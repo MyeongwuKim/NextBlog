@@ -33,7 +33,7 @@ const CPost: NextPage<IPost> = ({ title, date, content, tag }) => {
         타입스크립트에 대해 알아보자아아ㅏ
       </div>
       <div className="relative h-8">
-        <button className="absolute right-0 w-32 h-8 border-2 rounded-2xl">
+        <button className="absolute right-0 items-center inline-block p-2 text-lg font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-700">
           Read More
         </button>
       </div>

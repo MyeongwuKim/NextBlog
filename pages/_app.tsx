@@ -19,7 +19,7 @@ const lightTheme = {
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider attribute="class">
-      <div className="absolute w-full h-full bg-white text-slate-800 dark:bg-black dark:text-gray-200">
+      <div className="absolute w-full h-full min-w-[640px] bg-white text-slate-800 dark:bg-black dark:text-gray-200">
         <Component {...pageProps} />
       </div>
     </ThemeProvider>

@@ -104,7 +104,11 @@ const CSideMenu: NextPage = () => {
         </div>
       </div>
       <div className="relative grid gap-4 mt-5 justify-items-center">
-        <div className="rounded-full w-36 h-36 bg-slate-500"></div>
+        <div className="relative flex flex-row items-center justify-center rounded-full w-36 h-36 bg-slate-500">
+          <span className="text-3xl font-semibold text-center text-white ">
+            명우
+          </span>
+        </div>
         <button>
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[contentEditable="true"]:empty:before {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: rgb(107 114 128);
+  content: attr(placeholder);
+}
+
+textarea::placeholder {
+}
