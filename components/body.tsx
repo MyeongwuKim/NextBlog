@@ -1,6 +1,5 @@
 import CSideMenu from "./side";
 import { NextPage } from "next";
-import CPost from "./post";
 import { useRouter } from "next/router";
 
 interface IBodyProps {
