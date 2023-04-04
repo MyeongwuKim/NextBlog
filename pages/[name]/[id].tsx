@@ -3,7 +3,7 @@ import { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 
-const postDetail: NextPage = () => {
+const PostDetail: NextPage = () => {
   return (
     <CBody>
       <div className="w-full h-auto p-6 mb-10 bg-gray-200 rounded-lg dark:bg-zinc-900">
@@ -72,4 +72,4 @@ const postDetail: NextPage = () => {
   );
 };
 
-export default postDetail;
+export default PostDetail;

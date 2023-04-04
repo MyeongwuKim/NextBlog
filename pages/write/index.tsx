@@ -16,6 +16,7 @@ Update History
 - 23.3.14 스크롤 이벤트 작성, 문자열 사이에서 엔터쳤을때 발생했던 버그 수정
 - 23.3.15 텍스트영역 클릭이벤트작성, 복사붙여넣기 작성중..
 - 23.3.16 복사붙여넣기 완성, tool활성화 체크,
+- 23.4.3  스타일변경(크기,볼드,기울임,밑줄), 드랍다운 메뉴 추가, 스타일이벤트적용시 merge이벤트등 추가
 */
 /*
 -해야할것
@@ -30,16 +31,18 @@ interface IMultiKey {
 }
 interface IDropDownItem {
   name: string;
+  tag?: any;
   value: string;
   selected: boolean;
 }
 
 interface IToolState {
-  [key: string]: boolean | number;
+  [key: string]: boolean | number | string;
   bold: boolean;
   italic: boolean;
   underline: boolean;
   size: number;
+  align: string;
 }
 /////////////////////
 var selection: Selection | null;
@@ -50,11 +53,14 @@ var multiKey: IMultiKey = {
   back: false,
 };
 var makePrevTag: any;
+var firstAlign: string;
+var alignIndex: number;
 /** 노드타입 변수, TEXT: 3, NODE: 1*/
 const type = { TEXT: 3, NODE: 1 };
 /** 처음 입력시 막을 키목록, Tab, Arrow, Esc */
 const blockKeys: string[] = ["Tab", "Arrow", "Esc"];
-const dropDownData: IDropDownItem[] = [
+////dropdown data ////////////////
+const sizeData: IDropDownItem[] = [
   { name: "18", value: "18", selected: false },
   { name: "20", value: "20", selected: false },
   { name: "24", value: "24", selected: false },
@@ -62,6 +68,72 @@ const dropDownData: IDropDownItem[] = [
   { name: "36", value: "36", selected: false },
   { name: "48", value: "48", selected: false },
 ];
+const alignData: IDropDownItem[] = [
+  {
+    name: "left",
+    value: "left",
+    selected: false,
+    tag: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+        className="w-6 h-6"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 6.75h16.5M3.75 12H12m-8.25 5.25h16.5"
+        />
+      </svg>
+    ),
+  },
+  {
+    name: "right",
+    value: "right",
+    selected: false,
+    tag: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+        className="w-6 h-6"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25"
+        />
+      </svg>
+    ),
+  },
+  {
+    name: "center",
+    value: "center",
+    selected: false,
+    tag: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+        className="w-6 h-6"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+        />
+      </svg>
+    ),
+  },
+];
+////dropdown data ////////////////
 //replace(/<[^>]*>?/g, ''):모든태그제거
 const write: NextPage = () => {
   const [toolState, setToolState] = useState<IToolState>({
@@ -69,12 +141,15 @@ const write: NextPage = () => {
     italic: false,
     underline: false,
     size: 18,
+    align: "left",
   });
   const router = useRouter();
   const titleArea = useRef<any>();
   const bodyArea = useRef<HTMLDivElement>(null);
 
   const init = () => {
+    alignIndex = 0;
+    console.log(alignIndex);
     device = navigator?.userAgent.toLowerCase(); //기기정보
     selection = document.getSelection(); //현재 커서 정보
     makePrevTag = null;
@@ -86,12 +161,15 @@ const write: NextPage = () => {
       if (selection?.type == "Range") return;
       if (selection?.focusNode?.nodeType == type.TEXT) {
         let coverTag = selection.focusNode.parentNode as HTMLElement;
+        let size = parseInt(coverTag.style.fontSize.replace("px", ""));
+
         if (coverTag && coverTag.nodeName != "P") {
           setToolState((prev) => ({
             ...prev,
             bold: coverTag.style.fontWeight ? true : false,
             italic: coverTag.style.fontStyle ? true : false,
             underline: coverTag.style.textDecoration ? true : false,
+            size,
           }));
         } else {
           //텍스트면 초기화
@@ -101,6 +179,7 @@ const write: NextPage = () => {
               italic: false,
               underline: false,
               size: 18,
+              align: "left",
             }),
           });
         }
@@ -126,9 +205,7 @@ const write: NextPage = () => {
   useEffect(() => {
     init();
   }, []);
-  useEffect(() => {
-    console.log("Size " + toolState.size);
-  }, [toolState.size]);
+
   const mouseUpEvt = () => {
     let coverTag = selection?.focusNode?.parentNode as HTMLElement;
 
@@ -147,6 +224,7 @@ const write: NextPage = () => {
           italic: false,
           underline: false,
           size: 18,
+          align: "left",
         }),
       });
     }
@@ -348,7 +426,7 @@ const write: NextPage = () => {
     } ${
       evtAction == "size"
         ? `font-size:${evtState}px;`
-        : `font-size:${evtState}px;`
+        : `font-size:${originNode?.parentElement?.style.fontSize}`
     }`;
 
     if (styleData.length > 0) {
@@ -379,7 +457,7 @@ const write: NextPage = () => {
         );
       }
       mouseUpEvt();
-    } else if ((selection?.focusNode as HTMLElement).id == "editor_title") {
+    } else if ((selection?.focusNode as HTMLElement)?.id == "editor_title") {
       return;
     }
 
@@ -391,6 +469,8 @@ const write: NextPage = () => {
     let pNode = anchor;
 
     if (getTextAreaLength() <= 0) {
+      bodyArea.current?.setAttribute("style", `text-align:${evtState};`);
+
       bodyArea.current?.focus();
       return;
     }
@@ -407,7 +487,8 @@ const write: NextPage = () => {
         }
       }
     }
-
+    if (evtAction == "align") {
+    }
     if (selection?.type == "Caret") {
       let insertTag: Text | HTMLElement;
       if (getIsDefaultStyle(toolState)) {
@@ -448,7 +529,7 @@ const write: NextPage = () => {
           outerTag.before(outerTag.firstChild!);
         else outerTag.removeChild(child!);
       }
-      debugger;
+
       if (outerTag.tagName != "P") outerTag.remove();
       //스타일이 없다면 굳이 머지를 할필요가 없다
       if (insertTag.parentNode?.nodeName != "P")
@@ -832,9 +913,7 @@ const write: NextPage = () => {
         selection.getRangeAt(0).setEndAfter(child!);
         targetNode = child as HTMLElement;
       }
-
       //selection.getRangeAt(0).setEndAfter(anchorNode!);
-
       if (anchorNode?.nodeName == "SPAN") {
         anchorNode = anchorNode?.lastChild;
       }
@@ -847,12 +926,15 @@ const write: NextPage = () => {
       );
       e.preventDefault();
     } else if (selection?.type == "Caret") {
-      //커서가 맨끝에 위치해 있다면
-      if (caretOffset <= 0) {
+      //한칸밖에없음..
+      if (!prevNode && caretOffset == 1) {
+        current?.childNodes[0].remove();
+      } else if (caretOffset <= 0) {
+        //커서가 맨끝에 위치해 있다면
         if (!prevNode) {
           return;
         } //위에 다른 노드가 없으면 리턴
-        if (prevNode.innerHTML.replace("<br>", "").length <= 0) {
+        if (prevNode.innerHTML.replace(/<[^>]*>?/g, "").length <= 0) {
           //위에 다른 노드가 있고 값이 아무것도 없다면, 위의 노드를 삭제(위로당긴다)
           current?.removeChild(prevNode);
           //아무값 없는 P노드를 지운후 body에 한칸만 남아있는 상태라면 체크함
@@ -916,12 +998,17 @@ const write: NextPage = () => {
   //문단만들기
   const createParagraph = (isFirstInput: boolean): Node | void => {
     const { current } = bodyArea;
+    current?.removeAttribute("style");
     const pNode: HTMLElement = document.createElement("p");
 
     let [pNodeLength, caretOffset] = paragraphInfo();
     let insertEvent: InsertPosition = "afterbegin"; //beforebegin:앞에, afterend:뒤에
     let cursorStay: boolean = false;
     let currentNode = selection?.focusNode as HTMLElement;
+    let pStyleData = `text-align:${toolState.align};`;
+
+    pNode.setAttribute("style", getFormatStyle(pStyleData));
+    pNode.setAttribute("data-style", getFormatDataStyle(pStyleData));
 
     if (getIsDefaultStyle(toolState)) pNode.innerHTML = "<br>";
     else {
@@ -1362,7 +1449,11 @@ const write: NextPage = () => {
             flex items-center justify-start border-y-[2px] h-full dark:border-gray-500 font-semibold "
             >
               <CDropDown
+                useTag={false}
                 callback={(result) => {
+                  if (result == toolState.size) {
+                    return;
+                  }
                   onStyleEvent(
                     {
                       ...toolState,
@@ -1374,8 +1465,8 @@ const write: NextPage = () => {
                 }}
                 showValue={toolState.size}
                 buttnStyle={{ height: 32, width: 80 }}
-                menuStyle={{ height: 120, width: 100, left: 10, top: 47 }}
-                items={dropDownData}
+                menuStyle={{ height: "auto", width: 90, left: -5, top: 35 }}
+                items={sizeData}
               />
 
               {/* <button className="relative  text-base hover:dark:bg-slate-800">
@@ -1487,6 +1578,28 @@ const write: NextPage = () => {
                   />
                 </svg>
               </button>
+              <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
+              <CDropDown
+                useTag={true}
+                callback={(result) => {
+                  if (result == toolState.align) {
+                    return;
+                  }
+                  onStyleEvent(
+                    {
+                      ...toolState,
+                      align: result,
+                    },
+                    "align",
+                    result
+                  );
+                }}
+                showValue={toolState.align}
+                buttnStyle={{ height: 32, width: 50 }}
+                menuStyle={{ height: "auto", width: 60, left: -5, top: 35 }}
+                items={alignData}
+              />
+              <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
             </div>
           </div>
           <div
@@ -1574,14 +1687,14 @@ const write: NextPage = () => {
           id="editor_footer"
           className="h-[60px] relative flex items-center w-full  border-t-[1px] border-gray-400 dark:bg-zinc-700 bg-gray-200"
         >
-          <button className="absolute items-center inline-block p-2 text-lg font-semibold rounded-lg right-2 bg-emerald-500 hover:bg-emerald-700">
+          <button className="select-none absolute items-center inline-block p-2 text-lg font-semibold rounded-lg right-2 bg-emerald-500 hover:bg-emerald-700">
             Write Post
           </button>
           <button
             onClick={() => {
               router.back();
             }}
-            className="absolute items-center inline-block p-2 text-lg font-semibold rounded-lg left-2 bg-slate-600 hover:bg-slate-700"
+            className="select-none absolute items-center inline-block p-2 text-lg font-semibold rounded-lg left-2 bg-slate-600 hover:bg-slate-700"
           >
             Cancel
           </button>
