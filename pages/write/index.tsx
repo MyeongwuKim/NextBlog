@@ -2,7 +2,6 @@ import { NextPage } from "next";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import CDropDown from "@/components/dropDown";
-import { isTypeReferenceNode } from "typescript";
 
 /* 
 WYSIWYG에디터
@@ -37,7 +36,7 @@ interface IDropDownItem {
 }
 
 interface IToolState {
-  [key: string]: boolean | number | string;
+  [key: string]: any;
   bold: boolean;
   italic: boolean;
   underline: boolean;
@@ -53,8 +52,8 @@ var multiKey: IMultiKey = {
   back: false,
 };
 var makePrevTag: any;
+var placeHolderSpan: HTMLElement;
 var firstAlign: string;
-var alignIndex: number;
 /** 노드타입 변수, TEXT: 3, NODE: 1*/
 const type = { TEXT: 3, NODE: 1 };
 /** 처음 입력시 막을 키목록, Tab, Arrow, Esc */
@@ -135,7 +134,9 @@ const alignData: IDropDownItem[] = [
 ];
 ////dropdown data ////////////////
 //replace(/<[^>]*>?/g, ''):모든태그제거
-const write: NextPage = () => {
+//replace(/\r\n/g, ''); 엔터제거
+const Write: NextPage = () => {
+  const [toolOpen, setToolOpen] = useState<boolean>(false);
   const [toolState, setToolState] = useState<IToolState>({
     bold: false,
     italic: false,
@@ -148,13 +149,22 @@ const write: NextPage = () => {
   const bodyArea = useRef<HTMLDivElement>(null);
 
   const init = () => {
-    alignIndex = 0;
-    console.log(alignIndex);
     device = navigator?.userAgent.toLowerCase(); //기기정보
     selection = document.getSelection(); //현재 커서 정보
     makePrevTag = null;
+    firstAlign = "left";
+
+    enablePlaceHolder("enable");
 
     document.addEventListener("selectionchange", () => {
+      if (
+        (selection?.focusNode?.parentNode as HTMLElement)?.id ==
+        "placeHolderSpan"
+      ) {
+        let coverTag = selection?.focusNode?.parentNode!;
+        selection?.setBaseAndExtent(coverTag, 0, coverTag, 0);
+        return;
+      }
       if (makePrevTag != selection?.focusNode) {
         removeBlankTag();
       }
@@ -187,19 +197,27 @@ const write: NextPage = () => {
     });
 
     bodyArea?.current?.addEventListener("mouseup", mouseUpEvt);
+    bodyArea.current.addEventListener("focus", () => {
+      setToolOpen(true);
+    });
 
-    // let count = 3;
-    // let newRage = document.createRange();
-    // for (let i = 0; i < count; i++) {
-    //   const { current } = bodyArea;
-    //   const pNode: HTMLElement = document.createElement("p");
-    //   pNode.innerHTML = `<span data-style="bold;underline" style="text-decoration:underline; font-weight:bold;">oh</span><span data-style="bold" style="font-weight:bold;">span</span><span data-style="bold;underline" style="text-decoration:underline; font-weight:bold;">123</span>`;
+    let count = 0;
+    let newRage = document.createRange();
+    for (let i = 0; i < count; i++) {
+      const { current } = bodyArea;
+      const pNode: HTMLElement = document.createElement("p");
+      pNode.innerHTML = `<pre>
+      <code>
+      function name () {
+        const test = "1"}</code>
+        </pre>`;
 
-    //   current?.append(pNode);
-    //   newRage.setStartAfter(pNode);
-    //   newRage.collapse(true);
-    //   selection?.removeAllRanges();
-    // }
+      current?.append(pNode);
+      newRage.setStartAfter(pNode);
+      newRage.collapse(true);
+      selection?.removeAllRanges();
+    }
+    titleArea.current.focus();
   };
   //init
   useEffect(() => {
@@ -207,155 +225,186 @@ const write: NextPage = () => {
   }, []);
 
   const mouseUpEvt = () => {
-    let coverTag = selection?.focusNode?.parentNode as HTMLElement;
-
-    if (coverTag && coverTag.nodeName != "P") {
-      setToolState((prev) => ({
-        ...prev,
-        bold: coverTag.style.fontWeight ? true : false,
-        italic: coverTag.style.fontStyle ? true : false,
-        underline: coverTag.style.textDecoration ? true : false,
-      }));
-    } else {
-      //텍스트면 초기화
-      setToolState({
-        ...(toolState && {
-          bold: false,
-          italic: false,
-          underline: false,
-          size: 18,
-          align: "left",
-        }),
-      });
+    if (selection?.type == "None") {
+      return;
     }
+
+    let [offset, length, pTag] = paragraphInfo();
+    let coverTag = selection?.focusNode as HTMLElement;
+    if (coverTag.nodeType == type.TEXT) coverTag = coverTag.parentElement!;
+    //focus가 placeholder일때..
+    // if ((coverTag as HTMLElement)?.id == "placeHolderSpan") {
+    //   console.log(coverTag);
+    //   selection?.setBaseAndExtent(coverTag, 0, coverTag, 0);
+    //   return;
+    // }
+    setToolState((prev) => ({
+      ...prev,
+      bold: coverTag.style.fontWeight ? true : false,
+      italic: coverTag.style.fontStyle ? true : false,
+      underline: coverTag.style.textDecoration ? true : false,
+      font: coverTag.style.fontSize,
+      align: pTag!.style.textAlign,
+    }));
   };
 
   const pasteEvent = () => {
     navigator.clipboard
       .readText()
       .then((result) => {
-        const pLength = getTextAreaLength();
-
-        if (pLength! <= 0) {
-          let node = createParagraph(false) as HTMLElement;
-          node.innerHTML = result;
-          selection?.selectAllChildren(node);
-          selection?.collapseToEnd();
+        if (getIsEnablePlaceHolder()) {
+          enablePlaceHolder("disable");
+          createParagraph("FirstLine") as HTMLElement;
+          let span = bodyArea.current?.childNodes[0].lastChild as HTMLElement;
+          span.innerHTML = result;
+          selection?.setBaseAndExtent(
+            span.lastChild!,
+            span.lastChild?.nodeValue?.length!,
+            span.lastChild!,
+            span.lastChild?.nodeValue?.length!
+          );
         } else {
-          let pNode = selection?.focusNode as HTMLElement;
-
-          while (true) {
-            if (pNode?.nodeName == "P") break;
-            else {
-              pNode = pNode.parentNode as HTMLElement;
-            }
-          }
-
-          let focusNode = selection?.anchorNode;
-          let focusOffset = selection?.anchorOffset;
-          //드래그 부분 삭제
           if (selection?.type == "Range") {
-            selection.getRangeAt(0).deleteContents();
-            for (let i = 0; i < pNode.childNodes.length; i++) {
-              let child = pNode.childNodes[i];
-              if (
-                child.nodeType == type.NODE &&
-                (child as HTMLElement).innerHTML.replace(/<[^>]*>?/g, "")
-                  .length <= 0
-              ) {
-                pNode.removeChild(child);
-                i--;
-              }
-            }
+            multiKey.back = true;
+            removeEvent();
+            multiKey.back = false;
+          }
+          let focusNode = selection?.focusNode as HTMLElement;
+
+          let startCont = selection?.getRangeAt(0).startContainer;
+          let endCont = selection?.getRangeAt(0).endContainer;
+          let startOffset = selection?.getRangeAt(0).startOffset;
+          let endOffset = selection?.getRangeAt(0).endOffset;
+          let textNode = document.createTextNode(result);
+
+          let targetNode = focusNode;
+          if (focusNode.nodeType == type.TEXT) {
+            targetNode = targetNode.parentNode as HTMLElement;
           }
 
-          if (
-            !focusNode?.parentNode ||
-            (focusNode.parentNode as HTMLElement).innerHTML.replace(
-              /<[^>]*>?/g,
-              ""
-            ).length <= 0 ||
-            focusNode.nodeValue?.length! <= 0 ||
-            focusNode.nodeValue?.length! == focusOffset
-          ) {
-            focusNode = null;
-          }
+          selection?.getRangeAt(0).insertNode(textNode);
+          targetNode.innerHTML = targetNode.innerText;
 
-          if (pNode.innerHTML.replace("<br>", "").length <= 0) {
-            //br밖에 없다면.. 그냥 삽입함
-            pNode.innerHTML = result;
-            selection?.selectAllChildren(pNode);
-            selection?.collapseToEnd();
-          } else {
-            let lastNode = pNode.lastChild as HTMLElement;
+          selection?.setBaseAndExtent(
+            targetNode.lastChild!,
+            result.length + startOffset!,
+            targetNode.lastChild!,
+            result.length + startOffset!
+          );
 
-            if (lastNode.nodeType == type.NODE) {
-              lastNode = lastNode.lastChild as HTMLElement;
-            }
-            //커서 시작부분부터 끝 노드까지 드래그
-            selection!.setBaseAndExtent(
-              selection?.focusNode!,
-              selection?.focusOffset!,
-              lastNode,
-              lastNode.nodeValue?.length!
-            );
+          //let spanNode = focusNode.parentElement;
+          // while (true) {
+          //   if (pNode?.nodeName == "P") break;
+          //   else {
+          //     pNode = pNode.parentNode as HTMLElement;
+          //   }
+          // }
 
-            let range = selection?.getRangeAt(0);
-            let textNode = document.createTextNode(result);
-            let docNode = selection?.getRangeAt(0)?.extractContents(); //드래그된 부분을 잘라냄
+          // let focusNode = selection?.anchorNode;
+          // let focusOffset = selection?.anchorOffset;
+          // //드래그 부분 삭제
+          // if (selection?.type == "Range") {
+          //   selection.getRangeAt(0).deleteContents();
+          //   for (let i = 0; i < pNode.childNodes.length; i++) {
+          //     let child = pNode.childNodes[i];
+          //     if (
+          //       child.nodeType == type.NODE &&
+          //       (child as HTMLElement).innerHTML.replace(/<[^>]*>?/g, "")
+          //         .length <= 0
+          //     ) {
+          //       pNode.removeChild(child);
+          //       i--;
+          //     }
+          //   }
+          // }
 
-            docNode = getClearDocNode(docNode!);
+          // if (
+          //   !focusNode?.parentNode ||
+          //   (focusNode.parentNode as HTMLElement).innerHTML.replace(
+          //     /<[^>]*>?/g,
+          //     ""
+          //   ).length <= 0 ||
+          //   focusNode.nodeValue?.length! <= 0 ||
+          //   focusNode.nodeValue?.length! == focusOffset
+          // ) {
+          //   focusNode = null;
+          // }
 
-            for (let i = 0; i < docNode?.childNodes.length!; i++) {
-              let child = docNode?.childNodes[i]!;
-              if (
-                child.nodeType == type.NODE &&
-                (child as HTMLElement).innerHTML.replace(/<[^>]*>?/g, "")
-                  .length <= 0
-              ) {
-                docNode!.removeChild(child);
-                i--;
-              }
-            }
+          // if (pNode.innerHTML.replace("<br>", "").length <= 0) {
+          //   //br밖에 없다면.. 그냥 삽입함
+          //   pNode.innerHTML = result;
+          //   selection?.selectAllChildren(pNode);
+          //   selection?.collapseToEnd();
+          // } else {
+          //   let lastNode = pNode.lastChild as HTMLElement;
 
-            pNode?.appendChild(textNode); //복사해온 문자를 생성후 삽입
-            selection?.getRangeAt(0).selectNode(textNode);
+          //   if (lastNode.nodeType == type.NODE) {
+          //     lastNode = lastNode.lastChild as HTMLElement;
+          //   }
+          //   //커서 시작부분부터 끝 노드까지 드래그
+          //   selection!.setBaseAndExtent(
+          //     selection?.focusNode!,
+          //     selection?.focusOffset!,
+          //     lastNode,
+          //     lastNode.nodeValue?.length!
+          //   );
 
-            //잘라내기한 값을 삽입하면 range상태이기 때문에 끝부분으로 접고 돌면서 삽입
+          //   let range = selection?.getRangeAt(0);
+          //   let textNode = document.createTextNode(result);
+          //   let docNode = selection?.getRangeAt(0)?.extractContents(); //드래그된 부분을 잘라냄
 
-            while (docNode!.childNodes.length > 0) {
-              range?.collapse(false);
-              if (focusNode && focusNode?.parentNode?.nodeName == "SPAN") {
-                let cloneNode = focusNode.parentNode.cloneNode(
-                  true
-                ) as HTMLElement;
-                cloneNode.innerHTML = !(docNode!.firstChild as HTMLElement)
-                  .innerHTML
-                  ? docNode!.firstChild?.nodeValue!
-                  : (docNode!.firstChild as HTMLElement).innerHTML!;
-                docNode?.removeChild(docNode!.firstChild as Node);
-                range?.insertNode(cloneNode);
-                focusNode = null;
-              } else range?.insertNode(docNode!.firstChild as Node);
-            }
+          //   docNode = getClearDocNode(docNode!);
 
-            //복사한값을 선택하고 끝부분으로 커서를 접음
-            range?.selectNodeContents(textNode);
-            range?.collapse(false);
-          }
+          //   for (let i = 0; i < docNode?.childNodes.length!; i++) {
+          //     let child = docNode?.childNodes[i]!;
+          //     if (
+          //       child.nodeType == type.NODE &&
+          //       (child as HTMLElement).innerHTML.replace(/<[^>]*>?/g, "")
+          //         .length <= 0
+          //     ) {
+          //       docNode!.removeChild(child);
+          //       i--;
+          //     }
+          //   }
 
-          //잘라내기를 끝마치고 빈 span을 정리
-          for (let i = 0; i < pNode.childNodes.length; i++) {
-            let child = pNode.childNodes[i];
-            if (
-              child.nodeType == type.NODE &&
-              (child as HTMLElement).innerHTML.replace(/<[^>]*>?/g, "")
-                .length <= 0
-            ) {
-              pNode.removeChild(child);
-              i--;
-            }
-          }
+          //   pNode?.appendChild(textNode); //복사해온 문자를 생성후 삽입
+          //   selection?.getRangeAt(0).selectNode(textNode);
+
+          //   //잘라내기한 값을 삽입하면 range상태이기 때문에 끝부분으로 접고 돌면서 삽입
+
+          //   while (docNode!.childNodes.length > 0) {
+          //     range?.collapse(false);
+          //     if (focusNode && focusNode?.parentNode?.nodeName == "SPAN") {
+          //       let cloneNode = focusNode.parentNode.cloneNode(
+          //         true
+          //       ) as HTMLElement;
+          //       cloneNode.innerHTML = !(docNode!.firstChild as HTMLElement)
+          //         .innerHTML
+          //         ? docNode!.firstChild?.nodeValue!
+          //         : (docNode!.firstChild as HTMLElement).innerHTML!;
+          //       docNode?.removeChild(docNode!.firstChild as Node);
+          //       range?.insertNode(cloneNode);
+          //       focusNode = null;
+          //     } else range?.insertNode(docNode!.firstChild as Node);
+          //   }
+
+          //   //복사한값을 선택하고 끝부분으로 커서를 접음
+          //   range?.selectNodeContents(textNode);
+          //   range?.collapse(false);
+          // }
+
+          // //잘라내기를 끝마치고 빈 span을 정리
+          // for (let i = 0; i < pNode.childNodes.length; i++) {
+          //   let child = pNode.childNodes[i];
+          //   if (
+          //     child.nodeType == type.NODE &&
+          //     (child as HTMLElement).innerHTML.replace(/<[^>]*>?/g, "")
+          //       .length <= 0
+          //   ) {
+          //     pNode.removeChild(child);
+          //     i--;
+          //   }
+          // }
         }
       })
       .catch((err) => {
@@ -367,20 +416,20 @@ const write: NextPage = () => {
     let span = document.createElement("span");
     let styleData = `${
       outerTag.style.fontWeight.trim().length > 0
-        ? outerTag.style.fontWeight
+        ? `font-weight:${outerTag.style.fontWeight};`
         : ""
     }
     ${
       outerTag.style.textDecoration.trim().length > 0
-        ? `text-decoration:${outerTag.style.textDecoration}`
+        ? `text-decoration:${outerTag.style.textDecoration};`
         : ""
     }
     ${
       outerTag.style.fontStyle.trim().length > 0
-        ? `font-style:${outerTag.style.fontStyle}`
+        ? `font-style:${outerTag.style.fontStyle};`
         : ""
     }
-    font-size:${outerTag.style.fontSize}
+    font-size:${outerTag.style.fontSize};
     `;
 
     span.setAttribute("style", getFormatStyle(styleData));
@@ -390,14 +439,16 @@ const write: NextPage = () => {
   };
   /**태그에 스타일만 적용함 */
   const setTagStyle = (
+    toolState: IToolState,
     evtAction: string,
     evtState: boolean,
     insertNode: HTMLElement,
     originNode?: HTMLElement | void
   ) => {
     let styleData = "";
-    if (originNode?.parentElement?.nodeName == "SPAN") {
-      styleData = originNode?.parentElement?.style.cssText;
+
+    if ((originNode as HTMLElement).parentElement?.nodeName == "SPAN") {
+      styleData = (originNode as HTMLElement).parentElement?.style.cssText!;
     }
     styleData = `${
       evtAction == "bold" && evtState
@@ -426,13 +477,17 @@ const write: NextPage = () => {
     } ${
       evtAction == "size"
         ? `font-size:${evtState}px;`
-        : `font-size:${originNode?.parentElement?.style.fontSize}`
+        : `font-size:${toolState.size}px;`
     }`;
 
     if (styleData.length > 0) {
       insertNode.setAttribute("style", getFormatStyle(styleData));
       insertNode.setAttribute("data-style", getFormatDataStyle(styleData));
     }
+  };
+  const onCreateLink = () => {
+    let focusNode = selection.focusNode;
+    console.log(focusNode);
   };
   /**스타일 적용이벤트 */
   const onStyleEvent = (
@@ -456,24 +511,16 @@ const write: NextPage = () => {
           last?.nodeValue?.length!
         );
       }
-      mouseUpEvt();
     } else if ((selection?.focusNode as HTMLElement)?.id == "editor_title") {
       return;
     }
 
-    if (!getIsDefaultStyle(toolState)) removeBlankTag();
+    //if (!getIsDefaultStyle(toolState)) removeBlankTag();
 
     setToolState(toolState);
 
     let anchor = selection?.focusNode;
     let pNode = anchor;
-
-    if (getTextAreaLength() <= 0) {
-      bodyArea.current?.setAttribute("style", `text-align:${evtState};`);
-
-      bodyArea.current?.focus();
-      return;
-    }
 
     if (pNode?.nodeName != "DIV") {
       while (true) {
@@ -488,16 +535,60 @@ const write: NextPage = () => {
       }
     }
     if (evtAction == "align") {
+      let startCont = selection?.getRangeAt(0).startContainer!;
+      let endCont = selection?.getRangeAt(0).endContainer!;
+      let start = selection?.getRangeAt(0).startOffset!;
+      let end =
+        (pNode as HTMLElement).innerText.length! <= 0
+          ? 0
+          : selection?.getRangeAt(0).endOffset!;
+
+      if (selection?.type == "Caret" || startCont == endCont) {
+        (pNode as HTMLElement).setAttribute("style", `text-align:${evtState}`);
+        if (getCurentParagraphIdx(pNode as HTMLElement) == 0)
+          firstAlign = evtState;
+      } else if (selection?.type == "Range") {
+        let startParagraph = getCurentParagraph(startCont);
+        let endParagraph = getCurentParagraph(endCont);
+        let iterator: HTMLElement = startParagraph as HTMLElement;
+        while (true) {
+          if (iterator == endParagraph.nextSibling) break;
+          else {
+            iterator.setAttribute("style", `text-align:${evtState}`);
+            if (getCurentParagraphIdx(iterator as HTMLElement) == 0)
+              firstAlign = evtState;
+            iterator = iterator.nextSibling as HTMLElement;
+          }
+        }
+      }
+
+      if (startCont.nodeType == type.NODE && !getIsEnablePlaceHolder())
+        startCont = startCont.parentNode!;
+      if (endCont.nodeType == type.NODE && !getIsEnablePlaceHolder())
+        endCont = endCont.parentNode!;
+
+      //debugger;
+      selection?.setBaseAndExtent(startCont, 0, endCont, end);
+      selection?.collapseToEnd();
+      return;
     }
+    if (getIsEnablePlaceHolder()) {
+      placeHolderSpan.remove();
+    }
+
     if (selection?.type == "Caret") {
       let insertTag: Text | HTMLElement;
       if (getIsDefaultStyle(toolState)) {
         insertTag = document.createTextNode("");
         insertTag.textContent = "\u200B";
       } else {
+        //이미 만들어놓았다면 굳이 새로만들필요가 없다
+
         insertTag = document.createElement("span");
         insertTag.innerHTML = "\u200B";
+
         setTagStyle(
+          toolState,
           evtAction,
           evtState,
           insertTag,
@@ -522,6 +613,7 @@ const write: NextPage = () => {
       ) {
         surroundStyleTag(outerTag, insertTag.nextSibling!);
       }
+      //insertNode했을때 커서를 가리키는 span안에 넣는 문제가 발생, 바깥으로 뺴주는 작업을함
       while (outerTag.childNodes.length > 0 && outerTag.tagName != "P") {
         let child = outerTag.firstChild;
         if (child?.nodeType == type.NODE) child = child.lastChild;
@@ -538,6 +630,10 @@ const write: NextPage = () => {
         insertTag = insertTag.lastChild as HTMLElement;
 
       selection.setBaseAndExtent(insertTag!, 1, insertTag!, 1);
+      if (insertTag.parentElement.previousSibling) {
+        let prev = insertTag.parentElement.previousSibling as HTMLElement;
+        if (prev.innerText.replace("\u200B", "").length <= 0) prev.remove();
+      }
       makePrevTag = insertTag;
     } else if (selection?.type == "Range") {
       let startContainer = selection.getRangeAt(0).startContainer as Node;
@@ -630,7 +726,13 @@ const write: NextPage = () => {
         //적용된 스타일이 있으면 Span
         insertTag = document.createElement("span");
         insertTag.innerText = textValue!;
-        setTagStyle(evtAction, evtState, insertTag, focusNode as HTMLElement);
+        setTagStyle(
+          toolState,
+          evtAction,
+          evtState,
+          insertTag,
+          focusNode as HTMLElement
+        );
 
         selection.getRangeAt(0).deleteContents();
         selection.getRangeAt(0).insertNode(insertTag);
@@ -753,6 +855,8 @@ const write: NextPage = () => {
         endContainer.nodeValue?.length!
       );
     }
+
+    mouseUpEvt();
   };
   //타이틀영역을 스크롤영역만큼 늘린다
   const onTitleChange = (e: any) => {
@@ -862,11 +966,32 @@ const write: NextPage = () => {
     return newNode;
   };
   //삭제 이벤트
-  const removeEvent = (e: React.KeyboardEvent) => {
-    let [pNodeLength, caretOffset] = paragraphInfo();
-    const { current } = bodyArea;
-    let bodypNodeLength = current?.getElementsByTagName("p").length;
+  const removeEvent = (e?: React.KeyboardEvent) => {
     let currentNode = selection?.focusNode as HTMLElement;
+    let [pNodeLength, caretOffset, pNode] = paragraphInfo();
+    let prevcaretOffset = caretOffset;
+    const { current } = bodyArea;
+    let caretType = selection?.type;
+    let startCont = selection?.getRangeAt(0).startContainer!;
+    let endCont = selection?.getRangeAt(0).endContainer!;
+
+    if (multiKey.back) {
+      let start = selection?.getRangeAt(0).startOffset!;
+      let end =
+        pNode?.innerText.length! <= 0
+          ? 0
+          : selection?.getRangeAt(0).endOffset! -
+            (caretType == "Caret" ? 1 : 0);
+      if (end < 0) end = 0;
+      selection?.setBaseAndExtent(startCont, start, endCont, end);
+      selection?.getRangeAt(0).deleteContents();
+      [pNodeLength, caretOffset, pNode] = paragraphInfo();
+      if (caretType == "Range") {
+        currentNode = endCont as HTMLElement;
+        pNode = currentNode.parentElement!;
+        caretOffset = startCont == endCont ? caretOffset : 0;
+      }
+    }
 
     if (currentNode.nodeName == "DIV") return;
     // if (caretOffset >= 1 && caretOffset <= pNodeLength) return;
@@ -876,117 +1001,158 @@ const write: NextPage = () => {
         currentNode = currentNode.parentNode as HTMLElement;
       }
     }
-    let prevNode = currentNode.previousSibling as HTMLElement;
 
+    let prevNode = currentNode.previousSibling as HTMLElement;
     //드래그 지우기
     if (selection?.type == "Range") {
-      let anchorNode = selection.anchorNode;
+      // let anchorNode = selection.anchorNode;
 
-      selection.getRangeAt(0).deleteContents();
+      // selection.getRangeAt(0).deleteContents();
 
-      /*
-      지웠을때 커서가 가리키고있는 노드의 값이 없으면서 SPAN이면
-      anchorNode의 값을 prev노드로 바꾸고 지운다
-      */
-      if (
-        anchorNode?.nodeValue?.length! <= 0 &&
-        anchorNode?.parentNode?.nodeName == "SPAN"
-      ) {
-        anchorNode = anchorNode?.parentNode.previousSibling;
-        if (anchorNode?.parentNode?.nodeName == "SPAN") {
-          anchorNode.parentNode.nextSibling?.remove();
-        } else anchorNode?.nextSibling?.remove();
-      }
+      // /*
+      // 지웠을때 커서가 가리키고있는 노드의 값이 없으면서 SPAN이면
+      // anchorNode의 값을 prev노드로 바꾸고 지운다
+      // */
+      // if (
+      //   anchorNode?.nodeValue?.length! <= 0 &&
+      //   anchorNode?.parentNode?.nodeName == "SPAN"
+      // ) {
+      //   anchorNode = anchorNode?.parentNode.previousSibling;
+      //   if (anchorNode?.parentNode?.nodeName == "SPAN") {
+      //     anchorNode.parentNode.nextSibling?.remove();
+      //   } else anchorNode?.nextSibling?.remove();
+      // }
 
-      selection.selectAllChildren(currentNode);
-      let docNode = selection.getRangeAt(0).extractContents();
-      selection.getRangeAt(0).setStartAfter(anchorNode!);
-      selection.getRangeAt(0).setEndAfter(anchorNode!);
+      // selection.selectAllChildren(currentNode);
+      // let docNode = selection.getRangeAt(0).extractContents();
+      // selection.getRangeAt(0).setStartAfter(anchorNode!);
+      // selection.getRangeAt(0).setEndAfter(anchorNode!);
 
-      docNode = getClearDocNode(docNode!);
+      // docNode = getClearDocNode(docNode!);
 
-      let targetNode = anchorNode as HTMLElement;
-      //잘라온 노드들을 커서를 앞으로 보내가며 붙여줌
-      while (docNode.childNodes.length > 0) {
-        let child = docNode.firstChild;
-        targetNode.after(child!);
-        selection.getRangeAt(0).setEndAfter(child!);
-        targetNode = child as HTMLElement;
-      }
-      //selection.getRangeAt(0).setEndAfter(anchorNode!);
-      if (anchorNode?.nodeName == "SPAN") {
-        anchorNode = anchorNode?.lastChild;
-      }
-      //커서세팅
-      selection.setBaseAndExtent(
-        anchorNode!,
-        anchorNode?.nodeValue?.length!,
-        anchorNode!,
-        anchorNode?.nodeValue?.length!
-      );
-      e.preventDefault();
+      // let targetNode = anchorNode as HTMLElement;
+      // //잘라온 노드들을 커서를 앞으로 보내가며 붙여줌
+      // while (docNode.childNodes.length > 0) {
+      //   let child = docNode.firstChild;
+      //   targetNode.after(child!);
+      //   selection.getRangeAt(0).setEndAfter(child!);
+      //   targetNode = child as HTMLElement;
+      // }
+      // //selection.getRangeAt(0).setEndAfter(anchorNode!);
+      // if (anchorNode?.nodeName == "SPAN") {
+      //   anchorNode = anchorNode?.lastChild;
+      // }
+      // //커서세팅
+      // selection.setBaseAndExtent(
+      //   anchorNode!,
+      //   anchorNode?.nodeValue?.length!,
+      //   anchorNode!,
+      //   anchorNode?.nodeValue?.length!
+      // );
+      e?.preventDefault();
     } else if (selection?.type == "Caret") {
-      //한칸밖에없음..
-      if (!prevNode && caretOffset == 1) {
-        current?.childNodes[0].remove();
-      } else if (caretOffset <= 0) {
-        //커서가 맨끝에 위치해 있다면
-        if (!prevNode) {
-          return;
-        } //위에 다른 노드가 없으면 리턴
-        if (prevNode.innerHTML.replace(/<[^>]*>?/g, "").length <= 0) {
+      //두칸이상일때 처리,한칸남았을때 처리는 맨 아래로
+      if (caretOffset <= 0 && prevNode) {
+        //위에 다른 노드가 없다면..(1개)
+        selection.setBaseAndExtent(pNode?.lastChild!, 0, pNode?.lastChild!, 0);
+        if (
+          pNode!.innerText.replace(/\n/g, "").length <= 0 &&
+          prevcaretOffset == 0
+        ) {
           //위에 다른 노드가 있고 값이 아무것도 없다면, 위의 노드를 삭제(위로당긴다)
-          current?.removeChild(prevNode);
-          //아무값 없는 P노드를 지운후 body에 한칸만 남아있는 상태라면 체크함
-          if (
-            pNodeLength == 1 &&
-            (current?.childNodes[0] as HTMLElement).innerHTML.replace(
-              "<br>",
-              ""
-            ).length <= 0
-          ) {
-            current?.childNodes[0].remove();
+          current?.removeChild(pNode!);
+          let lastChild = prevNode.lastChild;
+          if (lastChild?.nodeType == type.NODE) {
+            lastChild = lastChild.lastChild;
           }
-          e.preventDefault();
-          return;
-        } else {
-          //위에 다른 노드가 있고 값이 있다면, 위의 노드랑 합침
-          let offset: number = prevNode.lastChild?.nodeValue?.length!;
-          let offsetNode = prevNode.lastChild;
+          selection?.setBaseAndExtent(
+            lastChild!,
+            lastChild?.nodeValue?.length!,
+            lastChild!,
+            lastChild?.nodeValue?.length!
+          );
+        } else if (pNode!.innerText.length > 0) {
+          let totalLength = prevNode.innerText.length;
+          let lastNode =
+            prevNode.lastChild?.nodeType == type.TEXT
+              ? prevNode.lastChild.parentElement
+              : prevNode.lastChild;
+          let endParagraph = getCurentParagraph(endCont);
 
-          if (prevNode.lastChild?.nodeType == type.NODE) {
-            let node = prevNode.lastChild as HTMLElement;
-            offsetNode = node.lastChild;
-            offset = offsetNode?.nodeValue?.length!;
+          while (endParagraph?.childNodes.length! > 0) {
+            prevNode.appendChild(endParagraph?.firstChild!);
           }
+          (endParagraph as HTMLElement).remove();
+          mergeSameTag(lastNode as HTMLElement);
 
-          selection?.setBaseAndExtent(offsetNode!, offset, offsetNode!, offset);
-
-          while (currentNode.childNodes.length > 0) {
-            let child = currentNode.firstChild;
-            let childoffset = child?.nodeValue?.length;
-
-            if (child?.nodeType == type.NODE) {
-              childoffset = child.lastChild?.nodeValue?.length;
+          for (let i = 0; i < prevNode.childNodes.length; i++) {
+            let child = prevNode.childNodes[i];
+            let curLength = (child as HTMLElement).innerText.length;
+            if (curLength >= totalLength) {
+              let content = child.lastChild;
+              selection.setBaseAndExtent(
+                content,
+                totalLength,
+                content,
+                totalLength
+              );
+              break;
+            } else {
+              totalLength -= curLength;
             }
-
-            selection?.getRangeAt(0).insertNode(child!);
-            selection?.getRangeAt(0)?.selectNodeContents(child!);
-            selection?.getRangeAt(0).collapse(false);
           }
-          selection?.setBaseAndExtent(offsetNode!, offset, offsetNode!, offset);
-          selection?.getRangeAt(0).collapse(true);
-          current?.removeChild(currentNode);
         }
-        e.preventDefault();
-      } else if (caretOffset == 1 && !prevNode) {
-        /*지울때 prevNode가 없고, caretOffset이 1일때 : P태그가 하나남았고, 문자열 한개를 지우기전에
-      태그를 날려준다,
-    */
-        // current?.removeChild(currentNode);
-        // e.preventDefault();
+        e?.preventDefault();
+      } else {
+        if (startCont.nodeValue?.length! <= 0) {
+          let prev;
+          if (startCont.parentElement?.previousSibling) {
+            prev = startCont.parentElement?.previousSibling;
+          }
+          if (prev) {
+            let pNode = getCurentParagraph(prev);
+            let totalLength = prev.innerText.length;
+            let iterator = pNode.firstChild;
+            while (true) {
+              if (iterator == prev) break;
+              else {
+                totalLength += (iterator as HTMLElement).innerText.length;
+                iterator = iterator.nextSibling;
+              }
+            }
+            mergeSameTag(prev);
+            selection.setBaseAndExtent(prev, 1, prev, 1);
+            for (let i = 0; i < pNode.childNodes.length; i++) {
+              let child = pNode.childNodes[i];
+              let curLength = (child as HTMLElement).innerText.length;
+              if (curLength >= totalLength) {
+                let content = child.lastChild;
+                selection.setBaseAndExtent(
+                  content,
+                  totalLength,
+                  content,
+                  totalLength
+                );
+                break;
+              } else {
+                totalLength -= curLength;
+              }
+            }
+          }
+          startCont.parentElement?.remove();
+          mouseUpEvt();
+        }
       }
     }
+
+    if (
+      getTextAreaLength() <= 1 &&
+      (current?.childNodes[0] as HTMLElement).innerText.replace(/\n/g, "")
+        .length <= 0
+    ) {
+      current?.firstChild?.remove();
+    }
+    if (getTextAreaLength() <= 0) enablePlaceHolder("enable");
     // for (let i = 0; i < bodyArea?.current?.childNodes.length!; i++) {
     //   let child = bodyArea?.current?.childNodes[i] as HTMLElement;
     //   if (child.innerHTML.replace(/<[^>]*>?/g, "").length <= 0) {
@@ -996,12 +1162,13 @@ const write: NextPage = () => {
     // }
   };
   //문단만들기
-  const createParagraph = (isFirstInput: boolean): Node | void => {
+  const createParagraph = (
+    evtName: "Enter" | "FirstLine",
+    fistKey?: string
+  ): Node | void => {
     const { current } = bodyArea;
-    current?.removeAttribute("style");
     const pNode: HTMLElement = document.createElement("p");
-
-    let [pNodeLength, caretOffset] = paragraphInfo();
+    pNode.className = "paragraph";
     let insertEvent: InsertPosition = "afterbegin"; //beforebegin:앞에, afterend:뒤에
     let cursorStay: boolean = false;
     let currentNode = selection?.focusNode as HTMLElement;
@@ -1009,19 +1176,26 @@ const write: NextPage = () => {
 
     pNode.setAttribute("style", getFormatStyle(pStyleData));
     pNode.setAttribute("data-style", getFormatDataStyle(pStyleData));
-
+    let span;
     if (getIsDefaultStyle(toolState)) pNode.innerHTML = "<br>";
     else {
-      pNode.innerHTML = `<span></span>`;
-      let child = pNode.firstChild as HTMLElement;
-      child.innerHTML = "<br>";
+      span = document.createElement("span");
+      span.innerHTML = "<br>";
+
       let styleData = `${toolState.bold ? "font-weight:bold;" : ""} ${
         toolState.underline ? "text-decoration:underline;" : ""
       } ${toolState.italic ? "font-style:italic;" : ""} font-size:${
         toolState.size + "px"
       }`;
-      child.setAttribute("style", getFormatStyle(styleData));
-      child.setAttribute("data-style", getFormatDataStyle(styleData));
+      span.setAttribute("style", getFormatStyle(styleData));
+      span.setAttribute("data-style", getFormatDataStyle(styleData));
+
+      if (getTextAreaLength() <= 1 && evtName == "FirstLine") {
+        (current?.firstChild as HTMLElement).appendChild(span);
+        selection?.setBaseAndExtent(span, 0, span, 0);
+        return;
+      }
+      pNode.append(span);
     }
 
     if (currentNode.nodeName != "DIV") {
@@ -1032,10 +1206,12 @@ const write: NextPage = () => {
         }
       }
     }
+    let [pNodeLength, caretOffset] = paragraphInfo();
     //가리키는 커서에 값이 있다면..
     if (
       selection?.focusNode?.nodeValue ||
-      (selection?.focusNode as HTMLElement).innerHTML.length > 0
+      (selection?.focusNode as HTMLElement).innerHTML.length > 0 ||
+      getIsEnablePlaceHolder()
     ) {
       /*커서가 드래그 되어있다 -> 드래그된 값을 삭제한다*/
       if (selection?.type == "Range") {
@@ -1065,6 +1241,7 @@ const write: NextPage = () => {
       insertEvent = "beforebegin";
       cursorStay = true;
     }
+
     //에디터에 아무런 값이 없다면  append함
     if (getTextAreaLength() <= 0) {
       current?.append(pNode);
@@ -1076,27 +1253,30 @@ const write: NextPage = () => {
       selection?.collapseToStart();
       selection?.setBaseAndExtent(
         pNode.childNodes[0],
-        0,
+        1,
         pNode.childNodes[0],
-        0
+        1
       );
     }
-    //비어있는 <p> 정리
-    for (let i = 0; i < current?.childNodes.length!; i++) {
-      let childP = current?.childNodes[i] as ChildNode;
-      if (
-        (childP as HTMLElement).innerHTML.replace(
-          /<(\/span|span)([^>]*)>/gi,
-          ""
-        ).length <= 0
-      ) {
-        current?.removeChild(childP);
-        i--;
-      }
+    if (evtName == "Enter" && getIsEnablePlaceHolder()) {
+      if (span) placeHolderSpan.parentNode?.appendChild(span.cloneNode(true));
+      placeHolderSpan.remove();
     }
+    //비어있는 <p> 정리
+    // for (let i = 0; i < current?.childNodes.length!; i++) {
+    //   let childP = current?.childNodes[i] as ChildNode;
+    //   if (
+    //     (childP as HTMLElement).innerHTML.replace(
+    //       /<(\/span|span)([^>]*)>/gi,
+    //       ""
+    //     ).length <= 0
+    //   ) {
+    //     current?.removeChild(childP);
+    //     i--;
+    //   }
+    // }
 
-    if (isFirstInput) createParagraph(false);
-
+    //if (isFirstInput) createParagraph(false);
     scrollEvent();
 
     return pNode;
@@ -1109,6 +1289,7 @@ const write: NextPage = () => {
 
     //scrollHeight :  영역 맨아래 값
     //scrollTop :스크롤이 움직인 값,
+
     if (currentNode.nodeName != "DIV") {
       while (true) {
         if (currentNode?.nodeName == "P") break;
@@ -1143,6 +1324,9 @@ const write: NextPage = () => {
   };
   //GET///////////////////////////////////////////////////////////////////////////////////
   /**인자값을 Style이 적용될 값으로 포맷후 리턴*/
+  const getIsEnablePlaceHolder = (): boolean => {
+    return document.getElementById("placeHolderSpan") ? true : false;
+  };
   const getFormatStyle = (data: string): string => {
     return data
       .replace(/\n|\r|\s*/g, "")
@@ -1167,7 +1351,7 @@ const write: NextPage = () => {
       .join(";");
   };
   /**문단안에있는 문자열 길이, 커서 오프셋 리턴*/
-  const paragraphInfo = (): [number, number] => {
+  const paragraphInfo = (): [number, number, HTMLElement?] => {
     let ragne = selection?.getRangeAt(0);
     let focusOffset = selection?.focusOffset!;
     let focusNode = selection?.focusNode as Node;
@@ -1208,7 +1392,19 @@ const write: NextPage = () => {
     selection?.removeAllRanges();
     selection?.addRange(ragne!);
     //br은 1로 취급
-    return [pNode.innerText.length, caretOffset];
+    return [pNode.innerText.length, caretOffset, pNode];
+  };
+  /**인자로 넣은 P가 바디에 몇번째 자식인지 */
+  const getCurentParagraphIdx = (paragraph: HTMLElement): number => {
+    let idx = 0;
+    for (let i = 0; i < bodyArea.current?.childNodes.length!; i++) {
+      let curP = bodyArea.current?.childNodes[i];
+      if (curP == paragraph) {
+        idx = i;
+        break;
+      }
+    }
+    return idx;
   };
   /**TextArea P태그 갯수  */
   const getTextAreaLength = (): number => {
@@ -1250,6 +1446,41 @@ const write: NextPage = () => {
     }
     return swapDocNode;
   };
+  const enablePlaceHolder = (isEnable: "enable" | "disable") => {
+    if (isEnable == "enable") {
+      let firstP: HTMLElement;
+      if (bodyArea.current?.childNodes[0]) {
+        firstP = bodyArea.current?.childNodes[0] as HTMLElement;
+      } else firstP = document.createElement("p");
+
+      firstP.className = "paragraph";
+      firstP.setAttribute("style", `text-align:${firstAlign}`);
+      placeHolderSpan = document.createElement("span");
+      placeHolderSpan.onmousedown = () => {
+        selection?.setBaseAndExtent(firstP, 0, firstP, 0);
+        return false;
+      };
+
+      placeHolderSpan.innerText = "내용을 입력해주세요..";
+      placeHolderSpan.setAttribute("id", "placeHolderSpan");
+
+      let styleData = `${toolState.bold ? "font-weight:bold;" : ""} ${
+        toolState.underline ? "text-decoration:underline;" : ""
+      } ${toolState.italic ? "font-style:italic;" : ""} font-size:${
+        toolState.size + "px"
+      }`;
+      placeHolderSpan.setAttribute("style", getFormatStyle(styleData));
+      placeHolderSpan.setAttribute("data-style", getFormatDataStyle(styleData));
+
+      firstP.appendChild(placeHolderSpan);
+      bodyArea.current?.appendChild(firstP);
+
+      selection?.setBaseAndExtent(firstP, 0, firstP, 0);
+      return;
+    } else {
+      placeHolderSpan.remove();
+    }
+  };
   //GET///////////////////////////////////////////////////////////////////////////////////
   //텍스트가 바디에 들어가기전에 작동함
   const onTextAreaKeyDown = (e: React.KeyboardEvent) => {
@@ -1263,27 +1494,25 @@ const write: NextPage = () => {
         e.preventDefault();
       }
       if (e.key == "Shift") {
-        console.log(selection?.getRangeAt(0));
-        console.log(selection!.getRangeAt(0).startOffset);
-        console.log(selection!.getRangeAt(0).endOffset);
+        console.log(selection);
         // document.execCommand("bold", false);
         // onStyleEvent();
       }
     } else if (!multiKey.ctrl) {
       if (e.key == "Backspace") {
-        removeEvent(e);
         multiKey.back = true;
+        removeEvent(e);
+        e.preventDefault();
       } else if (e.key == "Shift") {
         multiKey.shift = true;
       } else if (e.key == "Enter") {
-        if (pLength! <= 0) createParagraph(true);
-        else createParagraph(false);
+        createParagraph("Enter");
+        // else createParagraph(false);
         e.preventDefault();
       } else if (device.indexOf("mac") > -1 && e.key == "Meta") {
         multiKey.ctrl = true;
       } else {
-        if (pLength! <= 0) {
-          //첫번재 입력때 해당키가 있으면 키입력 블락
+        if (pLength == 1 && getIsEnablePlaceHolder()) {
           let isBlock = false;
           blockKeys.forEach((key) => {
             if (e.key.includes(key)) {
@@ -1296,11 +1525,20 @@ const write: NextPage = () => {
             e.preventDefault();
             return;
           }
-          createParagraph(false);
+          enablePlaceHolder("disable");
+          createParagraph("FirstLine", e.key);
         } else {
           //스타일 없는 텍스트 입력시, Arrow이벤트가 들어오면 블랭크 삭제
           if (e.key.indexOf("Arrow") > -1) {
             removeBlankTag();
+          } else {
+            let [offset, length, pNode] = paragraphInfo();
+            if (
+              pNode?.childNodes.length! <= 1 &&
+              (pNode?.lastChild! as HTMLElement).innerText.length <= 0
+            ) {
+              (pNode?.lastChild! as HTMLElement).innerHTML = "<br>";
+            }
           }
         }
       }
@@ -1333,6 +1571,14 @@ const write: NextPage = () => {
       }
       mergeSameTag(prevTag);
       makePrevTag = null;
+
+      if (
+        getTextAreaLength() <= 1 &&
+        (bodyArea.current?.childNodes[0] as HTMLElement).innerText.length <= 0
+      ) {
+        enablePlaceHolder("enable");
+        mouseUpEvt();
+      }
     }
   };
   /**Range된 모든 문단의 태그를 검사해서 합쳐줌*/
@@ -1373,37 +1619,35 @@ const write: NextPage = () => {
   /**앞뒤로 순회하면서 태그 속성이 같다면 합침(data-style로 체킹) */
   const mergeSameTag = (tag: HTMLElement): HTMLElement | void => {
     if (tag?.parentNode?.nodeName == "P" && tag.nodeType == type.TEXT) return;
+    if (!tag) return;
     let count = 0;
 
     while (count < 2) {
-      if (tag) {
-        let iterator = tag.previousSibling as HTMLElement;
-        if (count == 1) iterator = tag.nextSibling as HTMLElement;
-        if (!iterator) break;
-        if (
-          iterator.nodeType != type.TEXT &&
-          tag?.getAttribute("data-style") ==
-            iterator?.getAttribute("data-style")
-        ) {
-          let commonTag = document.createElement("span");
-          commonTag.style.cssText = iterator?.style.cssText!;
-          commonTag.setAttribute(
-            "data-style",
-            iterator?.getAttribute("data-style")!
-          );
+      let iterator = tag.previousSibling as HTMLElement;
+      if (count == 1) iterator = tag.nextSibling as HTMLElement;
 
-          iterator?.before(commonTag);
+      if (
+        iterator &&
+        iterator.nodeType != type.TEXT &&
+        tag?.getAttribute("data-style") == iterator?.getAttribute("data-style")
+      ) {
+        let commonTag = document.createElement("span");
+        commonTag.style.cssText = iterator?.style.cssText!;
+        commonTag.setAttribute(
+          "data-style",
+          iterator?.getAttribute("data-style")!
+        );
 
-          if (count == 1)
-            commonTag.innerHTML = tag.innerHTML + iterator.innerHTML;
-          else commonTag.innerHTML = iterator.innerHTML + tag.innerHTML;
+        iterator?.before(commonTag);
 
-          tag.remove();
-          iterator.remove();
-          tag = commonTag;
-        }
-      }
-      count++;
+        if (count == 1)
+          commonTag.innerHTML = tag.innerHTML + iterator.innerHTML;
+        else commonTag.innerHTML = iterator.innerHTML + tag.innerHTML;
+
+        tag.remove();
+        iterator.remove();
+        tag = commonTag;
+      } else count++;
     }
 
     return tag!;
@@ -1429,10 +1673,14 @@ const write: NextPage = () => {
             className="select-none relative h-auto max-h-[50%]"
           >
             <textarea
+              spellCheck={false}
               tabIndex={1}
               rows={1}
               ref={titleArea}
               onChange={onTitleChange}
+              onClick={() => {
+                setToolOpen(false);
+              }}
               placeholder="제목을 입력해주세요.."
               className={`my-4 relative overflow-auto w-full p-0 px-4
           font-bold text-2xl border-none resize-none bg-[rgba(0,0,0,0)]
@@ -1440,166 +1688,188 @@ const write: NextPage = () => {
             />
           </div>
           <div
-            id="editor_toolBox"
+            id="editor_container"
             className="relative px-4  dark:bg-zinc-900 min-h-[50px]"
           >
             <div
-              className="[&>button]:select-none [&>span]:select-none text-
-              [&>button]:h-8 [&>button]:w-8 [&>button]:mx-[0.5px] [&>span]:mx-2 
-            flex items-center justify-start border-y-[2px] h-full dark:border-gray-500 font-semibold "
+              onMouseDown={() => {
+                return false;
+              }}
+              className="border-y-[2px] h-full dark:border-gray-500 font-semibold "
             >
-              <CDropDown
-                useTag={false}
-                callback={(result) => {
-                  if (result == toolState.size) {
-                    return;
-                  }
-                  onStyleEvent(
-                    {
-                      ...toolState,
-                      size: result,
-                    },
-                    "size",
-                    result
-                  );
-                }}
-                showValue={toolState.size}
-                buttnStyle={{ height: 32, width: 80 }}
-                menuStyle={{ height: "auto", width: 90, left: -5, top: 35 }}
-                items={sizeData}
-              />
+              <div
+                id="editor_toolBox"
+                className={`${
+                  toolOpen
+                    ? "[&>button]:pointer-events-auto "
+                    : "[&>button]:pointer-events-none [&>button]:text-gray-500"
+                } [&>button]:select-none [&>span]:select-none text-
+              [&>button]:h-8 [&>button]:w-8 [&>button]:mx-[0.5px] [&>span]:mx-2 
+            flex items-center justify-start  h-full font-semibold`}
+              >
+                <CDropDown
+                  enable={toolOpen}
+                  callback={(result) => {
+                    if (result == toolState.size) {
+                      return;
+                    }
+                    onStyleEvent(
+                      {
+                        ...toolState,
+                        size: result,
+                      },
+                      "size",
+                      result
+                    );
+                  }}
+                  showValue={toolState.size}
+                  buttnStyle={{ height: 32, width: 80 }}
+                  menuStyle={{ height: "auto", width: 90, left: -5, top: 35 }}
+                  items={sizeData}
+                />
 
-              {/* <button className="relative  text-base hover:dark:bg-slate-800">
+                {/* <button className="relative  text-base hover:dark:bg-slate-800">
                 H2
               </button>
               <button className="relative text-base hover:dark:bg-slate-800">
                 H3
               </button> */}
-              <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
-              <button
-                id="editor_bold"
-                onClick={(e) => {
-                  onStyleEvent(
-                    {
-                      ...toolState,
-                      bold: toolState.bold ? false : true,
-                    },
-                    "bold",
-                    toolState.bold ? false : true
-                  );
-                  e.preventDefault();
-                }}
-                className={`relative  text-center ${
-                  toolState.bold
-                    ? "dark:bg-slate-800 ring-1 ring-gray-200"
-                    : "hover:dark:bg-slate-800"
-                }`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={0}
-                  stroke="currentColor"
-                  className="w-8 m-auto h-6"
+                <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
+                <button
+                  id="editor_bold"
+                  onClick={(e) => {
+                    onStyleEvent(
+                      {
+                        ...toolState,
+                        bold: toolState.bold ? false : true,
+                      },
+                      "bold",
+                      toolState.bold ? false : true
+                    );
+                    e.preventDefault();
+                  }}
+                  className={`relative  text-center ${
+                    toolState.bold
+                      ? "dark:bg-slate-800 ring-1 ring-gray-200"
+                      : "hover:dark:bg-slate-800"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"
-                  />
-                </svg>
-              </button>
-              <button
-                id="editor_italic"
-                onClick={(e) => {
-                  onStyleEvent(
-                    {
-                      ...toolState,
-                      italic: toolState.italic ? false : true,
-                    },
-                    "italic",
-                    toolState.italic ? false : true
-                  );
-                  e.preventDefault();
-                }}
-                className={`relative  text-center ${
-                  toolState.italic
-                    ? "dark:bg-slate-800 ring-1 ring-gray-200"
-                    : "hover:dark:bg-slate-800"
-                }`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={0}
-                  stroke="currentColor"
-                  className="w-8 m-auto h-6"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={0}
+                    stroke="currentColor"
+                    className="w-8 m-auto h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  id="editor_italic"
+                  onClick={(e) => {
+                    onStyleEvent(
+                      {
+                        ...toolState,
+                        italic: toolState.italic ? false : true,
+                      },
+                      "italic",
+                      toolState.italic ? false : true
+                    );
+                    e.preventDefault();
+                  }}
+                  className={`relative  text-center ${
+                    toolState.italic
+                      ? "dark:bg-slate-800 ring-1 ring-gray-200"
+                      : "hover:dark:bg-slate-800"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"
-                  />
-                </svg>
-              </button>
-              <button
-                id="editor_underline"
-                onClick={(e) => {
-                  onStyleEvent(
-                    {
-                      ...toolState,
-                      underline: toolState.underline ? false : true,
-                    },
-                    "underline",
-                    toolState.underline ? false : true
-                  );
-                  e.preventDefault();
-                }}
-                className={`relative  text-center ${
-                  toolState.underline
-                    ? "dark:bg-slate-800 ring-1 ring-gray-200"
-                    : "hover:dark:bg-slate-800"
-                }`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="currentColor"
-                  viewBox="0 0 32 32"
-                  strokeWidth={0}
-                  stroke="currentColor"
-                  className="w-8 m-auto h-6"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={0}
+                    stroke="currentColor"
+                    className="w-8 m-auto h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  id="editor_underline"
+                  onClick={(e) => {
+                    onStyleEvent(
+                      {
+                        ...toolState,
+                        underline: toolState.underline ? false : true,
+                      },
+                      "underline",
+                      toolState.underline ? false : true
+                    );
+                    e.preventDefault();
+                  }}
+                  className={`relative  text-center ${
+                    toolState.underline
+                      ? "dark:bg-slate-800 ring-1 ring-gray-200"
+                      : "hover:dark:bg-slate-800"
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M 8 4 L 8 16 C 8 20.429915 11.570085 24 16 24 C 20.429915 24 24 20.429915 24 16 L 24 4 L 22 4 L 22 16 C 22 19.370085 19.370085 22 16 22 C 12.629915 22 10 19.370085 10 16 L 10 4 L 8 4 z M 6 26 L 6 28 L 26 28 L 26 26 L 6 26 z"
-                  />
-                </svg>
-              </button>
-              <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
-              <CDropDown
-                useTag={true}
-                callback={(result) => {
-                  if (result == toolState.align) {
-                    return;
-                  }
-                  onStyleEvent(
-                    {
-                      ...toolState,
-                      align: result,
-                    },
-                    "align",
-                    result
-                  );
-                }}
-                showValue={toolState.align}
-                buttnStyle={{ height: 32, width: 50 }}
-                menuStyle={{ height: "auto", width: 60, left: -5, top: 35 }}
-                items={alignData}
-              />
-              <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="currentColor"
+                    viewBox="0 0 32 32"
+                    strokeWidth={0}
+                    stroke="currentColor"
+                    className="w-8 m-auto h-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M 8 4 L 8 16 C 8 20.429915 11.570085 24 16 24 C 20.429915 24 24 20.429915 24 16 L 24 4 L 22 4 L 22 16 C 22 19.370085 19.370085 22 16 22 C 12.629915 22 10 19.370085 10 16 L 10 4 L 8 4 z M 6 26 L 6 28 L 26 28 L 26 26 L 6 26 z"
+                    />
+                  </svg>
+                </button>
+                <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
+                <CDropDown
+                  enable={toolOpen}
+                  callback={(result, idx) => {
+                    if (result == toolState.align) {
+                      return;
+                    }
+                    onStyleEvent(
+                      {
+                        ...toolState,
+                        align: result,
+                      },
+                      "align",
+                      result
+                    );
+                  }}
+                  showValue={toolState.align}
+                  buttnStyle={{ height: 32, width: 50 }}
+                  menuStyle={{ height: "auto", width: 60, left: -5, top: 35 }}
+                  items={alignData}
+                />
+                <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
+                <button onClick={onCreateLink}>
+                  <span>link</span>
+                </button>
+                <button>
+                  <span>box</span>
+                </button>
+                <button>
+                  <span>img</span>
+                </button>
+                <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
+              </div>
             </div>
           </div>
           <div
@@ -1609,6 +1879,7 @@ const write: NextPage = () => {
             <div
               onClick={(e) => {
                 const target = e.target as HTMLElement;
+
                 if (target.id != "editor_scroll") {
                   return;
                 }
@@ -1619,19 +1890,27 @@ const write: NextPage = () => {
                 if (scroll?.clientHeight! > textArea?.clientHeight!) {
                   let lastP = textArea?.lastChild as HTMLElement;
                   textArea?.focus();
+
                   if (lastP) {
                     //selection?.selectAllChildren(lastP?.lastChild!);
                     let last = lastP?.lastChild!;
-                    if (last.nodeName != "BR" && last?.nodeType == type.NODE) {
-                      last = last.lastChild!;
-                    }
 
-                    selection?.setBaseAndExtent(
-                      last,
-                      last?.nodeValue?.length!,
-                      last,
-                      last?.nodeValue?.length!
-                    );
+                    if ((last as HTMLElement)?.id != "placeHolderSpan") {
+                      if (
+                        last.nodeName != "BR" &&
+                        last?.nodeType == type.NODE
+                      ) {
+                        last = last.lastChild!;
+                        selection?.setBaseAndExtent(
+                          last,
+                          last?.nodeValue?.length!,
+                          last,
+                          last?.nodeValue?.length!
+                        );
+                      }
+                    } else {
+                      selection?.setBaseAndExtent(last, 0, last, 0);
+                    }
                   }
                   mouseUpEvt();
                 }
@@ -1644,8 +1923,6 @@ const write: NextPage = () => {
                 tabIndex={1}
                 spellCheck="false"
                 id="editor_TextArea"
-                onChange={() => {}}
-                //onBeforeInput={firstInputEvent}
                 onInput={() => {
                   if (
                     selection?.focusNode?.nodeName == "P" ||
@@ -1704,4 +1981,4 @@ const write: NextPage = () => {
   );
 };
 
-export default write;
+export default Write;

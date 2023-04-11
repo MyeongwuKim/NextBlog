@@ -2,11 +2,11 @@ import { NextPage } from "next";
 import { useEffect, useRef, useState } from "react";
 
 interface IDropDown {
-  useTag: boolean;
+  enable: boolean;
   items: IDropDownItem[];
   buttnStyle: IButtnStyle;
   menuStyle: IMenuStyle;
-  callback?: (result: any) => void;
+  callback?: (result: any, idx?: number) => void;
   showValue?: any;
 }
 interface IButtnStyle {
@@ -29,7 +29,7 @@ interface IDropDownItem {
 var selectIdx: number;
 /**드랍다운 메뉴(데이터리스트,현재값,버튼스타일,메뉴스타일,콜백) */
 const CDropDown: NextPage<IDropDown> = ({
-  useTag,
+  enable,
   items,
   showValue,
   buttnStyle,
@@ -44,22 +44,24 @@ const CDropDown: NextPage<IDropDown> = ({
     boxItems[0].selected = true;
     selectIdx = 0;
   }, []);
+
   useEffect(() => {
     setOpenState(false);
     items.forEach((item, idx) => {
-      if (item.value == showValue) {
+      if (item.name == showValue) {
         items[selectIdx].selected = false;
         selectIdx = idx;
         item.selected = true;
         setBoxItems(items);
-        // if (callback) callback(item.value);
       }
     });
   }, [showValue]);
-  console.log(showValue);
+
   return (
-    <div>
-      <div className="relative">
+    <div
+      className={`${enable ? "pointer-events-auto" : "pointer-events-none"}`}
+    >
+      <div className={`relative`}>
         <div
           style={{ width: buttnStyle.width, height: buttnStyle.height }}
           className={`select-none relative flex items-center justify-between dark:bg-zinc-900  hover:dark:bg-slate-800
@@ -68,7 +70,21 @@ const CDropDown: NextPage<IDropDown> = ({
             setOpenState((prev) => (prev ? false : true));
           }}
         >
-          <div className="text-[18px] text-center">{showValue}</div>
+          <div
+            className={`text-[18px] text-center ${
+              enable ? "" : "text-gray-500"
+            }`}
+          >
+            {items.map((item, idx) => {
+              if (item.name == showValue) {
+                return (
+                  <div className="inline" key={idx}>
+                    {item.tag ? item.tag : item.name}
+                  </div>
+                );
+              }
+            })}
+          </div>
           <div>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -117,7 +133,8 @@ const CDropDown: NextPage<IDropDown> = ({
             return (
               <div
                 onClick={() => {
-                  if (callback) callback(item.value);
+                  if (callback) callback(item.value, idx);
+                  setOpenState(false);
                 }}
                 key={idx}
                 className="select-none flex justify-between px-2  items-center hover:dark:bg-slate-800"

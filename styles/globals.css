@@ -2,22 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-[contentEditable="true"]:empty:before {
+[contentEditable="true"] > pp:first-child:empty:before {
   font-weight: 900;
   font-size: 1.25rem;
   height: 30px;
   display: block;
   color: rgb(107 114 128);
-  content: attr(placeholder);
+  content: attr(data-placeholder);
 }
 
-#editor_body span {
-  position: relative;
+.paragraph {
+  margin-bottom: 10px;
 }
 
-#editor_body span!!:empty:after {
+#placeHolderSpan {
+  font-weight: 900;
+  font-size: 1.25rem;
+  height: 30px;
+  display: inline;
+  color: rgb(107 114 128);
+}
+
+[contentEditable="true"] > p:first-child:empty:after {
   content: "\200B";
 }
 
-textarea::placeholder {
+.paragraph > span:empty:after {
+  content: "\200B";
+  display: inline;
 }
