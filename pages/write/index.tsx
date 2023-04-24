@@ -2,7 +2,7 @@ import { NextPage } from "next";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import CDropDown from "@/components/dropDown";
-
+import CLinkBox from "@/components/linkBox";
 /* 
 WYSIWYG에디터
   예전 방식 contentEditable,execCommand 활용
@@ -28,6 +28,10 @@ interface IMultiKey {
   shift: boolean;
   back: boolean;
 }
+interface ILinkData {
+  content: string;
+  link: string;
+}
 interface IDropDownItem {
   name: string;
   tag?: any;
@@ -43,9 +47,23 @@ interface IToolState {
   size: number;
   align: string;
 }
+
+interface ICaret {
+  startCont: Node | null;
+  endCont: Node | null;
+  startOffset: number | null;
+  endOffset: number | null;
+}
 /////////////////////
+var caret: ICaret = {
+  startCont: null,
+  endCont: null,
+  startOffset: null,
+  endOffset: null,
+};
 var selection: Selection | null;
 var device: string;
+var linkBoxUse: boolean;
 var multiKey: IMultiKey = {
   ctrl: false,
   shift: false,
@@ -136,14 +154,17 @@ const alignData: IDropDownItem[] = [
 //replace(/<[^>]*>?/g, ''):모든태그제거
 //replace(/\r\n/g, ''); 엔터제거
 const Write: NextPage = () => {
+  const [linkOpen, setLinkOpen] = useState<boolean>(false);
   const [toolOpen, setToolOpen] = useState<boolean>(false);
-  const [toolState, setToolState] = useState<IToolState>({
+  const [useBox, setUseBox] = useState<boolean | null>(null);
+  const [styleToolState, setStyleToolState] = useState<IToolState>({
     bold: false,
     italic: false,
     underline: false,
     size: 18,
     align: "left",
   });
+
   const router = useRouter();
   const titleArea = useRef<any>();
   const bodyArea = useRef<HTMLDivElement>(null);
@@ -153,6 +174,7 @@ const Write: NextPage = () => {
     selection = document.getSelection(); //현재 커서 정보
     makePrevTag = null;
     firstAlign = "left";
+    linkBoxUse = false;
 
     enablePlaceHolder("enable");
 
@@ -165,7 +187,7 @@ const Write: NextPage = () => {
         selection?.setBaseAndExtent(coverTag, 0, coverTag, 0);
         return;
       }
-      if (makePrevTag != selection?.focusNode) {
+      if (makePrevTag != selection?.focusNode && !linkBoxUse) {
         removeBlankTag();
       }
       if (selection?.type == "Range") return;
@@ -174,17 +196,22 @@ const Write: NextPage = () => {
         let size = parseInt(coverTag.style.fontSize.replace("px", ""));
 
         if (coverTag && coverTag.nodeName != "P") {
-          setToolState((prev) => ({
+          setStyleToolState((prev) => ({
             ...prev,
             bold: coverTag.style.fontWeight ? true : false,
             italic: coverTag.style.fontStyle ? true : false,
             underline: coverTag.style.textDecoration ? true : false,
             size,
           }));
+          if (getCheckBox(coverTag)) {
+            setUseBox(true);
+          } else {
+            setUseBox(false);
+          }
         } else {
           //텍스트면 초기화
-          setToolState({
-            ...(toolState && {
+          setStyleToolState({
+            ...(styleToolState && {
               bold: false,
               italic: false,
               underline: false,
@@ -197,7 +224,7 @@ const Write: NextPage = () => {
     });
 
     bodyArea?.current?.addEventListener("mouseup", mouseUpEvt);
-    bodyArea.current.addEventListener("focus", () => {
+    bodyArea.current?.addEventListener("focus", () => {
       setToolOpen(true);
     });
 
@@ -206,11 +233,7 @@ const Write: NextPage = () => {
     for (let i = 0; i < count; i++) {
       const { current } = bodyArea;
       const pNode: HTMLElement = document.createElement("p");
-      pNode.innerHTML = `<pre>
-      <code>
-      function name () {
-        const test = "1"}</code>
-        </pre>`;
+      pNode.innerHTML = `<a>https://naver.com</a>`;
 
       current?.append(pNode);
       newRage.setStartAfter(pNode);
@@ -229,8 +252,10 @@ const Write: NextPage = () => {
       return;
     }
 
-    let [offset, length, pTag] = paragraphInfo();
+    if (!paragraphInfo()) return;
+    let [offset, length, pTag] = paragraphInfo()!;
     let coverTag = selection?.focusNode as HTMLElement;
+
     if (coverTag.nodeType == type.TEXT) coverTag = coverTag.parentElement!;
     //focus가 placeholder일때..
     // if ((coverTag as HTMLElement)?.id == "placeHolderSpan") {
@@ -238,7 +263,13 @@ const Write: NextPage = () => {
     //   selection?.setBaseAndExtent(coverTag, 0, coverTag, 0);
     //   return;
     // }
-    setToolState((prev) => ({
+    if (getCheckBox(coverTag)) {
+      setUseBox(true);
+    } else {
+      setUseBox(false);
+    }
+
+    setStyleToolState((prev) => ({
       ...prev,
       bold: coverTag.style.fontWeight ? true : false,
       italic: coverTag.style.fontStyle ? true : false,
@@ -447,7 +478,10 @@ const Write: NextPage = () => {
   ) => {
     let styleData = "";
 
-    if ((originNode as HTMLElement).parentElement?.nodeName == "SPAN") {
+    if (
+      (originNode as HTMLElement).parentElement?.nodeName == "SPAN" ||
+      (originNode as HTMLElement).parentElement?.nodeName == "A"
+    ) {
       styleData = (originNode as HTMLElement).parentElement?.style.cssText!;
     }
     styleData = `${
@@ -481,19 +515,135 @@ const Write: NextPage = () => {
     }`;
 
     if (styleData.length > 0) {
-      insertNode.setAttribute("style", getFormatStyle(styleData));
-      insertNode.setAttribute("data-style", getFormatDataStyle(styleData));
+      if (insertNode.nodeName == "A") {
+        insertNode.childNodes.forEach((child) => {
+          (child as HTMLElement).setAttribute(
+            "style",
+            getFormatStyle(styleData)
+          );
+          (child as HTMLElement).setAttribute(
+            "data-style",
+            getFormatDataStyle(styleData)
+          );
+        });
+      } else {
+        insertNode.setAttribute("style", getFormatStyle(styleData));
+        insertNode.setAttribute("data-style", getFormatDataStyle(styleData));
+      }
     }
   };
-  const onCreateLink = () => {
-    let focusNode = selection.focusNode;
-    console.log(focusNode);
+  /** EditText영역말고 container클릭했을때 대응 */
+  const onClickEditContainer = (e: React.MouseEvent) => {
+    //다른곳 클릭했을대 오류남, 체크해야함
+    const target = e.target as HTMLElement;
+    if (target.id != "editor_scroll") {
+      return;
+    }
+    //포커스 이벤트, 스크롤영역이 텍스트영역보다 크면 커서를 텍스트영역 맨아래로 옮긴다
+    let scroll = document.getElementById("editor_scroll");
+    let textArea = document.getElementById("editor_TextArea");
+
+    if (scroll?.clientHeight! > textArea?.clientHeight!) {
+      let lastP = textArea?.lastChild as HTMLElement;
+      textArea?.focus();
+
+      if (lastP) {
+        //selection?.selectAllChildren(lastP?.lastChild!);
+        let last = lastP?.lastChild!;
+
+        if ((last as HTMLElement)?.id != "placeHolderSpan") {
+          if (last.nodeName != "BR" && last?.nodeType == type.NODE) {
+            last = last.lastChild!;
+            if (last.nodeName == "SPAN") last = last.lastChild!;
+            selection?.setBaseAndExtent(
+              last,
+              last?.nodeValue?.length!,
+              last,
+              last?.nodeValue?.length!
+            );
+          }
+        } else {
+          selection?.setBaseAndExtent(last, 0, last, 0);
+        }
+      }
+      mouseUpEvt();
+    }
+  };
+  /** 박스 스타일 생성 박스형태 box -> boxinner 구조*/
+  const createBoxEvt = () => {
+    //box list
+    //box상태에서 한번더 누를때 박스 삭제
+    //위에꺼 드래그 이벤트
+    let startParagraph = getCurentParagraph(caret.startCont!);
+    let endParagraph = getCurentParagraph(caret.endCont!).nextSibling;
+    let pStyleData = `text-align:left;`;
+    let boxList = [];
+    let iteratorParagraph = startParagraph as HTMLElement;
+
+    if (useBox) {
+      while (true) {
+        if (iteratorParagraph == endParagraph) break;
+        if (
+          (iteratorParagraph.lastChild as HTMLElement).getAttribute(
+            "data-type"
+          ) == "box"
+        ) {
+          boxList.push(iteratorParagraph);
+        }
+        iteratorParagraph = iteratorParagraph.nextSibling as HTMLElement;
+      }
+      boxList.forEach((paragraph) => {
+        (paragraph as HTMLElement).childNodes.forEach((box) => {
+          while (box.childNodes.length > 0) {
+            let boxParagraph = box.firstChild as HTMLElement;
+            boxParagraph.className = "paragraph";
+            boxParagraph.removeAttribute("data-type");
+            paragraph.before(boxParagraph);
+          }
+        });
+      });
+      for (let i = 0; i < boxList.length; i++) boxList[i].remove();
+    } else {
+      let newParagraph = document.createElement("p"); //Box
+      newParagraph.setAttribute("style", getFormatStyle(pStyleData));
+      newParagraph.setAttribute("data-style", getFormatDataStyle(pStyleData));
+      let boxParagraph = document.createElement("p");
+      boxParagraph.setAttribute("data-type", "box");
+      boxParagraph.className =
+        "px-3 border-l-[3px] bg-gray-200 border-gray-400 dark:bg-zinc-700";
+
+      (startParagraph as HTMLElement).before(newParagraph);
+
+      newParagraph.appendChild(boxParagraph);
+
+      while (true) {
+        if (iteratorParagraph == endParagraph) break;
+        boxList.push(iteratorParagraph);
+        iteratorParagraph = iteratorParagraph.nextSibling as HTMLElement;
+      }
+
+      boxList.forEach((box) => {
+        box.className = "box_paragraph";
+        box.setAttribute("data-type", "box_inner");
+        boxParagraph.appendChild(box);
+      });
+    }
+
+    selection?.setBaseAndExtent(
+      caret.startCont!,
+      caret.startOffset!,
+      caret.endCont!,
+      caret.endOffset!
+    );
+
+    mouseUpEvt();
   };
   /**스타일 적용이벤트 */
   const onStyleEvent = (
     toolState: IToolState,
     evtAction: string,
-    evtState: any
+    evtState: any,
+    linkData?: ILinkData
   ) => {
     if (selection?.type == "None") {
       let textArea = document.getElementById("editor_TextArea");
@@ -517,7 +667,7 @@ const Write: NextPage = () => {
 
     //if (!getIsDefaultStyle(toolState)) removeBlankTag();
 
-    setToolState(toolState);
+    setStyleToolState(toolState);
 
     let anchor = selection?.focusNode;
     let pNode = anchor;
@@ -583,9 +733,17 @@ const Write: NextPage = () => {
         insertTag.textContent = "\u200B";
       } else {
         //이미 만들어놓았다면 굳이 새로만들필요가 없다
-
-        insertTag = document.createElement("span");
-        insertTag.innerHTML = "\u200B";
+        if (evtAction == "link") {
+          insertTag = document.createElement("a");
+          (insertTag as HTMLLinkElement).href = linkData?.link!;
+          let spanTag = document.createElement("span");
+          spanTag.innerHTML = linkData?.content!;
+          spanTag.setAttribute("data-type", "link");
+          insertTag.appendChild(spanTag);
+        } else {
+          insertTag = document.createElement("span");
+          insertTag.innerHTML = "\u200B";
+        }
 
         setTagStyle(
           toolState,
@@ -613,13 +771,18 @@ const Write: NextPage = () => {
       ) {
         surroundStyleTag(outerTag, insertTag.nextSibling!);
       }
+
       //insertNode했을때 커서를 가리키는 span안에 넣는 문제가 발생, 바깥으로 뺴주는 작업을함
       while (outerTag.childNodes.length > 0 && outerTag.tagName != "P") {
-        let child = outerTag.firstChild;
-        if (child?.nodeType == type.NODE) child = child.lastChild;
-        if (child?.nodeValue?.length! > 0)
+        let child = outerTag.firstChild as HTMLElement;
+        if (
+          child?.innerText?.replace("\u200B", "").length > 0 ||
+          child == insertTag
+        )
           outerTag.before(outerTag.firstChild!);
-        else outerTag.removeChild(child!);
+        else {
+          outerTag.removeChild(child!);
+        }
       }
 
       if (outerTag.tagName != "P") outerTag.remove();
@@ -629,9 +792,15 @@ const Write: NextPage = () => {
       if (insertTag && (insertTag as HTMLElement).nodeName == "SPAN")
         insertTag = insertTag.lastChild as HTMLElement;
 
-      selection.setBaseAndExtent(insertTag!, 1, insertTag!, 1);
-      if (insertTag.parentElement.previousSibling) {
-        let prev = insertTag.parentElement.previousSibling as HTMLElement;
+      let offset = 1;
+      if (insertTag.nodeName == "A") {
+        insertTag = insertTag.lastChild?.lastChild! as Text;
+        offset = insertTag.nodeValue?.length!;
+      }
+
+      selection.setBaseAndExtent(insertTag!, offset, insertTag!, offset);
+      if (insertTag.parentElement!.previousSibling) {
+        let prev = insertTag.parentElement!.previousSibling as HTMLElement;
         if (prev.innerText.replace("\u200B", "").length <= 0) prev.remove();
       }
       makePrevTag = insertTag;
@@ -717,7 +886,10 @@ const Write: NextPage = () => {
           endOffset
         );
         let focusNode = selection.focusNode;
-        let textValue = focusNode?.nodeValue!.substring(
+        if (selection.focusNode?.nodeType == type.TEXT)
+          focusNode = focusNode?.parentElement!;
+
+        let textValue = (focusNode as HTMLElement).innerText.substring(
           selection.anchorOffset,
           selection.focusOffset
         );
@@ -725,7 +897,7 @@ const Write: NextPage = () => {
 
         //적용된 스타일이 있으면 Span
         insertTag = document.createElement("span");
-        insertTag.innerText = textValue!;
+        insertTag.innerHTML = textValue!;
         setTagStyle(
           toolState,
           evtAction,
@@ -967,13 +1139,16 @@ const Write: NextPage = () => {
   };
   //삭제 이벤트
   const removeEvent = (e?: React.KeyboardEvent) => {
+    e?.preventDefault();
     let currentNode = selection?.focusNode as HTMLElement;
-    let [pNodeLength, caretOffset, pNode] = paragraphInfo();
+    let [pNodeLength, caretOffset, pNode] = paragraphInfo()!;
+
     let prevcaretOffset = caretOffset;
     const { current } = bodyArea;
     let caretType = selection?.type;
     let startCont = selection?.getRangeAt(0).startContainer!;
     let endCont = selection?.getRangeAt(0).endContainer!;
+    let sameTag = false;
 
     if (multiKey.back) {
       let start = selection?.getRangeAt(0).startOffset!;
@@ -985,8 +1160,11 @@ const Write: NextPage = () => {
       if (end < 0) end = 0;
       selection?.setBaseAndExtent(startCont, start, endCont, end);
       selection?.getRangeAt(0).deleteContents();
-      [pNodeLength, caretOffset, pNode] = paragraphInfo();
+      [pNodeLength, caretOffset, pNode] = paragraphInfo()!;
       if (caretType == "Range") {
+        if (startCont == endCont) {
+          sameTag = true;
+        }
         currentNode = endCont as HTMLElement;
         pNode = currentNode.parentElement!;
         caretOffset = startCont == endCont ? caretOffset : 0;
@@ -1051,16 +1229,17 @@ const Write: NextPage = () => {
       // );
       e?.preventDefault();
     } else if (selection?.type == "Caret") {
-      //두칸이상일때 처리,한칸남았을때 처리는 맨 아래로
+      //문단이 두칸이상일때 처리,한칸남았을때 처리는 맨 아래로
+
       if (caretOffset <= 0 && prevNode) {
         //위에 다른 노드가 없다면..(1개)
         selection.setBaseAndExtent(pNode?.lastChild!, 0, pNode?.lastChild!, 0);
         if (
-          pNode!.innerText.replace(/\n/g, "").length <= 0 &&
-          prevcaretOffset == 0
+          pNode!.innerText.replace(/\n|\u200B/g, "").length <= 0 &&
+          prevcaretOffset == 1
         ) {
           //위에 다른 노드가 있고 값이 아무것도 없다면, 위의 노드를 삭제(위로당긴다)
-          current?.removeChild(pNode!);
+          pNode?.remove();
           let lastChild = prevNode.lastChild;
           if (lastChild?.nodeType == type.NODE) {
             lastChild = lastChild.lastChild;
@@ -1089,7 +1268,7 @@ const Write: NextPage = () => {
             let child = prevNode.childNodes[i];
             let curLength = (child as HTMLElement).innerText.length;
             if (curLength >= totalLength) {
-              let content = child.lastChild;
+              let content = child.lastChild!;
               selection.setBaseAndExtent(
                 content,
                 totalLength,
@@ -1104,29 +1283,38 @@ const Write: NextPage = () => {
         }
         e?.preventDefault();
       } else {
+        //드래그로 지웠을때 값이 남는걸 처리해야함..endCont값이 남음
+        //한칸만남았을때 처리,
+        //커서의 시작부분의 값이 없다면?
         if (startCont.nodeValue?.length! <= 0) {
           let prev;
+
+          //parent가 data-type이 있다면, <a><span>내용</span></a> 이런형식이라는것
+          if (startCont.parentElement?.getAttribute("data-type") == "link") {
+            startCont = startCont.parentElement!;
+          }
           if (startCont.parentElement?.previousSibling) {
             prev = startCont.parentElement?.previousSibling;
           }
+
           if (prev) {
-            let pNode = getCurentParagraph(prev);
-            let totalLength = prev.innerText.length;
-            let iterator = pNode.firstChild;
+            let pNode = getCurentParagraph(prev)!;
+            let totalLength = (prev as HTMLElement).innerText.length;
+            let iterator = pNode.firstChild!;
             while (true) {
               if (iterator == prev) break;
               else {
                 totalLength += (iterator as HTMLElement).innerText.length;
-                iterator = iterator.nextSibling;
+                iterator = iterator.nextSibling!;
               }
             }
-            mergeSameTag(prev);
+            mergeSameTag(prev!);
             selection.setBaseAndExtent(prev, 1, prev, 1);
             for (let i = 0; i < pNode.childNodes.length; i++) {
               let child = pNode.childNodes[i];
               let curLength = (child as HTMLElement).innerText.length;
               if (curLength >= totalLength) {
-                let content = child.lastChild;
+                let content = child.lastChild!;
                 selection.setBaseAndExtent(
                   content,
                   totalLength,
@@ -1140,26 +1328,58 @@ const Write: NextPage = () => {
             }
           }
           startCont.parentElement?.remove();
-          mouseUpEvt();
+          if (!prev) {
+            setStyleToolState((prev) => ({
+              ...prev,
+              bold: false,
+              italic: false,
+              underline: false,
+              font: 18,
+              align: firstAlign,
+            }));
+          }
+        } else {
+          // if (startCont.parentElement?.getAttribute("data-type")) {
+          //   startCont = startCont.lastChild!;
+          // }
+          if (startCont.nodeType == type.NODE) {
+            startCont = startCont.lastChild!!;
+          }
+          if (!sameTag && endCont.nodeValue?.length! <= 0) {
+            endCont.parentElement?.remove();
+          }
+          if (startCont) {
+            selection.setBaseAndExtent(
+              startCont,
+              startCont.nodeValue?.length!,
+              startCont,
+              startCont.nodeValue?.length!
+            );
+          }
         }
       }
     }
-
+    if (getCheckBox(selection?.focusNode as HTMLElement)) {
+      let [boxinner, box] = getCheckBox(currentNode) as [
+        HTMLElement,
+        HTMLElement
+      ];
+      let boxTextData = box?.innerText;
+      if (boxTextData?.length! <= 0) {
+        box?.remove();
+      }
+    }
     if (
       getTextAreaLength() <= 1 &&
-      (current?.childNodes[0] as HTMLElement).innerText.replace(/\n/g, "")
-        .length <= 0
+      (current?.childNodes[0] as HTMLElement).innerText.replace(
+        /\n|\u200B/g,
+        ""
+      ).length <= 0
     ) {
       current?.firstChild?.remove();
     }
     if (getTextAreaLength() <= 0) enablePlaceHolder("enable");
-    // for (let i = 0; i < bodyArea?.current?.childNodes.length!; i++) {
-    //   let child = bodyArea?.current?.childNodes[i] as HTMLElement;
-    //   if (child.innerHTML.replace(/<[^>]*>?/g, "").length <= 0) {
-    //     bodyArea?.current?.removeChild(child);
-    //     i--;
-    //   }
-    // }
+    mouseUpEvt();
   };
   //문단만들기
   const createParagraph = (
@@ -1172,41 +1392,45 @@ const Write: NextPage = () => {
     let insertEvent: InsertPosition = "afterbegin"; //beforebegin:앞에, afterend:뒤에
     let cursorStay: boolean = false;
     let currentNode = selection?.focusNode as HTMLElement;
-    let pStyleData = `text-align:${toolState.align};`;
+    let pStyleData = `text-align:${styleToolState.align};`;
 
     pNode.setAttribute("style", getFormatStyle(pStyleData));
     pNode.setAttribute("data-style", getFormatDataStyle(pStyleData));
     let span;
-    if (getIsDefaultStyle(toolState)) pNode.innerHTML = "<br>";
+    if (getIsDefaultStyle(styleToolState)) pNode.innerHTML = "<br>";
     else {
       span = document.createElement("span");
-      span.innerHTML = "<br>";
+      span.innerHTML = "\u200B";
 
-      let styleData = `${toolState.bold ? "font-weight:bold;" : ""} ${
-        toolState.underline ? "text-decoration:underline;" : ""
-      } ${toolState.italic ? "font-style:italic;" : ""} font-size:${
-        toolState.size + "px"
+      let styleData = `${styleToolState.bold ? "font-weight:bold;" : ""} ${
+        styleToolState.underline ? "text-decoration:underline;" : ""
+      } ${styleToolState.italic ? "font-style:italic;" : ""} font-size:${
+        styleToolState.size + "px"
       }`;
       span.setAttribute("style", getFormatStyle(styleData));
       span.setAttribute("data-style", getFormatDataStyle(styleData));
 
       if (getTextAreaLength() <= 1 && evtName == "FirstLine") {
         (current?.firstChild as HTMLElement).appendChild(span);
-        selection?.setBaseAndExtent(span, 0, span, 0);
+        selection?.setBaseAndExtent(span, 1, span, 1);
         return;
       }
       pNode.append(span);
     }
 
-    if (currentNode.nodeName != "DIV") {
-      while (true) {
-        if (currentNode?.nodeName == "P") break;
-        else {
-          currentNode = currentNode.parentNode as HTMLElement;
-        }
-      }
+    let currentParagraph = getCurentParagraph(currentNode) as HTMLElement;
+
+    if (getCheckBox(currentNode)) {
+      let [boxinner, box] = getCheckBox(currentNode) as [
+        HTMLElement,
+        HTMLElement
+      ];
+
+      currentParagraph = boxinner;
+      pNode.setAttribute("data-type", "box_inner");
+      pNode.className = "box_paragraph";
     }
-    let [pNodeLength, caretOffset] = paragraphInfo();
+    let [pNodeLength, caretOffset] = paragraphInfo()!;
     //가리키는 커서에 값이 있다면..
     if (
       selection?.focusNode?.nodeValue ||
@@ -1241,11 +1465,10 @@ const Write: NextPage = () => {
       insertEvent = "beforebegin";
       cursorStay = true;
     }
-
     //에디터에 아무런 값이 없다면  append함
     if (getTextAreaLength() <= 0) {
       current?.append(pNode);
-    } else currentNode.insertAdjacentElement(insertEvent, pNode);
+    } else currentParagraph.insertAdjacentElement(insertEvent, pNode);
 
     //커서가 stay여야만 할때, 커서 이동X
     if (!cursorStay) {
@@ -1322,11 +1545,23 @@ const Write: NextPage = () => {
       editScroll.scrollTo(0, pTotalHeight - editScroll?.clientHeight);
     }
   };
+
+  const saveCaretState = () => {
+    caret.startCont = selection?.getRangeAt(0).startContainer!;
+    caret.endCont = selection?.getRangeAt(0).endContainer!;
+    caret.startOffset = selection?.getRangeAt(0).startOffset!;
+    let pNode = getCurentParagraph(caret.startCont);
+    caret.endOffset =
+      (pNode as HTMLElement).innerText.length! <= 0
+        ? 0
+        : selection?.getRangeAt(0).endOffset!;
+  };
   //GET///////////////////////////////////////////////////////////////////////////////////
-  /**인자값을 Style이 적용될 값으로 포맷후 리턴*/
+  /**플레이스홀더가 사용중인지 체크*/
   const getIsEnablePlaceHolder = (): boolean => {
     return document.getElementById("placeHolderSpan") ? true : false;
   };
+  /**인자값을 Style이 적용될 값으로 포맷후 리턴*/
   const getFormatStyle = (data: string): string => {
     return data
       .replace(/\n|\r|\s*/g, "")
@@ -1351,25 +1586,22 @@ const Write: NextPage = () => {
       .join(";");
   };
   /**문단안에있는 문자열 길이, 커서 오프셋 리턴*/
-  const paragraphInfo = (): [number, number, HTMLElement?] => {
+  const paragraphInfo = (): [number, number, HTMLElement?] | void => {
     let ragne = selection?.getRangeAt(0);
     let focusOffset = selection?.focusOffset!;
     let focusNode = selection?.focusNode as Node;
+    if (focusNode.nodeName == "DIV") return;
+
     let pNode = focusNode?.parentNode as HTMLElement;
     let caretOffset = 0;
 
-    if (focusNode.nodeName == "P") {
-      pNode = focusNode as HTMLElement;
-    } else if (focusNode?.parentNode?.nodeName != "P") {
-      pNode = focusNode?.parentNode as HTMLElement;
-      while (true) {
-        if (pNode?.parentNode?.nodeName == "DIV") {
-          break;
-        } else {
-          pNode = pNode?.parentNode as HTMLElement;
-        }
-      }
-    }
+    if (getCheckBox(focusNode)) {
+      let [boxinner, box] = getCheckBox(focusNode) as [
+        HTMLElement,
+        HTMLElement
+      ];
+      pNode = boxinner;
+    } else pNode = getCurentParagraph(focusNode) as HTMLElement;
 
     selection?.setBaseAndExtent(
       pNode.firstChild as Node,
@@ -1382,9 +1614,10 @@ const Write: NextPage = () => {
       ?.getRangeAt(0)
       .cloneContents()
       .childNodes.forEach((node: any) => {
-        if (node.nodeType == type.TEXT) caretOffset += node?.nodeValue!.length;
-        else if (node.nodeType == type.NODE) {
-          caretOffset += node?.innerText!.length;
+        if (node.nodeType == type.TEXT) {
+          caretOffset += node.nodeValue!.length;
+        } else if (node.nodeType == type.NODE) {
+          caretOffset += node.innerText!.length;
         }
       });
 
@@ -1411,13 +1644,38 @@ const Write: NextPage = () => {
     return bodyArea?.current?.getElementsByTagName("P").length!;
   };
   /**해당 노드가 속한 P태그를 리턴  */
-  const getCurentParagraph = (node: Node) => {
+  const getCurentParagraph = (node: Node): Node => {
     let paragraphTag = node;
+
     while (true) {
-      if (paragraphTag.nodeName == "P") break;
+      if (
+        paragraphTag.nodeName == "P" &&
+        !(paragraphTag as HTMLElement).getAttribute("data-type")
+      )
+        break;
       else paragraphTag = paragraphTag.parentNode as Node;
     }
     return paragraphTag;
+  };
+  /**박스 스타일 정보, inner and box */
+  const getCheckBox = (node: Node): [HTMLElement, HTMLElement] | boolean => {
+    let boxInner = node as HTMLElement;
+    let box = node as HTMLElement;
+    let isHaveBox = false;
+
+    while (true) {
+      if (boxInner.nodeName == "DIV") {
+        break;
+      } else if (
+        boxInner.nodeName == "P" &&
+        (boxInner as HTMLElement).getAttribute("data-type") == "box_inner"
+      ) {
+        box = boxInner.parentElement!;
+        isHaveBox = true;
+        break;
+      } else boxInner = boxInner.parentNode as HTMLElement;
+    }
+    return isHaveBox ? [boxInner, box] : false;
   };
   /**아무런 스타일이 지정되어있지않다면 true , 아니면 false  */
   const getIsDefaultStyle = (toolState: IToolState): boolean => {
@@ -1464,10 +1722,10 @@ const Write: NextPage = () => {
       placeHolderSpan.innerText = "내용을 입력해주세요..";
       placeHolderSpan.setAttribute("id", "placeHolderSpan");
 
-      let styleData = `${toolState.bold ? "font-weight:bold;" : ""} ${
-        toolState.underline ? "text-decoration:underline;" : ""
-      } ${toolState.italic ? "font-style:italic;" : ""} font-size:${
-        toolState.size + "px"
+      let styleData = `${styleToolState.bold ? "font-weight:bold;" : ""} ${
+        styleToolState.underline ? "text-decoration:underline;" : ""
+      } ${styleToolState.italic ? "font-style:italic;" : ""} font-size:${
+        styleToolState.size + "px"
       }`;
       placeHolderSpan.setAttribute("style", getFormatStyle(styleData));
       placeHolderSpan.setAttribute("data-style", getFormatDataStyle(styleData));
@@ -1495,8 +1753,6 @@ const Write: NextPage = () => {
       }
       if (e.key == "Shift") {
         console.log(selection);
-        // document.execCommand("bold", false);
-        // onStyleEvent();
       }
     } else if (!multiKey.ctrl) {
       if (e.key == "Backspace") {
@@ -1530,31 +1786,37 @@ const Write: NextPage = () => {
         } else {
           //스타일 없는 텍스트 입력시, Arrow이벤트가 들어오면 블랭크 삭제
           if (e.key.indexOf("Arrow") > -1) {
-            removeBlankTag();
+            let curParagraph = getCurentParagraph(
+              selection?.focusNode as HTMLElement
+            ) as HTMLElement;
+            if (curParagraph.innerText.replace(/\n|\u200B/g, "").length <= 0)
+              removeBlankTag();
           } else {
-            let [offset, length, pNode] = paragraphInfo();
-            if (
-              pNode?.childNodes.length! <= 1 &&
-              (pNode?.lastChild! as HTMLElement).innerText.length <= 0
-            ) {
-              (pNode?.lastChild! as HTMLElement).innerHTML = "<br>";
-            }
+            // let [offset, length, pNode] = paragraphInfo();
+            // if (
+            //   pNode?.childNodes.length! <= 1 &&
+            //   (pNode?.lastChild! as HTMLElement).innerText.length <= 0
+            // ) {
+            //   (pNode?.lastChild! as HTMLElement).innerHTML = "<br>";
+            // }
           }
         }
       }
     }
   };
-
   const removeBlankTag = () => {
     let focusNode = makePrevTag;
-    if (!focusNode) return;
+    if (!focusNode || focusNode?.nodeName == "A") return;
     if (focusNode?.nodeName == "SPAN") {
       focusNode = focusNode.lastChild as HTMLElement;
     }
     if (focusNode!.nodeValue!.indexOf("\u200B") > -1) {
       //selection.setBaseAndExtent(focusNode, index, focusNode, index);
       let styleSpan = focusNode;
-      if (styleSpan?.parentNode?.nodeName == "SPAN")
+      if (
+        styleSpan?.parentNode?.nodeName == "SPAN" ||
+        focusNode?.nodeName == "A"
+      )
         styleSpan = styleSpan.parentNode;
 
       let prevTag = styleSpan?.previousSibling as HTMLElement;
@@ -1666,6 +1928,7 @@ const Write: NextPage = () => {
 
   return (
     <div className="flex justify-center w-full h-full">
+      <div className="w-full h-full dark:bg-black bg-slate-50"></div>
       <div className="flex-[0.45_1_0%] flex-col flex h-full">
         <div className="flex scroll-auto flex-col dark:bg-zinc-900 min-w-[500px] h-[calc(100%-60px)]">
           <div
@@ -1703,26 +1966,26 @@ const Write: NextPage = () => {
                   toolOpen
                     ? "[&>button]:pointer-events-auto "
                     : "[&>button]:pointer-events-none [&>button]:text-gray-500"
-                } [&>button]:select-none [&>span]:select-none text-
+                } [&>button]:select-none [&>span]:select-none
               [&>button]:h-8 [&>button]:w-8 [&>button]:mx-[0.5px] [&>span]:mx-2 
             flex items-center justify-start  h-full font-semibold`}
               >
                 <CDropDown
                   enable={toolOpen}
                   callback={(result) => {
-                    if (result == toolState.size) {
+                    if (result == styleToolState.size) {
                       return;
                     }
                     onStyleEvent(
                       {
-                        ...toolState,
+                        ...styleToolState,
                         size: result,
                       },
                       "size",
                       result
                     );
                   }}
-                  showValue={toolState.size}
+                  showValue={styleToolState.size}
                   buttnStyle={{ height: 32, width: 80 }}
                   menuStyle={{ height: "auto", width: 90, left: -5, top: 35 }}
                   items={sizeData}
@@ -1740,16 +2003,16 @@ const Write: NextPage = () => {
                   onClick={(e) => {
                     onStyleEvent(
                       {
-                        ...toolState,
-                        bold: toolState.bold ? false : true,
+                        ...styleToolState,
+                        bold: styleToolState.bold ? false : true,
                       },
                       "bold",
-                      toolState.bold ? false : true
+                      styleToolState.bold ? false : true
                     );
                     e.preventDefault();
                   }}
                   className={`relative  text-center ${
-                    toolState.bold
+                    styleToolState.bold
                       ? "dark:bg-slate-800 ring-1 ring-gray-200"
                       : "hover:dark:bg-slate-800"
                   }`}
@@ -1774,16 +2037,16 @@ const Write: NextPage = () => {
                   onClick={(e) => {
                     onStyleEvent(
                       {
-                        ...toolState,
-                        italic: toolState.italic ? false : true,
+                        ...styleToolState,
+                        italic: styleToolState.italic ? false : true,
                       },
                       "italic",
-                      toolState.italic ? false : true
+                      styleToolState.italic ? false : true
                     );
                     e.preventDefault();
                   }}
                   className={`relative  text-center ${
-                    toolState.italic
+                    styleToolState.italic
                       ? "dark:bg-slate-800 ring-1 ring-gray-200"
                       : "hover:dark:bg-slate-800"
                   }`}
@@ -1808,16 +2071,16 @@ const Write: NextPage = () => {
                   onClick={(e) => {
                     onStyleEvent(
                       {
-                        ...toolState,
-                        underline: toolState.underline ? false : true,
+                        ...styleToolState,
+                        underline: styleToolState.underline ? false : true,
                       },
                       "underline",
-                      toolState.underline ? false : true
+                      styleToolState.underline ? false : true
                     );
                     e.preventDefault();
                   }}
                   className={`relative  text-center ${
-                    toolState.underline
+                    styleToolState.underline
                       ? "dark:bg-slate-800 ring-1 ring-gray-200"
                       : "hover:dark:bg-slate-800"
                   }`}
@@ -1841,32 +2104,53 @@ const Write: NextPage = () => {
                 <CDropDown
                   enable={toolOpen}
                   callback={(result, idx) => {
-                    if (result == toolState.align) {
+                    if (result == styleToolState.align) {
                       return;
                     }
                     onStyleEvent(
                       {
-                        ...toolState,
+                        ...styleToolState,
                         align: result,
                       },
                       "align",
                       result
                     );
                   }}
-                  showValue={toolState.align}
+                  showValue={styleToolState.align}
                   buttnStyle={{ height: 32, width: 50 }}
                   menuStyle={{ height: "auto", width: 60, left: -5, top: 35 }}
                   items={alignData}
                 />
                 <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
-                <button onClick={onCreateLink}>
+                <button
+                  onClick={() => {
+                    saveCaretState();
+                    linkBoxUse = true;
+                    setLinkOpen(true);
+                  }}
+                >
                   <span>link</span>
                 </button>
-                <button>
+                <button
+                  className={`${
+                    useBox
+                      ? "dark:bg-slate-800 ring-1 ring-gray-200"
+                      : "hover:dark:bg-slate-800"
+                  }`}
+                  onClick={(e) => {
+                    if (getIsEnablePlaceHolder()) {
+                      enablePlaceHolder("disable");
+                      createParagraph("FirstLine");
+                    }
+                    saveCaretState();
+                    createBoxEvt();
+                    e.preventDefault();
+                  }}
+                >
                   <span>box</span>
                 </button>
                 <button>
-                  <span>img</span>
+                  <span>code</span>
                 </button>
                 <span className="relative  h-2/4 border-[1px] dark:border-gray-500" />
               </div>
@@ -1878,42 +2162,7 @@ const Write: NextPage = () => {
           >
             <div
               onClick={(e) => {
-                const target = e.target as HTMLElement;
-
-                if (target.id != "editor_scroll") {
-                  return;
-                }
-                //포커스 이벤트, 스크롤영역이 텍스트영역보다 크면 커서를 텍스트영역 맨아래로 옮긴다
-                let scroll = document.getElementById("editor_scroll");
-                let textArea = document.getElementById("editor_TextArea");
-
-                if (scroll?.clientHeight! > textArea?.clientHeight!) {
-                  let lastP = textArea?.lastChild as HTMLElement;
-                  textArea?.focus();
-
-                  if (lastP) {
-                    //selection?.selectAllChildren(lastP?.lastChild!);
-                    let last = lastP?.lastChild!;
-
-                    if ((last as HTMLElement)?.id != "placeHolderSpan") {
-                      if (
-                        last.nodeName != "BR" &&
-                        last?.nodeType == type.NODE
-                      ) {
-                        last = last.lastChild!;
-                        selection?.setBaseAndExtent(
-                          last,
-                          last?.nodeValue?.length!,
-                          last,
-                          last?.nodeValue?.length!
-                        );
-                      }
-                    } else {
-                      selection?.setBaseAndExtent(last, 0, last, 0);
-                    }
-                  }
-                  mouseUpEvt();
-                }
+                onClickEditContainer(e);
               }}
               id="editor_scroll"
               className="overflow-auto h-[calc(100%)] relative   focus:outline-none w-full
@@ -1932,22 +2181,25 @@ const Write: NextPage = () => {
                   }
                   //값이 들어오고 난뒤 공백문자열이 있다면 날려줌
                   if (selection!.focusNode!.nodeValue?.indexOf("\u200B") > -1) {
-                    let startIdx =
-                      selection!.focusNode!.nodeValue!.indexOf("\u200B");
-                    selection?.setBaseAndExtent(
-                      selection?.focusNode!,
-                      0,
-                      selection?.focusNode!,
-                      1
-                    );
-                    selection?.getRangeAt(0).deleteContents();
-                    selection?.setBaseAndExtent(
-                      selection?.focusNode!,
-                      1,
-                      selection?.focusNode!,
-                      1
-                    );
+                    // let startIdx =
+                    //   selection!.focusNode!.nodeValue!.indexOf("\u200B");
+                    // selection?.setBaseAndExtent(
+                    //   selection?.focusNode!,
+                    //   startIdx,
+                    //   selection?.focusNode!,
+                    //   startIdx
+                    // );
+                    // selection?.getRangeAt(0).deleteContents();
+                    // selection?.setBaseAndExtent(
+                    //   selection?.focusNode!,
+                    //   1,
+                    //   selection?.focusNode!,
+                    //   1
+                    // );
                   }
+                  // if (multiKey.back) {
+                  //   removeEvent();
+                  // }
                 }}
                 onKeyDown={onTextAreaKeyDown}
                 onKeyUp={onTextAreaKeyUp}
@@ -1956,8 +2208,31 @@ const Write: NextPage = () => {
                 contentEditable="true"
                 className="relative break-all focus:outline-none  w-full  h-auto
             bg-[rgba(0,0,0,0)] dark:bg-zinc-900 text-xl "
-              ></div>
+              />
             </div>
+            <CLinkBox
+              enable={linkOpen}
+              callback={(data) => {
+                setLinkOpen(false);
+                selection?.setBaseAndExtent(
+                  caret.startCont!,
+                  caret.startOffset!,
+                  caret.endCont!,
+                  caret.endOffset!
+                );
+                if (data) {
+                  linkBoxUse = false;
+                  selection?.getRangeAt(0).deleteContents();
+
+                  onStyleEvent(styleToolState, "link", true, data);
+                }
+                //setCaretStay();
+              }}
+              height={"auto"}
+              width={"250px"}
+              posX={100}
+              posY={100}
+            />
           </div>
         </div>
         <div
@@ -1977,6 +2252,7 @@ const Write: NextPage = () => {
           </button>
         </div>
       </div>
+      <div className="w-full h-full  dark:bg-black bg-slate-50"></div>
     </div>
   );
 };

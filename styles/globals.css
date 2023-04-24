@@ -31,3 +31,7 @@
   content: "\200B";
   display: inline;
 }
+
+a {
+  color: rgb(14 165 233);
+}
