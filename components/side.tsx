@@ -16,8 +16,9 @@ const CSideMenu: NextPage = () => {
 
   return (
     <div
-      className={`overflow-auto left-0 h-full border-r-[1px] bg-neutral-200
-      text-slate-800 `}
+      className={`overflow-auto left-0 h-full border-r-[1px] dark:bg-zinc-900
+      bg-gray-100
+       `}
     >
       <div className="relative flex w-auto pl-3 mt-2 justify-items-start">
         <div className="basis-10">
@@ -113,8 +114,8 @@ const CSideMenu: NextPage = () => {
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            fill="black"
-            className="w-10 h-10"
+            fill={`${useTheme().theme == "dark" ? "white" : "black"}`}
+            className="w-10 h-10 rounded-3xl"
           >
             <path
               d="M 12 2.2467 A 

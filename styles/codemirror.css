@@ -1,0 +1,26 @@
+.dark {
+  .cm-line {
+    color: white;
+    background: black;
+    font-size: 16px;
+  }
+  .cm-content {
+    background: black;
+    caret-color: white;
+  }
+}
+.light {
+  .cm-line {
+    color: black;
+    background: white;
+    font-size: 16px;
+  }
+  .cm-content {
+    background: white;
+    caret-color: black;
+  }
+}
+
+.cm-editor.cm-focused {
+  outline: none !important;
+}

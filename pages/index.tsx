@@ -1,10 +1,11 @@
 import CBody from "@/components/body";
 import CPost from "@/components/post";
 import CSideMenu from "@/components/side";
-import { GetStaticPaths, GetStaticProps } from "next";
+import { readFileSync, readdirSync } from "fs";
+import { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import useSWR from "swr";
 
-export default function Home() {
+const Home: NextPage = () => {
   return (
     <>
       <CBody>
@@ -14,10 +15,11 @@ export default function Home() {
       </CBody>
     </>
   );
-}
+};
 
-export const getStaticProps: GetStaticProps = async ({}) => {
+export const getStaticProps: GetStaticProps = (ctx) => {
   return {
     props: {},
   };
 };
+export default Home;

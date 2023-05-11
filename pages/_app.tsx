@@ -1,5 +1,7 @@
 import "@/styles/globals.css";
-import { ThemeProvider } from "next-themes";
+import "@/styles/preview.css";
+import "@/styles/codemirror.css";
+import { ThemeProvider, useTheme } from "next-themes";
 import type { AppProps } from "next/app";
 
 const darkTheme = {

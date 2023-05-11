@@ -43,19 +43,23 @@ const CDropDown: NextPage<IDropDown> = ({
   useEffect(() => {
     boxItems[0].selected = true;
     selectIdx = 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    setOpenState(false);
-    items.forEach((item, idx) => {
-      if (item.name == showValue) {
-        items[selectIdx].selected = false;
-        selectIdx = idx;
-        item.selected = true;
-        setBoxItems(items);
-      }
-    });
-  }, [showValue]);
+    const itemSelect = () => {
+      setOpenState(false);
+      items.forEach((item, idx) => {
+        if (item.name == showValue) {
+          items[selectIdx].selected = false;
+          selectIdx = idx;
+          item.selected = true;
+          setBoxItems(items);
+        }
+      });
+    };
+    itemSelect();
+  }, [showValue, items]);
 
   return (
     <div

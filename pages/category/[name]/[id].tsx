@@ -1,9 +1,15 @@
 import CBody from "@/components/body";
-import { NextPage } from "next";
+import ReactMD from "@/components/reactMD";
+import { readFileSync, readdirSync } from "fs";
+import { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 
-const PostDetail: NextPage = () => {
+interface IPostData {
+  content: string;
+}
+const PostDetail: NextPage<IPostData> = ({ content }) => {
+  const router = useRouter();
   return (
     <CBody>
       <div className="w-full h-auto p-6 mb-10 bg-gray-200 rounded-lg dark:bg-zinc-900">
@@ -18,7 +24,7 @@ const PostDetail: NextPage = () => {
       </div>
       <div className="mb-5 text-5xl font-bold leading-tight">
         <span className="mr-2">[알고리즘]</span>
-        <span>타입스크립트에 관하여타입스크립트에</span>
+        <span></span>
         관하여타입스크립트에 관하여
       </div>
       <div className="mb-5">
@@ -31,17 +37,8 @@ const PostDetail: NextPage = () => {
         </span>
       </div>
       <div className="border-b-[1px]" />
-      <div className="my-20">
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
-        내용이 들어가는 곳입니다! 내용이 들어가는 곳입니다! <p></p>
+      <div className="my-10">
+        <ReactMD doc={content} />
       </div>
       <div className="mb-4 text-xl font-semibold">Post By</div>
       <div className="py-4 mb-5 border-y-[1px] flex">
@@ -70,6 +67,26 @@ const PostDetail: NextPage = () => {
       </div>
     </CBody>
   );
+};
+
+export const getStaticPaths: GetStaticPaths = () => {
+  console.log("2");
+  const files = readdirSync("./post").map((file) => {
+    const [name, _extension] = file.split(".");
+    return { params: { name: "java", id: name } };
+  });
+
+  return {
+    paths: files,
+    fallback: false,
+  };
+};
+
+export const getStaticProps: GetStaticProps = (ctx) => {
+  console.log("!");
+  return {
+    props: {},
+  };
 };
 
 export default PostDetail;

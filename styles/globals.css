@@ -11,10 +11,6 @@
   content: attr(data-placeholder);
 }
 
-.paragraph {
-  margin-bottom: 10px;
-}
-
 #placeHolderSpan {
   font-weight: 900;
   font-size: 1.25rem;

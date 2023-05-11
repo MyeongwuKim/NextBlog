@@ -34,7 +34,8 @@ const CLinkBox: NextPage<ILinkBox> = ({
   useEffect(() => {
     setOpenState(enable);
     clearErrors(["content", "link"]);
-  }, [enable]);
+  }, [enable, clearErrors]);
+
   return (
     <div id="linkbox" className={`${open ? "block" : "hidden"}`}>
       <div
