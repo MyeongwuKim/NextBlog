@@ -1,4 +1,3 @@
-import CBody from "@/components/body";
 import ReactMD from "@/components/reactMD";
 import { readFileSync, readdirSync } from "fs";
 import { GetStaticPaths, GetStaticProps, NextPage } from "next";
@@ -11,7 +10,7 @@ interface IPostData {
 const PostDetail: NextPage<IPostData> = ({ content }) => {
   const router = useRouter();
   return (
-    <CBody>
+    <>
       <div className="w-full h-auto p-6 mb-10 bg-gray-200 rounded-lg dark:bg-zinc-900">
         <div className="mb-10 text-xl font-semibold">알고리즘</div>
         <div className="flex justify-between ">
@@ -65,27 +64,22 @@ const PostDetail: NextPage<IPostData> = ({ content }) => {
           </div>
         </div>
       </div>
-    </CBody>
+    </>
   );
 };
 
 export const getStaticPaths: GetStaticPaths = () => {
-  console.log("2");
-  const files = readdirSync("./post").map((file) => {
-    const [name, _extension] = file.split(".");
-    return { params: { name: "java", id: name } };
-  });
-
   return {
-    paths: files,
-    fallback: false,
+    paths: [],
+    fallback: "blocking",
   };
 };
 
-export const getStaticProps: GetStaticProps = (ctx) => {
-  console.log("!");
+export const getStaticProps: GetStaticProps = ({ params }) => {
+  //const content = readFileSync(`./post/${params?.id}.md`, "utf-8");
+  const content = "11";
   return {
-    props: {},
+    props: { content },
   };
 };
 

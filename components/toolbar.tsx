@@ -195,28 +195,28 @@ const ToolBar: NextPage<IToolBar> = (props) => {
 
   return (
     <div>
-      <div className="bg-slate-50 dark:bg-zinc-700 p-2 flex items-center relative h-auto font-semibold dark:border-gray-500 [&>button]:select-none">
+      <div className="bg-gray-100 dark:bg-zinc-900 p-2 flex items-center relative h-auto font-semibold dark:border-zinc-800 [&>button]:select-none">
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("#")}
         >
           H1
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("##")}
         >
           H2
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("###")}
         >
           H3
         </button>
-        <span className="relative h-6 border-[1px] dark:border-gray-500 mx-2" />
+        <span className="relative h-6 border-[1px] dark:border-zinc-500 mx-2" />
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onTwoSymbolEvt("**")}
         >
           <svg
@@ -235,7 +235,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onTwoSymbolEvt("_")}
         >
           <svg
@@ -254,7 +254,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onTwoSymbolEvt("~~")}
         >
           <svg
@@ -274,7 +274,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
         </button>
         <span className="relative h-6 border-[1px] dark:border-gray-500 mx-2" />
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onLinkEvt()}
         >
           <svg
@@ -289,7 +289,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onCodeEvt()}
         >
           <svg
@@ -304,7 +304,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt(">")}
         >
           <svg
@@ -320,7 +320,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
         </button>
         <label
           htmlFor="image"
-          className="cursor-pointer flex items-center w-8 h-8 relative hover:dark:bg-slate-800 hover:bg-slate-200"
+          className="cursor-pointer flex items-center w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
         >
           <svg
             stroke="currentColor"

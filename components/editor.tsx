@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import useCodeMirror from "lib/use-codemirror";
-import { EditorSelection } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
@@ -46,7 +44,7 @@ const Editor: React.FC<Props> = (props) => {
              focus:ring-0`}
           />
         </div>
-        <div className="border-[1px] border-gray-300"></div>
+        <div className="border-[1px] border-gray-300 dark:border-zinc-800"></div>
         <div
           onClick={() => {
             editorView?.focus();
@@ -75,18 +73,18 @@ const Editor: React.FC<Props> = (props) => {
 
       <div
         id="editor_footer"
-        className="h-[60px] relative flex items-center w-full  border-t-[1px] border-gray-300 dark:bg-zinc-700 bg-state-50"
+        className="h-[60px] relative flex items-center w-full  border-t-[2px] border-gray-300 dark:border-zinc-800 dark:bg-zinc-900 bg-gray-100"
       >
-        <button className=" select-none absolute items-center inline-block p-2 text-lg font-semibold rounded-lg right-2 bg-emerald-500 hover:bg-emerald-700">
-          Write Post
+        <button className=" w-24 select-none absolute items-center inline-block p-2 text-lg font-semibold rounded-lg right-2 bg-emerald-500 hover:bg-emerald-700">
+          작성하기
         </button>
         <button
           onClick={() => {
             router.back();
           }}
-          className=" select-none absolute items-center inline-block p-2 text-lg font-semibold rounded-lg left-2 bg-slate-600 hover:bg-slate-700"
+          className="w-24 select-none absolute items-center inline-block p-2 text-lg font-semibold rounded-lg left-2 bg-slate-600 hover:bg-slate-700"
         >
-          Cancel
+          취소
         </button>
       </div>
     </div>

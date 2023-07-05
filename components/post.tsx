@@ -1,6 +1,9 @@
 import { NextPage } from "next";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
 interface IPost {
+  postId: string;
   category?: string;
   title?: string;
   date?: string;
@@ -8,7 +11,8 @@ interface IPost {
   tag?: string[];
 }
 
-const CPost: NextPage<IPost> = ({ title, date, content, tag }) => {
+const CPost: NextPage<IPost> = ({ title, date, content, tag, postId }) => {
+  const router = useRouter();
   return (
     <div className="w-full h-auto mb-16">
       <div className="mb-4 text-3xl font-bold">
@@ -33,7 +37,12 @@ const CPost: NextPage<IPost> = ({ title, date, content, tag }) => {
         타입스크립트에 대해 알아보자아아ㅏ
       </div>
       <div className="relative h-8">
-        <button className="absolute right-0 items-center inline-block p-2 text-lg font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-700">
+        <button
+          onClick={() => {
+            router.push(`/post/name=${postId}`);
+          }}
+          className="absolute right-0 items-center inline-block p-2 text-lg font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-700"
+        >
           Read More
         </button>
       </div>

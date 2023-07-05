@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
-import { EditorView, keymap, highlightActiveLine } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { defaultKeymap } from "@codemirror/commands";
 import { history, historyKeymap } from "@codemirror/history";
 import { indentOnInput } from "@codemirror/language";
 import { bracketMatching } from "@codemirror/matchbrackets";
-import { lineNumbers } from "@codemirror/gutter";
 import {
   defaultHighlightStyle,
   HighlightStyle,
@@ -13,7 +12,6 @@ import {
 } from "@codemirror/highlight";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { languages } from "@codemirror/language-data";
-import { Text } from "@codemirror/state";
 
 interface Props {
   initialDoc: string;

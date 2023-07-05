@@ -45,14 +45,15 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
                 className="mb-[1em] font-semibold border-l-4 whitespace-pre-line dark:bg-zinc-700 bg-gray-100 text-black dark:text-white border-emerald-500 px-4"
                 {...props}
               >
-                {children.map((child) => {
+                {children.map((child, i) => {
                   let reactElement = child as JSX.Element;
                   if (reactElement.props) {
                     let div = React.createElement(
                       "div",
-                      null,
+                      { key: i },
                       reactElement.props?.children
                     );
+
                     return div;
                   } else return child;
                 })}
