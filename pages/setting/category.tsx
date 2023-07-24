@@ -1,32 +1,62 @@
 import CategoryItem from "@/components/categoryItem";
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import { getToken } from "next-auth/jwt";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import * as ReactDOMClient from "react-dom/client";
-import client from "lib/client";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import { Category } from "@prisma/client";
-import { useForm } from "react-hook-form";
-import ErrorMsg from "@/components/errorMsg";
 import useSWR, { SWRConfig } from "swr";
+import useMutation from "@/lib/server/useMutation";
+import { useSession } from "next-auth/react";
+import { MyAppContext } from "../_app";
+import prisma from "@/lib/server/client";
 
 let prevTarget: HTMLElement = null;
-interface CategoryProps {
-  categoryList: Category[];
-}
-let root = null;
+let removeIdList: number[] = [];
 
-const MyCategory: NextPage = () => {
+interface CategoryProps {
+  categoryList: (Category & { _count: { post: number } })[];
+}
+interface CategoryResponse {
+  ok: boolean;
+  updateData?: Category[];
+  error: string;
+}
+const MyCategory: NextPage = (props) => {
   const {
     data: { categoryList },
-  } = useSWR("/api/category");
-  const categoryRef = useRef<any>([]);
-  const categoryPageRef = useRef<HTMLDivElement>(null);
+    mutate: categoryUpdate,
+  } = useSWR<CategoryProps>("/api/category");
+  const [categoryMutation, { loading: mutateLoading, data: resData }] =
+    useMutation<CategoryResponse>("/api/category");
   const [saveState, setSaveState] = useState<boolean>(true);
   const [categoryData, setCategoryData] = useState<Category[]>();
+  const categoryRef = useRef<any>([]);
+  const categoryPageRef = useRef<HTMLDivElement>(null);
+  const { data } = useSession();
+  const { createError, setLoading, updateLayoutData } =
+    useContext(MyAppContext);
 
   useEffect(() => {
     setCategoryData(JSON.parse(JSON.stringify(categoryList)));
-  }, [categoryList]);
+  }, []);
+
+  useEffect(() => {
+    if (!resData) return;
+    setLoading(false);
+    if (resData.ok) {
+      setSaveState(false);
+      createError("변경사항을 저장하였습니다.", false);
+      updateLayoutData(resData.updateData);
+    } else {
+      createError(resData.error, true);
+    }
+  }, [resData]);
 
   useEffect(() => {
     if (categoryList.length != categoryData?.length) {
@@ -47,15 +77,11 @@ const MyCategory: NextPage = () => {
 
   const categoryMutate = () => {
     if (!categoryValid()) {
-      if (!document.getElementById("cautionWindow")) {
-        root = ReactDOMClient.createRoot(document.getElementById("errorCont"));
-      } else {
-        root.unmount();
-        root = ReactDOMClient.createRoot(document.getElementById("errorCont"));
-      }
-      root.render(<ErrorMsg root={root} msg="변경사항을 저장할수 없습니다." />);
-      return;
+      createError("변경사항을 저장할수 없습니다.", true);
     } else {
+      setLoading(true);
+      const data = { mutate: categoryData, remove: removeIdList };
+      categoryMutation(data);
     }
   };
 
@@ -83,15 +109,16 @@ const MyCategory: NextPage = () => {
   const changeCategoryOrder = useCallback(
     (changeIndex, originIndex) => {
       if (changeIndex < 0) changeIndex = 0;
-      else if (changeIndex != categoryData.length - 1) changeIndex++;
 
       let removeData = categoryData.splice(originIndex, 1);
       categoryData.splice(changeIndex, 0, removeData[0]);
 
-      const nextCounters = categoryData.map((v, i) => {
+      const newCategoryData = categoryData.map((v, i) => {
+        v.order = i;
         return v;
       });
-      setCategoryData([...nextCounters]);
+
+      setCategoryData(JSON.parse(JSON.stringify(newCategoryData)));
     },
     [categoryData]
   );
@@ -122,9 +149,16 @@ const MyCategory: NextPage = () => {
 
   const removeCategory = useCallback(
     (index) => {
+      removeIdList.push(categoryData[index].id);
       let newData = categoryData.filter((v, i) => {
-        if (i != index) return true;
+        if (i != index) {
+          return true;
+        }
       });
+      newData.forEach((v, i) => {
+        if (i >= index) v.order--;
+      });
+
       setCategoryData([...newData]);
     },
     [categoryData]
@@ -134,11 +168,9 @@ const MyCategory: NextPage = () => {
     setCategoryData([
       ...categoryData,
       {
-        id: -1,
+        id: categoryList.length - (categoryData.length + 1),
         name: "",
-        accountId: null,
-        createdAt: null,
-        updatedAt: null,
+        accountId: data.accessToken.id,
         order: categoryData.length,
       },
     ]);
@@ -157,7 +189,7 @@ const MyCategory: NextPage = () => {
                 ref={(element) => {
                   categoryRef.current[i] = element;
                 }}
-                key={category.order}
+                key={category.id}
               >
                 <CategoryItem
                   data={category}
@@ -202,7 +234,6 @@ const MyCategory: NextPage = () => {
           </button>
         </div>
       </div>
-      <div id="errorCont"></div>
     </div>
   );
 };
@@ -231,17 +262,29 @@ export const getServerSideProps: GetServerSideProps<CategoryProps> = async (
     cookieName: process.env.NEXTAUTH_TOKENNAME,
     secret: process.env.NEXTAUTH_SECRET,
   });
-  let categoryList = await client.category.findMany({
+  let categoryList = await prisma.category.findMany({
     where: {
       account: {
         id: parseInt(token?.id.toString()),
       },
     },
     orderBy: { order: "asc" },
+    select: {
+      order: true,
+      name: true,
+      id: true,
+      _count: {
+        select: {
+          post: true,
+        },
+      },
+    },
   });
 
   return {
-    props: { categoryList: JSON.parse(JSON.stringify(categoryList)) },
+    props: {
+      categoryList: JSON.parse(JSON.stringify(categoryList)),
+    },
   };
 };
 

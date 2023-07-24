@@ -18,7 +18,6 @@ const Preview: React.FC<Props> = (props) => {
   useEffect(() => {
     const { current } = titleRef;
     current!.innerHTML = props.title!;
-    console.log(props.title);
   }, [props.title]);
   // const md = unified()
   //   .use(remarkParse)
@@ -44,7 +43,7 @@ const Preview: React.FC<Props> = (props) => {
     >
       <div
         ref={titleRef}
-        className="font-bold text-2xl p-4 select-none relative h-auto break-words whitespace-pre-line"
+        className="font-sans font-bold text-2xl p-4 select-none relative h-auto break-words whitespace-pre-line"
       ></div>
       <div className="bg-white dark:text-white p-4 dark:bg-black  preview markdown-body relative h-auto w-full  break-words">
         <ReactMD doc={props.doc} />

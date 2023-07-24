@@ -16,33 +16,34 @@ model Account {
   category  Category[]
   post      Post[]
   email     String     @unique
+  github    String?
   password  String
   name      String
   introduce String?
   avatar    String?
   createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Category {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
   post      Post[]
   order     Int
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @default(now())
-  account   Account?  @relation(fields: [accountId], references: [id])
-  accountId Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  account   Account  @relation(fields: [accountId], references: [id])
+  accountId Int
 }
 
 model Post {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   title      String
   content    String
-  category   Category? @relation(fields: [categoryId], references: [id])
-  categoryId Int?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now())
-  account    Account?  @relation(fields: [accountId], references: [id])
-  accountId  Int?
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  account    Account  @relation(fields: [accountId], references: [id])
+  accountId  Int
 }

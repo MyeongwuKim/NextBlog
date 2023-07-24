@@ -1,12 +1,12 @@
+import { MyAppContext } from "@/pages/_app";
 import { NextPage } from "next";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 interface DropDownProps {
   enable: boolean;
   dropdownCallback: (enable: boolean) => void;
-  loadingCallback?: (enable: boolean) => void;
 }
 interface position {
   top: number;
@@ -14,15 +14,11 @@ interface position {
 }
 var selectIdx: number;
 /**드랍다운 메뉴(데이터리스트,현재값,버튼스타일,메뉴스타일,콜백) */
-const SettingBox: NextPage<DropDownProps> = ({
-  enable,
-  dropdownCallback,
-  loadingCallback,
-}) => {
+const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
   const menuBox = useRef<HTMLDivElement>(null);
   const { update } = useSession();
   const router = useRouter();
-
+  const loadingContext = useContext(MyAppContext).setLoading;
   return (
     <div
       id="dropdown-menu"
@@ -93,7 +89,7 @@ const SettingBox: NextPage<DropDownProps> = ({
         <button
           className="w-full flex hover:dark:bg-zinc-800 hover:bg-gray-200"
           onClick={() => {
-            loadingCallback(true);
+            loadingContext(true);
             dropdownCallback(false);
             signOut({ redirect: false }).then((res) => {
               if (
@@ -103,7 +99,7 @@ const SettingBox: NextPage<DropDownProps> = ({
                 router.reload();
               }
               update();
-              loadingCallback(false);
+              loadingContext(false);
             });
           }}
         >

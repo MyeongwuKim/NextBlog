@@ -5,9 +5,8 @@ import Editor from "@/components/editor";
 import Preview from "@/components/preview";
 import { useTheme } from "next-themes";
 
-import useCodeMirror from "@/lib/use-codemirror";
+import useCodeMirror from "@/lib/front/use-codemirror";
 import ToolBar from "@/components/toolbar";
-import dynamic from "next/dynamic";
 
 const Write: NextPage = () => {
   const theme = useTheme().theme;
@@ -27,7 +26,6 @@ const Write: NextPage = () => {
   let [refContainer, editorView] = useCodeMirror<HTMLDivElement>({
     initialDoc: doc,
     onChange: handleDocChange,
-    theme: useTheme()?.theme!,
   });
 
   useEffect(() => {}, [editorView]);
@@ -43,7 +41,6 @@ const Write: NextPage = () => {
             editorView={editorView!}
             refContainer={refContainer}
             handleTitleChange={handleTitleChange}
-            theme={useTheme()?.theme!}
           />
           <div className="border-r-2 dark:border-zinc-800"></div>
           <Preview doc={doc} title={title} />

@@ -1,7 +1,7 @@
 import NextAuth, { DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import client from "lib/client";
+import prisma from "@/lib/server/client";
 import { Account } from "@prisma/client";
 import { JWT } from "next-auth/jwt";
 
@@ -14,6 +14,12 @@ declare module "next-auth" {
     accessToken: JWT;
   }
 }
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: number;
+  }
+}
+
 export default NextAuth({
   providers: [
     CredentialsProvider({
@@ -27,7 +33,7 @@ export default NextAuth({
           string
         >;
 
-        const exUser = await client?.account.findUnique({
+        const exUser = await prisma?.account.findUnique({
           where: {
             email,
           },
@@ -59,7 +65,7 @@ export default NextAuth({
         return token;
       }
 
-      const exUser = await client.account.findUnique({
+      const exUser = await prisma.account.findUnique({
         where: { email: token.email },
         select: {
           id: true,

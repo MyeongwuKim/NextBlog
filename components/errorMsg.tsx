@@ -4,13 +4,14 @@ import * as ReactDOMClient from "react-dom/client";
 
 interface ErrorMsgProps {
   msg: string;
+  isWarning: boolean;
   root: ReactDOMClient.Root;
 }
 const fixedTime = 2;
 let fixedWidth = 0;
 let timer = null;
 
-const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root }) => {
+const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
   useEffect(() => {
     fixedWidth = document.getElementById("cautionBody").clientWidth;
 
@@ -52,7 +53,9 @@ const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root }) => {
         <div
           style={{ width: "280px" }}
           id="cautionTimeBar"
-          className="absolute left-0 transition-all h-2 bg-red-500 rounded-t-md"
+          className={`absolute left-0 transition-all h-2 ${
+            isWarning ? "bg-red-500" : "bg-green-500"
+          } rounded-t-md`}
         />
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -60,7 +63,9 @@ const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root }) => {
           viewBox="0 0 24 24"
           strokeWidth={1.5}
           stroke="currentColor"
-          className="w-8 h-8 text-red-500 mt-6"
+          className={`w-8 h-8 ${
+            isWarning ? "text-red-500" : "text-green-500"
+          } mt-6`}
         >
           <path
             strokeLinecap="round"

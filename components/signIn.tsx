@@ -1,13 +1,13 @@
 import { GetServerSideProps, NextPage } from "next";
 import { signIn, useSession } from "next-auth/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/router";
+import { MyAppContext } from "@/pages/_app";
 
 interface ISignInProps {
   enable: boolean;
   openCallback: (mode: "signin" | "signup" | "none") => void;
-  loadingCallback?: (isLoading: boolean) => void;
 }
 interface IWindowInfo {
   posX: number;
@@ -22,11 +22,7 @@ interface ISighInData {
 const width = 500;
 const height = 500;
 
-const SignIn: NextPage<ISignInProps> = ({
-  enable,
-  openCallback,
-  loadingCallback,
-}) => {
+const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
   const router = useRouter();
   const { data: session, status, update } = useSession();
   const {
@@ -46,6 +42,7 @@ const SignIn: NextPage<ISignInProps> = ({
       posY: posY,
     });
   };
+  const loadingContext = useContext(MyAppContext).setLoading;
 
   const onValid = useCallback(async (data: ISighInData) => {
     sighinEvt(data);
@@ -71,7 +68,7 @@ const SignIn: NextPage<ISignInProps> = ({
   useEffect(() => {}, [windowInfo]);
 
   const sighinEvt = async (data: ISighInData) => {
-    loadingCallback(true);
+    loadingContext(true);
     const res = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -79,10 +76,10 @@ const SignIn: NextPage<ISignInProps> = ({
     });
     if (res.ok) {
       update();
-      loadingCallback(false);
+      loadingContext(false);
       openCallback("none");
     } else {
-      loadingCallback(false);
+      loadingContext(false);
       setError("errorMsg", { message: res.error });
     }
     // .then((res) => {

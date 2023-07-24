@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { useForm } from "react-hook-form";
 
 interface Props {
-  theme: string | undefined;
   refContainer: React.RefObject<HTMLDivElement> | null;
   editorView: EditorView;
   handleTitleChange: (title: string) => void;
@@ -40,7 +39,7 @@ const Editor: React.FC<Props> = (props) => {
             onChange={onTitleChange}
             placeholder="제목을 입력해주세요"
             className={`placeholder-gray-300 p-4 placeholder:font-semibold relative w-full max-h-[100%] overflow-auto
-          font-bold text-2xl border-none resize-none bg-[rgba(0,0,0,0)]
+          font-bold text-2xl border-none resize-none bg-[rgba(0,0,0,0)] outline-none
              focus:ring-0`}
           />
         </div>

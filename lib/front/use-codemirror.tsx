@@ -16,77 +16,53 @@ import { languages } from "@codemirror/language-data";
 interface Props {
   initialDoc: string;
   onChange?: (doc: string) => void;
-  theme: string | undefined;
 }
-
 const useCodeMirror = <T extends Element>(
   props: Props
 ): [React.MutableRefObject<T | null>, EditorView?] => {
   const refContainer = useRef<T>(null);
   const [editorView, setEditorView] = useState<EditorView>();
-  const { onChange, theme } = props;
+  const { onChange } = props;
 
-  // const transparentTheme = EditorView.theme(
-  //   {
-  //     "&": {
-  //       backgroundColor: "rgb(255,255,255); !important",
-  //       height: "100%",
-  //     },
-  //     ".cm-line": {
-  //       fontSize: "20px",
-  //       color: "white",
-  //     },
-  //     ".cm-content": {},
-  //   },
-  //   { dark: false }
-  // );
+  const transparentTheme = EditorView.theme(
+    {
+      "&": {
+        backgroundColor: "rgb(255,255,255); !important",
+        height: "100%",
+      },
+      ".cm-line": {
+        fontSize: "20px",
+        color: "white",
+      },
+      ".cm-content": {},
+    },
+    { dark: false }
+  );
 
   useEffect(() => {
     if (!refContainer.current) return;
 
-    let bg = theme == "dark" ? "black" : "white";
-    let caret = theme == "dark" ? "white" : "gray";
-    let textColor = theme == "dark" ? "white" : "rgb(30 41 59)";
-
-    // const baseTheme = EditorView.baseTheme({
-    //   ".dark .cm-line": {
-    //     color: textColor,
-    //     backgroundColor: bg,
-    //     fontSize: "16px",
-    //   },
-    //   ".dark .cm-content": {
-    //     backgroundColor: bg,
-    //     "caret-color": caret,
-    //   },
-    //   ".light .cm-line": {
-    //     color: textColor,
-    //     backgroundColor: bg,
-    //     fontSize: "16px",
-    //   },
-    //   ".light .cm-content": {
-    //     backgroundColor: bg,
-    //     "caret-color": caret,
-    //   },
-    // });
+    const baseTheme = EditorView.baseTheme({
+      ".cm-scroller": {
+        "font-family": "font-sans",
+      },
+    });
 
     const syntaxHighlighting = HighlightStyle.define([
       {
         tag: tags.heading1,
         fontSize: "2.0em",
         fontWeight: "bold",
-        color: textColor,
       },
       {
         tag: tags.heading2,
         fontSize: "1.8em",
         fontWeight: "bold",
-        color: textColor,
       },
       {
         tag: tags.heading3,
         fontSize: "1.6em",
         fontWeight: "bold",
-        color: textColor,
       },
     ]);
     const editorTheme = new Compartment();
@@ -103,6 +79,7 @@ const useCodeMirror = <T extends Element>(
           codeLanguages: languages,
           addKeymap: true,
         }),
+        baseTheme,
         syntaxHighlighting,
         EditorView.lineWrapping,
         EditorView.updateListener.of((update) => {
@@ -121,7 +98,7 @@ const useCodeMirror = <T extends Element>(
     });
 
     setEditorView(view);
-  }, [refContainer, theme, onChange]);
+  }, [refContainer, onChange]);
 
   return [refContainer, editorView];
 };
