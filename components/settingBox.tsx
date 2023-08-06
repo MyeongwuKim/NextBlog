@@ -1,8 +1,8 @@
-import { MyAppContext } from "@/pages/_app";
+import { setLoading } from "@/hooks/useGlobal";
 import { NextPage } from "next";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
 interface DropDownProps {
   enable: boolean;
@@ -18,7 +18,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
   const menuBox = useRef<HTMLDivElement>(null);
   const { update } = useSession();
   const router = useRouter();
-  const loadingContext = useContext(MyAppContext).setLoading;
+
   return (
     <div
       id="dropdown-menu"
@@ -29,8 +29,8 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
     >
       <div
         className={` w-full h-full text-lg font-semibold
-        [&>button]:p-2 
-        flex-col flex items-center justify-center relative dark:bg-zinc-900  bg-gray-100 z-20 ${
+        [&>button]:p-2 shadow-lg dark:shadow-black
+        flex-col flex items-center justify-center relative dark:bg-zinc-800  bg-gray-50 z-20 ${
           enable ? "block" : "hidden"
         }`}
       >
@@ -89,7 +89,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
         <button
           className="w-full flex hover:dark:bg-zinc-800 hover:bg-gray-200"
           onClick={() => {
-            loadingContext(true);
+            setLoading(true);
             dropdownCallback(false);
             signOut({ redirect: false }).then((res) => {
               if (
@@ -99,7 +99,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
                 router.reload();
               }
               update();
-              loadingContext(false);
+              setLoading(false);
             });
           }}
         >

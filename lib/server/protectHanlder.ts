@@ -6,10 +6,15 @@ type method = "GET" | "POST" | "DELETE";
 interface ProtectParams {
   handler: (req: NextApiRequest, res: NextApiResponse) => Promise<void>;
   methods: method[];
+  isPrivate?: boolean;
 }
 type ProtectType = (props: ProtectParams) => void;
 
-const ProtectHanlder: ProtectType = ({ handler, methods }) => {
+const ProtectHanlder: ProtectType = ({
+  handler,
+  methods,
+  isPrivate = true,
+}) => {
   return async function (req: NextApiRequest, res: NextApiResponse) {
     const user = await getToken({
       req,
@@ -19,7 +24,7 @@ const ProtectHanlder: ProtectType = ({ handler, methods }) => {
     if (req.method && !methods.includes(req.method as any)) {
       return res.status(405).end();
     }
-    if (!user && user?.email != "mw1992@naver.com") {
+    if (isPrivate && !user && user?.email != "mw1992@naver.com") {
       return res.status(401).json({ ok: false, error: "Plz log in." });
     }
 

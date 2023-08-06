@@ -1,13 +1,12 @@
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import { getToken } from "next-auth/jwt";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
-import { MyAppContext } from "../_app";
 import useMutation from "@/lib/server/useMutation";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/server/client";
 import useSWR, { SWRConfig } from "swr";
-
+import { createErrorMsg, setLoading, updateUserData } from "hooks/useGlobal";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -59,8 +58,6 @@ const Profile: NextPage = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [prevAvatar, setPrevAvatar] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<boolean>(false);
-  const { createError, setLoading, updateLayoutData } =
-    useContext(MyAppContext);
 
   useEffect(() => {
     if (profile?.avatar) {
@@ -89,9 +86,9 @@ const Profile: NextPage = () => {
   useEffect(() => {
     if (!ResponseData) return;
     if (ResponseData.ok) {
-      createError("변경사항을 저장하였습니다.", false);
+      createErrorMsg("변경사항을 저장하였습니다.", false);
     } else {
-      createError(ResponseData.error, true);
+      createErrorMsg(ResponseData.error, true);
     }
   }, [ResponseData]);
 
@@ -164,7 +161,7 @@ const Profile: NextPage = () => {
         delete data.avatar;
       }
     } catch {
-      createError("이미지서버 통신 오류입니다.", true);
+      createErrorMsg("이미지서버 통신 오류입니다.", true);
       return;
     }
 
@@ -174,7 +171,7 @@ const Profile: NextPage = () => {
         profile.password
       );
       if (!passwordResult) {
-        createError("기존 비밀번호를 확인해주세요.", true);
+        createErrorMsg("기존 비밀번호를 확인해주세요.", true);
         return;
       }
       const changePassword = await bcrypt.hash(data.changePassword, 10);
@@ -193,7 +190,7 @@ const Profile: NextPage = () => {
           ? data.changePassword
           : prev.profile.password,
       };
-      updateLayoutData(prev.profile);
+      updateUserData(prev.profile);
       return prev;
     }, false);
   };
@@ -208,7 +205,7 @@ const Profile: NextPage = () => {
     } else if (github) {
       msg = github.message;
     }
-    createError(msg, true);
+    createErrorMsg(msg, true);
   };
 
   return (

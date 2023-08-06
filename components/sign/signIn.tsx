@@ -3,7 +3,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/router";
-import { MyAppContext } from "@/pages/_app";
+import { setLoading } from "@/hooks/useGlobal";
 
 interface ISignInProps {
   enable: boolean;
@@ -42,7 +42,6 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
       posY: posY,
     });
   };
-  const loadingContext = useContext(MyAppContext).setLoading;
 
   const onValid = useCallback(async (data: ISighInData) => {
     sighinEvt(data);
@@ -68,7 +67,7 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
   useEffect(() => {}, [windowInfo]);
 
   const sighinEvt = async (data: ISighInData) => {
-    loadingContext(true);
+    setLoading(true);
     const res = await signIn("credentials", {
       email: data.email,
       password: data.password,
@@ -76,10 +75,10 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
     });
     if (res.ok) {
       update();
-      loadingContext(false);
+      setLoading(false);
       openCallback("none");
     } else {
-      loadingContext(false);
+      setLoading(false);
       setError("errorMsg", { message: res.error });
     }
     // .then((res) => {

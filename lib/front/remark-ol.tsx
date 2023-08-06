@@ -15,7 +15,6 @@ const RemarkOL: React.FC<
   const { children } = props;
 
   useEffect(() => {}, [children]);
-  console.log(children);
   return <ol>{children}</ol>;
 };
 

@@ -1,4 +1,4 @@
-import ReactMD from "@/components/reactMD";
+import ReactMD from "@/components/write/reactMD";
 import { readFileSync, readdirSync } from "fs";
 import { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
@@ -9,6 +9,7 @@ interface IPostData {
 }
 const PostDetail: NextPage<IPostData> = ({ content }) => {
   const router = useRouter();
+  content = "```js\nconsole.log('1')\n```";
   return (
     <>
       <div className="w-full h-auto p-6 mb-10 bg-gray-200 rounded-lg dark:bg-zinc-900">

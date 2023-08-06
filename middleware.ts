@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
   //토큰이 없다면 로그인이 되어있지 않으므로 "로그인이 필요한 기능"이라고 경고창 띄우고 리다이렉트
-  console.log("middle");
+
   if (!token) {
     return NextResponse.redirect(new URL(process.env.NEXTAUTH_URL));
   }

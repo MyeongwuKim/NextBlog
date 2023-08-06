@@ -14,7 +14,6 @@ let timer = null;
 const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
   useEffect(() => {
     fixedWidth = document.getElementById("cautionBody").clientWidth;
-
     if (timer) {
       clearInterval(timer);
     }
@@ -47,8 +46,8 @@ const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
           root.unmount();
           //document.getElementById("cautionWindow").remove();
         }}
-        className={`absolute left-2 top-2 flex flex-col items-center
-       z-[99] w-[280px] h-[120px] dark:bg-zinc-800 rounded-md shadow-xl`}
+        className={`absolute left-2 top-2 flex flex-col items-center bg-gray-100
+       z-[99] w-[280px] min-h-[120px] h-auto dark:bg-zinc-800 rounded-md shadow-xl`}
       >
         <div
           style={{ width: "280px" }}

@@ -1,23 +1,33 @@
 import { NextPage } from "next";
-import { EditorSelection } from "@codemirror/state";
+import { EditorSelection, EditorState, Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { useCallback, useEffect, useState } from "react";
+import { Dispatch, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { createErrorMsg, getUserData } from "@/hooks/useGlobal";
+import { useSession } from "next-auth/react";
+import { SearchCursor } from "@codemirror/search";
 
 interface IToolBar {
   theme: string | undefined;
   editorView: EditorView;
+  imagesIdCallback: (imageId: string) => void;
 }
 
+const uploadPrefix = "https://imagedelivery.net/0VaIqAONZ2vq2gejAGX7Sw/";
+const uploadSuffix = "/public";
+
 const ToolBar: NextPage<IToolBar> = (props) => {
-  const { editorView } = props;
-  const { watch, register } = useForm();
+  const { data } = useSession();
+
+  const { editorView, imagesIdCallback } = props;
+  const { watch, register, setValue } = useForm();
   const imageFile = watch("image");
 
+  //이미지 송신, 완료하면 url 변경
   const onUploadImgEvt = useCallback(
-    (imgURL: string) => {
+    async (file: any) => {
       editorView?.focus();
-
+      const imgURL = URL.createObjectURL(file);
       let line = editorView?.state.doc.lineAt(
         editorView?.state.selection.main.from
       )!;
@@ -28,33 +38,78 @@ const ToolBar: NextPage<IToolBar> = (props) => {
 
       let cutStr = line?.text.substring(startCaret, startCaret + endCaret);
 
-      let link = `![${cutStr!.length > 0 ? cutStr : "NAME"}](${imgURL})`;
+      let link = `![${cutStr!.length > 0 ? cutStr : "업로드중"}](${imgURL})`;
       let state = editorView?.state!;
       let tr = state.update(state.replaceSelection(link));
 
       editorView?.dispatch(tr);
 
-      let newFrom = state.selection.main.from + 2;
-      let newTo = state.selection.main.from + link.indexOf("]");
+      try {
+        const { uploadURL } = await (
+          await fetch(`/api/files`, { method: "POST" })
+        ).json();
 
-      editorView?.dispatch({
-        selection: EditorSelection.create(
-          [
-            EditorSelection.range(newFrom, newTo),
-            EditorSelection.cursor(newTo),
-          ],
-          1
-        ),
-      });
+        const form = new FormData();
+        let today = new Date();
+        let timeStamp = [
+          today.getFullYear(),
+          today.getMonth() + 1,
+          today.getDate(),
+          today.getHours(),
+          today.getMinutes(),
+          today.getSeconds(),
+        ].join("");
+
+        let userId = data.accessToken.id;
+
+        form.append(
+          "file",
+          file as any,
+          `${userId.toString()}_post_${timeStamp}`
+        );
+        const {
+          result: { id },
+        } = await (
+          await fetch(uploadURL, {
+            method: "POST",
+            body: form,
+          })
+        ).json();
+
+        let cursor = new SearchCursor(editorView.state.doc, link);
+        cursor.next();
+
+        editorView?.dispatch({
+          changes: {
+            from: cursor.value.from,
+            to: cursor.value.to,
+            insert: `![](${uploadPrefix}${id}${uploadSuffix})`,
+          },
+        });
+        imagesIdCallback(id);
+      } catch {
+        createErrorMsg("이미지 업로드중 실패하였습니다", true);
+      }
+
+      // editorView?.dispatch({
+      //   selection: EditorSelection.create(
+      //     [
+      //       EditorSelection.range(newFrom, newTo),
+      //       EditorSelection.cursor(newTo),
+      //     ],
+      //     1
+      //   ),
+      // });
     },
-    [editorView]
+    [editorView, data]
   );
 
   useEffect(() => {
     if (imageFile && imageFile.length > 0) {
       const file: any = imageFile[0];
-      const url = URL.createObjectURL(file);
-      onUploadImgEvt(url);
+      onUploadImgEvt(file);
+      setValue("image", "");
+      //URL.revokeObjectURL(url);
     }
   }, [imageFile, onUploadImgEvt]);
 
@@ -195,7 +250,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
 
   return (
     <div>
-      <div className="bg-gray-100 dark:bg-zinc-900 p-2 flex items-center relative h-auto font-semibold dark:border-zinc-800 [&>button]:select-none">
+      <div className="shadow-md dark:shadow-black dark:bg-zinc-800 p-2 flex items-center relative h-auto font-semibold dark:border-zinc-800 [&>button]:select-none">
         <button
           className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("#")}

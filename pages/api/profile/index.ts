@@ -55,7 +55,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         secret: process.env.NEXTAUTH_SECRET,
       });
       const profileData = await prisma.account.findUnique({
-        where: { id: token.id },
+        where: { email: "mw1992@naver.com" },
         select: {
           avatar: true,
           email: true,
@@ -79,4 +79,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default ProtectHanlder({ handler, methods: ["GET", "POST"] });
+export default ProtectHanlder({
+  handler,
+  methods: ["GET", "POST"],
+  isPrivate: false,
+});

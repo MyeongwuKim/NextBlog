@@ -1,35 +1,29 @@
 import CategoryItem from "@/components/categoryItem";
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import { getToken } from "next-auth/jwt";
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import { Category } from "@prisma/client";
 import useSWR, { SWRConfig } from "swr";
 import useMutation from "@/lib/server/useMutation";
 import { useSession } from "next-auth/react";
-import { MyAppContext } from "../_app";
 import prisma from "@/lib/server/client";
+import { updateUserData, createErrorMsg, setLoading } from "@/hooks/useGlobal";
 
 let prevTarget: HTMLElement = null;
 let removeIdList: number[] = [];
 
 interface CategoryProps {
-  categoryList: (Category & { _count: { post: number } })[];
+  originCategory: (Category & { _count: { post: number } })[];
 }
 interface CategoryResponse {
   ok: boolean;
   updateData?: Category[];
   error: string;
 }
-const MyCategory: NextPage = (props) => {
+const MyCategory: NextPage = () => {
   const {
-    data: { categoryList },
+    data: { originCategory },
     mutate: categoryUpdate,
   } = useSWR<CategoryProps>("/api/category");
   const [categoryMutation, { loading: mutateLoading, data: resData }] =
@@ -39,11 +33,9 @@ const MyCategory: NextPage = (props) => {
   const categoryRef = useRef<any>([]);
   const categoryPageRef = useRef<HTMLDivElement>(null);
   const { data } = useSession();
-  const { createError, setLoading, updateLayoutData } =
-    useContext(MyAppContext);
 
   useEffect(() => {
-    setCategoryData(JSON.parse(JSON.stringify(categoryList)));
+    setCategoryData(JSON.parse(JSON.stringify(originCategory)));
   }, []);
 
   useEffect(() => {
@@ -51,20 +43,20 @@ const MyCategory: NextPage = (props) => {
     setLoading(false);
     if (resData.ok) {
       setSaveState(false);
-      createError("변경사항을 저장하였습니다.", false);
-      updateLayoutData(resData.updateData);
+      createErrorMsg("변경사항을 저장하였습니다.", false);
+      updateUserData(resData.updateData);
     } else {
-      createError(resData.error, true);
+      createErrorMsg(resData.error, true);
     }
   }, [resData]);
 
   useEffect(() => {
-    if (categoryList.length != categoryData?.length) {
+    if (originCategory.length != categoryData?.length) {
       setSaveState(true);
     } else {
-      let originOrders = categoryList.map((item) => item.order);
+      let originOrders = originCategory.map((item) => item.order);
       let changeOrders = categoryData.map((item) => item.order);
-      let originNames = categoryList.map((item) => item.name);
+      let originNames = originCategory.map((item) => item.name);
       let changeNames = categoryData.map((item) => item.name);
       if (
         JSON.stringify(originOrders) != JSON.stringify(changeOrders) ||
@@ -77,7 +69,7 @@ const MyCategory: NextPage = (props) => {
 
   const categoryMutate = () => {
     if (!categoryValid()) {
-      createError("변경사항을 저장할수 없습니다.", true);
+      createErrorMsg("변경사항을 저장할수 없습니다.", true);
     } else {
       setLoading(true);
       const data = { mutate: categoryData, remove: removeIdList };
@@ -168,10 +160,12 @@ const MyCategory: NextPage = (props) => {
     setCategoryData([
       ...categoryData,
       {
-        id: categoryList.length - (categoryData.length + 1),
+        id: originCategory.length - (categoryData.length + 1),
         name: "",
         accountId: data.accessToken.id,
         order: categoryData.length,
+        createdAt: null,
+        updatedAt: null,
       },
     ]);
   };
@@ -238,14 +232,14 @@ const MyCategory: NextPage = (props) => {
   );
 };
 
-const CategorySWR: NextPage<CategoryProps> = ({ categoryList }) => {
+const CategorySWR: NextPage<CategoryProps> = ({ originCategory }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/category": {
             ok: true,
-            categoryList,
+            originCategory,
           },
         },
       }}
@@ -283,7 +277,7 @@ export const getServerSideProps: GetServerSideProps<CategoryProps> = async (
 
   return {
     props: {
-      categoryList: JSON.parse(JSON.stringify(categoryList)),
+      originCategory: JSON.parse(JSON.stringify(categoryList)),
     },
   };
 };

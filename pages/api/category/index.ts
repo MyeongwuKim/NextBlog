@@ -126,17 +126,20 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return;
     }
   } else if (req.method == "GET") {
-    let categoryList = await prisma.account.findUnique({
+    let categoryData = await prisma.category.findMany({
       where: {
-        email: "mw1992@naver.com",
+        account: {
+          email: "mw1992@naver.com",
+        },
       },
-      select: {
-        category: true,
+      include: {
+        _count: true,
       },
     });
+
     res.json({
       ok: true,
-      categoryList,
+      originCategory: categoryData,
     });
   }
 };

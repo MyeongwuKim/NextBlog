@@ -49,7 +49,7 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
           blockquote({ node, children, ...props }) {
             return (
               <blockquote
-                className="font-sans mb-[1em] font-semibold border-l-4 whitespace-pre-line dark:bg-zinc-700 bg-gray-100 text-black dark:text-white border-emerald-500 px-4"
+                className="font-sans mb-[1em] font-semibold border-l-4 whitespace-pre-line dark:bg-zinc-600 bg-gray-100 text-black dark:text-white border-emerald-500 px-4"
                 {...props}
               >
                 {children.map((child, i) => {
@@ -69,7 +69,7 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
           },
           p({ node, children, ...props }) {
             return (
-              <p className="font-sans mb-[1em]" {...props}>
+              <p className="font-sans mb-[1em] " {...props}>
                 {children}
               </p>
             );

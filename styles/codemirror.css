@@ -1,11 +1,11 @@
 .dark {
   .cm-line {
     color: white;
-    background: black;
+    background: rgb(39 39 42);
     font-size: 16px;
   }
   .cm-content {
-    background: black;
+    background: rgb(39 39 42);
     caret-color: white;
   }
 }

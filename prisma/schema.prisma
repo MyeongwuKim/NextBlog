@@ -21,29 +21,55 @@ model Account {
   name      String
   introduce String?
   avatar    String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime?  @default(now())
+  updatedAt DateTime?  @updatedAt
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
   post      Post[]
   order     Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  account   Account  @relation(fields: [accountId], references: [id])
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  account   Account   @relation(fields: [accountId], references: [id])
   accountId Int
 }
 
 model Post {
-  id         Int      @id @default(autoincrement())
+  id         Int       @id @default(autoincrement())
   title      String
   content    String
-  category   Category @relation(fields: [categoryId], references: [id])
+  thumnail   String?
+  isPrivate  Boolean?  @default(false)
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  images     Image[]
   categoryId Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  account    Account  @relation(fields: [accountId], references: [id])
+  postIntro  String?
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  allow      Boolean?  @default(true)
+  account    Account   @relation(fields: [accountId], references: [id])
   accountId  Int
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  content   String
+  name      String
+  password  String
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int?
+}
+
+model Image {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  imageId   String
+  Post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int?
 }

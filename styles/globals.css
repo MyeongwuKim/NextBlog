@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: Noto Sans kr;
+  }
+}
+
 [contentEditable="true"] > pp:first-child:empty:before {
   font-weight: 900;
   font-size: 1.25rem;

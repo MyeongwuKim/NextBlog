@@ -1,19 +1,25 @@
-import SignIn from "@/components/signIn";
-import SignUp from "@/components/signup";
+import SignIn from "@/components/sign/signIn";
+import SignUp from "@/components/sign/signup";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
-import Loading from "./loading";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
-import SettingSide from "./settingSide";
 import { Category } from "@prisma/client";
 import SettingBox from "./settingBox";
 import { useSession } from "next-auth/react";
+import {
+  getCategoryData,
+  getUserData,
+  registUserDataState,
+} from "@/hooks/useGlobal";
 
 interface LayoutProps {
   children: React.ReactElement;
+}
+
+interface UserData {
   profile?: ProfileType;
-  category?: Category[];
+  category?: (Category & { _count: { post: number } })[];
 }
 
 interface TopViewProps {
@@ -23,7 +29,7 @@ interface TopViewProps {
 
 interface LeftViewProps {
   profile?: ProfileType;
-  category?: Category[];
+  category?: (Category & { _count: { post: number } })[];
 }
 
 type ProfileType = {
@@ -40,11 +46,18 @@ const uploadSuffix = "/avatar";
 
 const fullPageList = ["write", "setting"];
 
-const Layout: NextPage<LayoutProps> = ({ children, profile, category }) => {
+const Layout: NextPage<LayoutProps> = ({ children }) => {
+  let profile = getUserData();
+  let category = getCategoryData();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
+  const [userData, setUserData] = useState<UserData>();
 
-  useEffect(() => {}, [router]);
+  registUserDataState(setUserData);
+
+  useEffect(() => {
+    setUserData({ profile, category });
+  }, [profile, category]);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [signMode, setSignMode] = useState<"signin" | "signup" | "none">(
@@ -53,14 +66,10 @@ const Layout: NextPage<LayoutProps> = ({ children, profile, category }) => {
   const signModeCallback = useCallback((mode: "signin" | "signup" | "none") => {
     setSignMode(mode);
   }, []);
-  const loadingCallback = useCallback((isLoading: boolean) => {
-    setLoading(isLoading);
-  }, []);
 
   return (
-    <div className=" absolute w-full h-full min-w-[640px] bg-slate-50 text-slate-800 dark:bg-black dark:text-gray-200">
+    <div className=" absolute w-full h-full min-w-[640px] bg-white text-slate-800 dark:bg-zinc-900 dark:text-gray-200">
       <div className="w-full h-full">
-        <Loading enable={loading} />
         <SignIn
           enable={signMode == "signin" ? true : false}
           openCallback={signModeCallback}
@@ -70,7 +79,7 @@ const Layout: NextPage<LayoutProps> = ({ children, profile, category }) => {
           openCallback={signModeCallback}
         />
         <div className="flex flex-col w-full h-full">
-          <TopView openCallback={setSignMode} profile={profile} />
+          <TopView openCallback={setSignMode} profile={userData?.profile} />
           <div className="flex w-full h-full flex-row overflow-auto">
             <div
               className={`${
@@ -81,7 +90,10 @@ const Layout: NextPage<LayoutProps> = ({ children, profile, category }) => {
                   : "block"
               } flex-[0.25_0.25_0%]`}
             >
-              <LeftView profile={profile} category={category} />
+              <LeftView
+                profile={userData?.profile}
+                category={userData?.category}
+              />
             </div>
             <div
               className={`${
@@ -152,8 +164,8 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
 
   return (
     <div
-      className="px-6 dark:bg-zinc-900 border-b-[2px] border-gray-200 dark:border-zinc-800
-    bg-gray-100 relative flex w-auto  h-[60px] justify-end items-center"
+      className="px-6  border-b-[2px] border-gray-200 dark:border-zinc-800
+     relative flex w-auto  h-[60px] justify-end items-center"
     >
       <div className="flex flex-col">
         <button
@@ -329,7 +341,8 @@ const RightView: NextPage = () => {
   return (
     <>
       <div
-        className={`w-full relative flex flex-row justify-start pl-4 mt-2 py-10 `}
+        className={`w-full relative flex flex-row justify-start px-6 
+        left-0 h-full border-l-[2px] border-gray-200 dark:border-zinc-800`}
       >
         <div></div>
       </div>
@@ -340,12 +353,22 @@ const RightView: NextPage = () => {
 export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
   const { theme, setTheme } = useTheme();
   const [loaded, setLoaded] = useState(false);
+  const [countAll, setCountAll] = useState<number>(0);
   const router = useRouter();
 
   useEffect(() => {
     setLoaded(true);
   }, [loaded]);
 
+  useEffect(() => {
+    if (!category) return;
+    let totalCount = 0;
+    for (let i = 0; i < category.length; i++) {
+      let c = category[i];
+      totalCount += c._count.post;
+    }
+    setCountAll(totalCount);
+  }, [category]);
   return (
     <div className="pl-10 h-full w-full  py-10">
       <div
@@ -395,25 +418,98 @@ export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
             {profile?.introduce}
           </div>
           <div
+            onClick={() => {
+              router.push("/");
+            }}
             className="cursor-pointer
               p-2
-              hover:dark:bg-zinc-800 hover:bg-gray-200
+              hover:dark:bg-zinc-800 hover:bg-gray-100
                relative w-full h-auto  text-lg text-center"
           >
-            전체보기
+            전체보기({countAll})
           </div>
           {category?.map((v, i) => (
             <div
+              onClick={() => {
+                router.query.category = v.id.toString();
+                router.push(router);
+              }}
               key={i}
               className="cursor-pointer
               p-2
-              hover:dark:bg-zinc-800 hover:bg-gray-200
+              hover:dark:bg-zinc-800 hover:bg-gray-100
                relative w-full h-auto text-center text-lg "
             >
-              <span className="w-full break-words">{v.name}</span>
+              <span className="w-full break-words">
+                {v.name}({v._count.post})
+              </span>
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+};
+
+const items: ItemProps[] = [
+  { name: "프로필 관리", router: "profile" },
+  { name: "글 관리", router: "post" },
+  { name: "댓글 관리", router: "comment" },
+  { name: "카테고리 관리", router: "category" },
+];
+
+interface ItemProps {
+  name: string;
+  router: string;
+}
+
+let prevBtn = null;
+export const SettingSide = () => {
+  const router = useRouter();
+  const [selectedBtn, setSelectedBtn] = useState<HTMLButtonElement>(null);
+  const btnRef = useRef<any>({});
+
+  useEffect(() => {
+    if (!router.pathname.includes("setting")) return;
+    let path = router.pathname.replace("/setting/", "");
+    if (!prevBtn) {
+      btnRef.current[path].disabled = true;
+      prevBtn = btnRef.current[path];
+    } else {
+      prevBtn.disabled = false;
+      btnRef.current[path].disabled = true;
+      prevBtn = btnRef.current[path];
+    }
+  }, [router]);
+
+  return (
+    <div className="pl-10 py-10 h-full w-full">
+      <div
+        className={`overflow-auto flex flex-col justify-center items-center
+         left-0 h-auto w-full border-r-[2px] border-gray-200
+        dark:border-zinc-800 
+ `}
+      >
+        {items.map((item, i) => (
+          <button
+            ref={(element) => {
+              btnRef.current[item.router] = element;
+            }}
+            disabled={false}
+            onClick={(e) => {
+              router
+                .push(`/setting/${item.router}`, undefined, { shallow: true })
+                .then(() => {});
+            }}
+            id={item.router}
+            className="disabled:text-emerald-500 
+            isabled:pointer-events-none text-center p-2 enabled:hover:bg-gray-200 
+            enabled:hover:dark:bg-zinc-800  w-full text-lg font-semibold"
+            key={i}
+          >
+            {item.name}
+          </button>
+        ))}
       </div>
     </div>
   );

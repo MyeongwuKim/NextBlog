@@ -1,6 +1,6 @@
 import { Category } from "@prisma/client";
 import { NextPage } from "next";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { DragEvent } from "react";
 
 interface CategoryItemProps {
@@ -64,8 +64,8 @@ const CategoryItem: NextPage<CategoryItemProps> = ({
       ) {
         if (e.clientY <= y + height / 2) changeIndex = parseInt(target.id) - 1;
         else if (e.clientY >= y + height / 2) changeIndex = parseInt(target.id);
+
         overCallback(parseInt(target.id), changeIndex);
-        changeIndex++;
       }
     }
     e.preventDefault();
@@ -85,8 +85,7 @@ const CategoryItem: NextPage<CategoryItemProps> = ({
       onDragEnd={onDragEndEvt}
       onDragStart={onDragStartEvt}
       onDragOver={onDragOverEvt}
-      className={`mb-1 select-none border-2 flex items-center h-16 dark:border-zinc-800 
-      dark:bg-zinc-900 bg-gray-50`}
+      className={`mb-1 select-none border-2 flex items-center h-16 dark:border-zinc-800 dark:bg-zinc-900 bg-gray-50`}
     >
       <div
         className={`relative h-full flex items-center justify-center border-r-2
@@ -112,7 +111,6 @@ const CategoryItem: NextPage<CategoryItemProps> = ({
       </div>
 
       <input
-        maxLength={10}
         placeholder="카테고리 이름을 입력해주세요"
         className={`${
           itemModify
