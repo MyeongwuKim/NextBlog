@@ -10,15 +10,23 @@ import {
   createErrorMsg,
   getCategoryData,
   setLoading,
-  updateUserData,
+  updateCategoryData,
 } from "hooks/useGlobal";
-import Image from "next/image";
-import { Category, Post } from "@prisma/client";
+import NextImage from "next/image";
+import { Category, Post, Image } from "@prisma/client";
 import useMutation from "@/lib/server/useMutation";
 import { useSession } from "next-auth/react";
+import {
+  getDeliveryDomain,
+  getFormatImagesId,
+  getTimeStamp,
+} from "@/hooks/useUtils";
+import prisma from "@/lib/server/client";
+import OkBtn from "@/components/okBtn";
+import CancelBtn from "@/components/cancelBtn";
 
 interface PopupData {
-  thumnail?: string;
+  thumbnail?: string;
   isPrivate: boolean;
   allow: boolean;
   category: CategoryCountType;
@@ -31,37 +39,54 @@ interface WriteResponse {
   error: string;
 }
 
-const Write: NextPage = () => {
-  const categoryData = getCategoryData();
+interface WriteProps {
+  postData?: Post & { images: { imageId: number }[] };
+}
+
+const Write: NextPage<WriteProps> = ({ postData }) => {
+  const updateCategory = updateCategoryData();
   const [selectCategory, setSelectCategory] = useState<CategoryCountType>(null);
+  const [preview, setPreview] = useState<string>("");
   const { data: sessionData } = useSession();
   const [enablePopup, setEnablePopup] = useState<boolean>(false);
   const router = useRouter();
-  const [doc, setDoc] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
+  const [doc, setDoc] = useState<string>(postData?.content);
+  const [title, setTitle] = useState<string>(postData ? postData.title : "");
   const [imagesId, setImagesId] = useState<string[]>([]); //취소했을시 지울 요청할 이미지id 배열
   const [writeMutation, { loading: mutateLoading, data: resData }] =
-    useMutation<WriteResponse>("/api/write");
+    useMutation<WriteResponse>(`/api/write/${postData ? "modify" : "create"}`);
+
+  useEffect(() => {
+    if (!postData) return;
+    setImagesId(getFormatImagesId(postData.content));
+  }, [postData]);
 
   useEffect(() => {
     if (!resData) return;
     if (resData.ok) {
-      createErrorMsg("포스트 작성을 완료하였습니다.", false);
-      let newData = categoryData.map((category) => {
-        if (category.id == selectCategory.id) {
-          category = {
-            ...selectCategory,
-            _count: { post: selectCategory._count.post + 1 },
-          };
-        }
-        return category;
-      });
-      updateUserData(newData);
+      createErrorMsg(
+        `포스트 ${postData ? "수정" : "작성"}을 완료하였습니다.`,
+        false
+      );
+      updateCategory();
+      router.replace("/");
     } else {
-      console.log(resData.error);
       createErrorMsg(resData.error, true);
     }
   }, [resData]);
+  //프리뷰 만들기
+  const setCotentPreview = useCallback((element) => {
+    let previewContent = "";
+    if (element?.children) {
+      for (let i = 0; i < element.children.length; i++) {
+        let child = element.children[i];
+        if (child.tagName == "P" || child.tagName == "BLOCKQUOTE") {
+          previewContent += child.outerText.split("\n").join(" ");
+        }
+      }
+    }
+    setPreview(previewContent);
+  }, []);
 
   const handleDocChange = useCallback((newDoc: string) => {
     setDoc(newDoc);
@@ -71,12 +96,12 @@ const Write: NextPage = () => {
     setTitle(title);
   }, []);
 
-  const addNewImageId = useCallback(
-    (newId: string) => {
-      setImagesId((prev) => [...prev, newId]);
-    },
-    [imagesId]
-  );
+  // const addNewImageId = useCallback(
+  //   (newId: string) => {
+  //     setImagesId((prev) => [...prev, newId]);
+  //   },
+  //   [imagesId]
+  // );
 
   const onCancelEvt = () => {
     setLoading(true);
@@ -100,7 +125,12 @@ const Write: NextPage = () => {
     router.replace("/");
   };
 
-  const doWrite = ({ allow, category, isPrivate, thumnail }: PopupData) => {
+  const doWrite = async ({
+    allow,
+    category,
+    isPrivate,
+    thumbnail,
+  }: PopupData) => {
     setSelectCategory(category);
     let data = {
       title,
@@ -109,11 +139,24 @@ const Write: NextPage = () => {
       allow,
       isPrivate,
       accountId: sessionData?.accessToken?.id,
-      thumnail: thumnail,
-      imagesId,
+      thumbnail,
+      preview,
     };
-    setLoading(true);
+
+    if (postData) {
+      data["prevThumnail"] = postData?.thumbnail;
+      data["postId"] = postData?.id;
+      data["imagesId"] = postData?.images;
+      //기존 섬네일 삭제
+      if (thumbnail) {
+        await fetch(`/api/files`, {
+          method: "DELETE",
+          body: JSON.stringify({ imageId: postData?.thumbnail }),
+        });
+      }
+    }
     writeMutation(data);
+    setLoading(true);
   };
 
   const onWriteValid = () => {
@@ -136,44 +179,44 @@ const Write: NextPage = () => {
   return (
     <div className="h-full  w-full  flex flex-col">
       <div className="flex flex-col h-full ">
-        <ToolBar
-          editorView={editorView!}
-          theme={useTheme().theme}
-          imagesIdCallback={addNewImageId}
-        />
+        <ToolBar editorView={editorView!} theme={useTheme().theme} />
         <div className="flex flex-row w-full h-[calc(100%-50px)] gap-2">
           <div className="flex w-full flex-col">
             <Editor
+              defaultTitleValue={postData?.title}
               editorView={editorView!}
               refContainer={refContainer}
               handleTitleChange={handleTitleChange}
             />
             <div
               id="editor_footer"
-              className="h-[60px] relative flex items-center justify-center 
+              className="h-[60px] relative flex items-center justify-between
+              px-4 
               w-full shadow-md dark:bg-zinc-800 dark:shadow-[0_0px_6px_-1px_rgba(0,0,0)]"
             >
-              <button
-                onClick={onWriteValid}
-                className="text-white w-24 select-none absolute items-center inline-block p-2 
-                text-lg font-semibold rounded-md right-2 bg-emerald-500 hover:bg-emerald-700"
-              >
-                작성하기
-              </button>
-              <button
-                onClick={onCancelEvt}
-                className="text-white w-24 select-none absolute items-center inline-block p-2 text-lg 
-                font-semibold rounded-md left-2 bg-slate-600 hover:bg-slate-700"
-              >
-                취소
-              </button>
+              <CancelBtn
+                content="취소"
+                height={45}
+                width={96}
+                onClickEvt={onCancelEvt}
+              />
+              <OkBtn
+                content={postData ? "수정하기" : "작성하기"}
+                height={45}
+                width={96}
+                onClickEvt={onWriteValid}
+              />
             </div>
           </div>
-
-          <Preview doc={doc} title={title} />
+          <Preview
+            setCotentPreview={setCotentPreview}
+            doc={doc}
+            title={title}
+          />
         </div>
       </div>
       <WritePopup
+        postData={postData}
         enable={enablePopup}
         setPopupState={setEnablePopup}
         doWriteCallback={doWrite}
@@ -181,22 +224,30 @@ const Write: NextPage = () => {
     </div>
   );
 };
-
-export async function getServerSideProps(context: GetServerSidePropsContext) {
-  return {
-    props: {},
-  };
-}
-
 interface CategoryListProps {
   selectCallback: (category: Category) => void;
+  categoryId: number;
 }
-export const CategoryList = ({ selectCallback }: CategoryListProps) => {
+export const CategoryList = ({
+  selectCallback,
+  categoryId,
+}: CategoryListProps) => {
   let categoryList: Category[] = getCategoryData();
   let [selectName, setSelectName] = useState<string>("");
   let [selectCategory, setSelectCategory] = useState<Category>(null);
   let btnRef = useRef<any>({});
 
+  useEffect(() => {
+    if (!categoryList) return;
+    if (categoryId) {
+      for (let idx in categoryList) {
+        if (categoryList[idx].id == categoryId) {
+          onCategoryClick(null, categoryList[idx]);
+          break;
+        }
+      }
+    }
+  }, [categoryList]);
   const onCategoryClick = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     category: Category
@@ -248,42 +299,108 @@ export const CategoryList = ({ selectCallback }: CategoryListProps) => {
 };
 
 interface WritePopupProps {
+  postData: Post;
   enable: boolean;
   setPopupState: React.Dispatch<React.SetStateAction<boolean>>;
   doWriteCallback: (popupData: PopupData) => void;
 }
 
 export const WritePopup = ({
+  postData,
   enable,
   setPopupState,
   doWriteCallback,
 }: WritePopupProps) => {
+  const { data } = useSession();
+  const timeStamp = getTimeStamp();
   const btnRef = useRef<any>({});
+  const inputRef = useRef<any>();
   const [selectCategory, setSelectCategory] = useState<CategoryCountType>();
   const [disableBtn, setDisableBtn] = useState<boolean>(true);
   const [thumbnailPreView, setThumbnailPreview] = useState<string>("");
   const [hoverThumnail, setHoverThumnail] = useState<boolean>(false);
   useEffect(() => {
-    btnRef.current["publicBtn"].disabled = true;
-    btnRef.current["allowBtn"].disabled = true;
-  });
+    if (postData) {
+      if (postData?.thumbnail)
+        setThumbnailPreview(
+          getDeliveryDomain(postData?.thumbnail, "thumbnail")
+        );
+      onClickPublicPrivate(
+        null,
+        postData?.isPrivate
+          ? btnRef.current["privateBtn"]
+          : btnRef.current["publicBtn"]
+      );
+      onClickComment(
+        null,
+        postData?.allow
+          ? btnRef.current["allowBtn"]
+          : btnRef.current["disAllowBtn"]
+      );
+    } else {
+      btnRef.current["publicBtn"].disabled = true;
+      btnRef.current["allowBtn"].disabled = true;
+    }
+  }, [postData]);
   const onClickComment = (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    btn?: HTMLButtonElement
   ) => {
-    let btnId = (e.target as HTMLElement).id;
+    let btnId = btn ? btn.id : (e.target as HTMLElement).id;
     let enableId = btnId == "allowBtn" ? "disAllowBtn" : "allowBtn";
     btnRef.current[btnId].disabled = true;
     btnRef.current[enableId].disabled = false;
   };
   const onClickPublicPrivate = (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+    btn?: HTMLButtonElement
   ) => {
-    let btnId = (e.target as HTMLElement).id;
+    let btnId = btn ? btn.id : (e.target as HTMLElement).id;
     let enableId = btnId == "publicBtn" ? "privateBtn" : "publicBtn";
     btnRef.current[btnId].disabled = true;
     btnRef.current[enableId].disabled = false;
   };
+  const onDoWritePost = async () => {
+    setLoading(true);
+    let callBackData = {
+      isPrivate: btnRef.current["publicBtn"].disabled ? false : true,
+      allow: btnRef.current["allowBtn"].disabled ? true : false,
+      category: selectCategory,
+      thumbnail: null,
+    };
+    try {
+      const form = new FormData();
+      let userId = data.accessToken.id;
+      let file = inputRef.current.files[0];
+      if (file) {
+        const { uploadURL } = await (
+          await fetch(`/api/files`, { method: "POST" })
+        ).json();
+        form.append(
+          "file",
+          file as any,
+          `${userId.toString()}_postThumbnail_${timeStamp()}`
+        );
+        const {
+          result: { id },
+        } = await (
+          await fetch(uploadURL, {
+            method: "POST",
+            body: form,
+          })
+        ).json();
 
+        callBackData.thumbnail = id;
+      }
+
+      setLoading(false);
+      doWriteCallback(callBackData);
+      setPopupState(false);
+    } catch {
+      setLoading(false);
+      createErrorMsg("썸네일 이미지 업로드중 오류가 발생했습니다", true);
+    }
+  };
   const onCategorySelect = useCallback((category: CategoryCountType) => {
     setDisableBtn(false);
     setSelectCategory(category);
@@ -414,6 +531,7 @@ export const WritePopup = ({
         ${thumbnailPreView.length <= 0 ? "block" : "hidden"}`}
             >
               <input
+                ref={inputRef}
                 id="picture"
                 type="file"
                 className="hidden"
@@ -444,7 +562,7 @@ export const WritePopup = ({
                 }}
                 style={{ position: "relative", width: "100%", height: "100%" }}
               >
-                <Image
+                <NextImage
                   src={thumbnailPreView.length > 0 ? thumbnailPreView : ""}
                   alt="thumbnail"
                   fill={true}
@@ -482,40 +600,55 @@ export const WritePopup = ({
               </div>
             )}
           </div>
-          <CategoryList selectCallback={onCategorySelect} />
+          <CategoryList
+            selectCallback={onCategorySelect}
+            categoryId={postData?.categoryId}
+          />
         </div>
-
         <div className="w-full flex flex-row h-10 justify-between">
-          <button
-            onClick={() => {
+          <CancelBtn
+            onClickEvt={() => {
               setPopupState(false);
             }}
-            className="text-white select-none relative items-center 
-            inline-block text-lg font-semibold rounded-md w-52 h-10
-            bg-slate-600 hover:bg-slate-700"
-          >
-            취소
-          </button>
-          <button
-            disabled={disableBtn}
-            onClick={() => {
-              doWriteCallback({
-                isPrivate: btnRef.current["publicBtn"].disabled ? false : true,
-                allow: btnRef.current["allowBtn"].disabled ? true : false,
-                category: selectCategory,
-              });
-              setPopupState(false);
-            }}
-            className="text-white select-none relative items-center 
-            disabled:bg-emerald-900 disabled:text-gray-400
-            w-52 h-10  text-lg font-semibold rounded-md 
-            bg-emerald-500 hover:bg-emerald-700"
-          >
-            작성하기
-          </button>
+            content="취소"
+            height={40}
+            width={208}
+          />
+          <OkBtn
+            onClickEvt={onDoWritePost}
+            isEnable={!disableBtn}
+            width={208}
+            height={40}
+            content={postData ? "수정하기" : "작성하기"}
+          />
         </div>
       </div>
     </div>
   );
 };
+
+export async function getServerSideProps(ctx: GetServerSidePropsContext) {
+  let { id } = ctx.query;
+  let postData;
+  if (id) {
+    postData = await prisma.post.findUnique({
+      where: {
+        id: Number(id),
+      },
+      include: {
+        images: {
+          select: {
+            imageId: true,
+          },
+        },
+      },
+    });
+  }
+  return {
+    props: {
+      postData: postData ? JSON.parse(JSON.stringify(postData)) : null,
+    },
+  };
+}
+
 export default Write;

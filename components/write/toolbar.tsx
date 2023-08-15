@@ -1,25 +1,23 @@
 import { NextPage } from "next";
 import { EditorSelection, EditorState, Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { Dispatch, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { createErrorMsg, getUserData } from "@/hooks/useGlobal";
+import { createErrorMsg } from "@/hooks/useGlobal";
+
 import { useSession } from "next-auth/react";
 import { SearchCursor } from "@codemirror/search";
+import { getTimeStamp, getDeliveryDomain } from "@/hooks/useUtils";
 
 interface IToolBar {
   theme: string | undefined;
   editorView: EditorView;
-  imagesIdCallback: (imageId: string) => void;
 }
-
-const uploadPrefix = "https://imagedelivery.net/0VaIqAONZ2vq2gejAGX7Sw/";
-const uploadSuffix = "/public";
 
 const ToolBar: NextPage<IToolBar> = (props) => {
   const { data } = useSession();
-
-  const { editorView, imagesIdCallback } = props;
+  let timeStamp = getTimeStamp();
+  const { editorView } = props;
   const { watch, register, setValue } = useForm();
   const imageFile = watch("image");
 
@@ -51,21 +49,13 @@ const ToolBar: NextPage<IToolBar> = (props) => {
 
         const form = new FormData();
         let today = new Date();
-        let timeStamp = [
-          today.getFullYear(),
-          today.getMonth() + 1,
-          today.getDate(),
-          today.getHours(),
-          today.getMinutes(),
-          today.getSeconds(),
-        ].join("");
 
         let userId = data.accessToken.id;
 
         form.append(
           "file",
           file as any,
-          `${userId.toString()}_post_${timeStamp}`
+          `${userId.toString()}_post_${timeStamp()}`
         );
         const {
           result: { id },
@@ -83,10 +73,9 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           changes: {
             from: cursor.value.from,
             to: cursor.value.to,
-            insert: `![](${uploadPrefix}${id}${uploadSuffix})`,
+            insert: `![](${getDeliveryDomain(id, "public")})`,
           },
         });
-        imagesIdCallback(id);
       } catch {
         createErrorMsg("이미지 업로드중 실패하였습니다", true);
       }

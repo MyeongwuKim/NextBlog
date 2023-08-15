@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/server/client";
 import ProtectHanlder from "@/lib/server/protectHanlder";
-import { Prisma } from "@prisma/client";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { getFormatImagesId } from "@/hooks/useUtils";
 
 interface RequestBodyData {
   title: string;
@@ -11,8 +10,8 @@ interface RequestBodyData {
   allow: boolean;
   isPrivate: boolean;
   accountId: number;
-  thumnail: string;
-  imagesId: string[];
+  thumbnail: string;
+  preview: string;
 }
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
@@ -23,9 +22,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         categoryId,
         content,
         isPrivate,
-        thumnail,
+        thumbnail,
         title,
-        imagesId,
+        preview,
       } = req.body as RequestBodyData;
 
       let post = await prisma.post.create({
@@ -33,8 +32,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           content,
           title,
           allow,
+          preview,
           isPrivate,
-          thumnail,
           category: {
             connect: {
               id: categoryId,
@@ -48,20 +47,35 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       });
 
-      const transaction = await prisma.$transaction(
-        imagesId.map((id) =>
-          prisma.image.create({
-            data: {
-              imageId: id,
-              Post: {
-                connect: {
-                  id: post?.id,
-                },
+      if (thumbnail) {
+        await prisma.post.update({
+          where: {
+            id: post.id,
+          },
+          data: {
+            thumbnail,
+          },
+        });
+      }
+
+      const imageUplaod = async (id) => {
+        await prisma.image.create({
+          data: {
+            imageId: id,
+            Post: {
+              connect: {
+                id: post?.id,
               },
             },
-          })
-        )
-      );
+          },
+        });
+      };
+
+      for (let i = 0; i < getFormatImagesId(content).length; i++) {
+        let id = getFormatImagesId(content)[i];
+        await imageUplaod(id);
+      }
+
       res.json({
         ok: true,
       });

@@ -6,6 +6,7 @@ import ReactMarkDown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkBreaks from "remark-breaks";
 import React from "react";
+import Image from "next/image";
 
 interface IReactMD {
   doc: string;
@@ -16,6 +17,13 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
     <>
       <ReactMarkDown
         components={{
+          a({ node, children, ...props }) {
+            return (
+              <a className="mb-[1em]" target="_blank" {...props}>
+                {children}
+              </a>
+            );
+          },
           h1({ node, children, ...props }) {
             return (
               <h1
@@ -72,6 +80,20 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
               <p className="font-sans mb-[1em] " {...props}>
                 {children}
               </p>
+            );
+          },
+          img({ node, children, ...props }) {
+            return (
+              <Image
+                width="0"
+                height="0"
+                sizes="100vw"
+                src={props.src}
+                alt="public"
+                style={{ width: "100%", height: "auto" }}
+              >
+                {children}
+              </Image>
             );
           },
           code: RemarkCode,

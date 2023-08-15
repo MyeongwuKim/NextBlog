@@ -134,7 +134,11 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
               </svg>
             </button>
           </div>
-          <form className="w-full" onSubmit={handleSubmit(onValid, onInValid)}>
+          <form
+            className="w-full"
+            method="post"
+            onSubmit={handleSubmit(onValid, onInValid)}
+          >
             <div className="relative w-full  flex items-start p-6 flex-col">
               <div className="relative w-full text-center font-bold text-slate-800 dark:text-gray-200 text-3xl mb-3">
                 <span>로그인</span>

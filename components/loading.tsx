@@ -10,7 +10,7 @@ const Loading = () => {
     <div
       className={`${
         enable ? "block" : "hidden"
-      } z-[99] bg-[rgba(0,0,0,0.2)] w-full h-full flex justify-center items-center absolute  left-0 top-0`}
+      } z-[9999] bg-[rgba(0,0,0,0.2)] w-full h-full flex justify-center items-center absolute  left-0 top-0`}
     >
       <div className="loadingio-spinner-spinner-q4iokninqxs">
         <div className="ldio-fa83pt8hugh">

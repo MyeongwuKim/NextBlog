@@ -35,7 +35,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
         }`}
       >
         <button
-          className="w-full flex hover:dark:bg-zinc-800 hover:bg-gray-200"
+          className="w-full flex hover:dark:bg-zinc-700 hover:bg-gray-200"
           onClick={() => {
             dropdownCallback(false);
             router.push("/setting/profile");
@@ -68,7 +68,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
             dropdownCallback(false);
             router.push("/write");
           }}
-          className="w-full flex hover:dark:bg-zinc-800 hover:bg-gray-200"
+          className="w-full flex hover:dark:bg-zinc-700 hover:bg-gray-200"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -87,7 +87,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
           <span className="ml-2">글쓰기</span>
         </button>
         <button
-          className="w-full flex hover:dark:bg-zinc-800 hover:bg-gray-200"
+          className="w-full flex hover:dark:bg-zinc-700 hover:bg-gray-200"
           onClick={() => {
             setLoading(true);
             dropdownCallback(false);

@@ -39,37 +39,54 @@ model Category {
 model Post {
   id         Int       @id @default(autoincrement())
   title      String
-  content    String
-  thumnail   String?
+  content    String    @db.Text()
+  thumbnail  String?
   isPrivate  Boolean?  @default(false)
   category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  preview    String?   @db.VarChar(200)
   comments   Comment[]
   images     Image[]
   categoryId Int
-  postIntro  String?
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
   allow      Boolean?  @default(true)
   account    Account   @relation(fields: [accountId], references: [id])
   accountId  Int
+  replys     Reply[]
 }
 
 model Comment {
   id        Int       @id @default(autoincrement())
-  content   String
-  name      String
-  password  String
+  content   String    @db.VarChar(500)
+  name      String?
+  password  String?
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
   post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int?
+  isMe      Boolean   @default(false)
+  replys    Reply[]
+}
+
+model Reply {
+  id        Int       @id @default(autoincrement())
+  content   String
+  name      String?
+  password  String?
+  isMe      Boolean   @default(false)
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int?
+  comment   Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId Int?
 }
 
 model Image {
   id        Int       @id @default(autoincrement())
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
-  imageId   String
+  imageId   String    @unique
   Post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int?
 }

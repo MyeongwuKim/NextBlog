@@ -3,7 +3,7 @@ import { signIn } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import bcrypt from "bcryptjs";
-import useMutation from "@/lib/useMutation";
+import useMutation from "@/lib/server/useMutation";
 import { useRouter } from "next/router";
 
 interface ISignInProps {

@@ -4,11 +4,13 @@ import ReactMD from "./reactMD";
 interface Props {
   doc: string;
   title?: string;
+  setCotentPreview: (element) => void;
 }
 
 const Preview: React.FC<Props> = (props) => {
   const previewRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const { current } = previewRef;
@@ -43,9 +45,14 @@ const Preview: React.FC<Props> = (props) => {
     >
       <div
         ref={titleRef}
-        className="font-sans font-bold text-2xl p-4 select-none relative h-auto break-words whitespace-pre-line"
-      ></div>
-      <div className="bg-white dark:text-white p-4 dark:bg-zinc-800  preview markdown-body relative h-auto w-full  break-words">
+        className="font-bold text-2xl p-4 select-none relative h-auto break-words whitespace-pre-line"
+      />
+      <div
+        ref={(element) => {
+          props?.setCotentPreview(element);
+        }}
+        className="bg-white dark:text-white p-4 dark:bg-zinc-800  preview markdown-body relative h-auto w-full  break-words"
+      >
         <ReactMD doc={props.doc} />
         {/* <div
           style={{ background: "transparent" }}

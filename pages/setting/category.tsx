@@ -21,6 +21,7 @@ interface CategoryResponse {
   updateData?: Category[];
   error: string;
 }
+type CategoryCountType = Category & { _count: { post: number } };
 const MyCategory: NextPage = () => {
   const {
     data: { originCategory },
@@ -44,7 +45,7 @@ const MyCategory: NextPage = () => {
     if (resData.ok) {
       setSaveState(false);
       createErrorMsg("변경사항을 저장하였습니다.", false);
-      updateUserData(resData.updateData);
+      updateUserData(resData.updateData as CategoryCountType[]);
     } else {
       createErrorMsg(resData.error, true);
     }

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    domains: ["imagedelivery.net"],
+  },
   reactStrictMode: false,
   // async redirects(data) {
   //   console.log(data);

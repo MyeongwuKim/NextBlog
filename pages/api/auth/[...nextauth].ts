@@ -98,7 +98,7 @@ export default NextAuth({
     maxAge: 6000,
   },
   pages: {
-    signIn: "/login",
+    signIn: "/",
     signOut: "/",
   },
   secret: process.env.NEXTAUTH_SECRET,

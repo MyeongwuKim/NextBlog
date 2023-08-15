@@ -6,13 +6,16 @@ interface Props {
   refContainer: React.RefObject<HTMLDivElement> | null;
   editorView: EditorView;
   handleTitleChange: (title: string) => void;
+  defaultTitleValue: string;
 }
 
-const Editor: React.FC<Props> = (props) => {
+const Editor: React.FC<Props> = ({
+  editorView,
+  refContainer,
+  handleTitleChange,
+  defaultTitleValue,
+}) => {
   const titleArea = useRef<any>();
-  const { editorView, refContainer, handleTitleChange } = props;
-
-  const { register, handleSubmit, setValue } = useForm();
 
   const onTitleChange = (e: any) => {
     const { current } = titleArea;
@@ -32,9 +35,12 @@ const Editor: React.FC<Props> = (props) => {
             spellCheck={false}
             tabIndex={1}
             rows={1}
-            ref={titleArea}
+            ref={(element) => {
+              titleArea.current = element;
+            }}
+            value={defaultTitleValue}
             onChange={onTitleChange}
-            placeholder="제목을 입력해주세요"
+            placeholder="제목"
             className={`placeholder-gray-300 p-4 placeholder:font-semibold relative w-full max-h-[100%] overflow-auto
           font-bold text-2xl border-none resize-none bg-[rgba(0,0,0,0)] outline-none
              focus:ring-0`}
@@ -61,7 +67,7 @@ const Editor: React.FC<Props> = (props) => {
                       : "inline-block"
                   }`}
                 >
-                  내용을 입력해주세요
+                  내용
                 </span>
               </div>
             </div>

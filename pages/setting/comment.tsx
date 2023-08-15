@@ -1,6 +1,6 @@
 import { NextPage } from "next";
 
-const Comment: NextPage = () => {
+const CommentList: NextPage = () => {
   return (
     <div className="h-full  w-full  flex flex-col">
       <div className="w-full h-full">Comment</div>
@@ -8,4 +8,4 @@ const Comment: NextPage = () => {
   );
 };
 
-export default Comment;
+export default CommentList;

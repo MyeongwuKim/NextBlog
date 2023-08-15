@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/server/client";
 import useSWR, { SWRConfig } from "swr";
 import { createErrorMsg, setLoading, updateUserData } from "hooks/useGlobal";
+import { getDeliveryDomain } from "@/hooks/useUtils";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -35,6 +36,7 @@ interface ProfileResponse {
   ok: true;
   error: string;
 }
+
 const uploadPrefix = "https://imagedelivery.net/0VaIqAONZ2vq2gejAGX7Sw/";
 const uploadSuffix = "/avatar";
 
@@ -61,7 +63,7 @@ const Profile: NextPage = () => {
 
   useEffect(() => {
     if (profile?.avatar) {
-      setAvatarPreview(`${uploadPrefix}${profile?.avatar}${uploadSuffix}`);
+      setAvatarPreview(`${getDeliveryDomain(profile?.avatar, "avatar")}`);
       setPrevAvatar(profile?.avatar);
     }
   }, []);

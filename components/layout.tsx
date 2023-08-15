@@ -12,6 +12,7 @@ import {
   getUserData,
   registUserDataState,
 } from "@/hooks/useGlobal";
+import { getDeliveryDomain } from "@/hooks/useUtils";
 
 interface LayoutProps {
   children: React.ReactElement;
@@ -40,9 +41,6 @@ type ProfileType = {
   github?: string;
   introduce?: string;
 };
-
-const uploadPrefix = "https://imagedelivery.net/0VaIqAONZ2vq2gejAGX7Sw/";
-const uploadSuffix = "/avatar";
 
 const fullPageList = ["write", "setting"];
 
@@ -198,7 +196,7 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
               <img
                 src={
                   profile?.avatar
-                    ? `${uploadPrefix}${profile?.avatar}${uploadSuffix}`
+                    ? `${getDeliveryDomain(profile?.avatar, "avatar")}`
                     : ""
                 }
                 className={`${
@@ -385,7 +383,7 @@ export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
               <img
                 src={
                   profile?.avatar
-                    ? `${uploadPrefix}${profile?.avatar}${uploadSuffix}`
+                    ? `${getDeliveryDomain(profile?.avatar, "avatar")}`
                     : ""
                 }
                 className={`${

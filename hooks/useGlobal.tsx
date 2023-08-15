@@ -70,6 +70,11 @@ export const getCategoryData = (): CategoryCountType[] => {
   return data?.originCategory;
 };
 
+export const updateCategoryData = () => {
+  const { data, mutate } = useSWR("/api/category");
+  return mutate;
+};
+
 export const updateUserData = (data: CategoryCountType[] | ProfileType) => {
   userDataState((prev) => {
     var newPrev;

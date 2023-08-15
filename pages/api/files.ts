@@ -1,3 +1,4 @@
+import ProtectHanlder from "@/lib/server/protectHanlder";
 import { NextApiRequest, NextApiResponse } from "next";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -32,4 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default handler;
+export default ProtectHanlder({
+  handler,
+  methods: ["POST", "DELETE"],
+});
