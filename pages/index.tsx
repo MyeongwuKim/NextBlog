@@ -3,28 +3,45 @@ import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import useSWR from "swr";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
-import { getToken } from "next-auth/jwt";
+import { useEffect, useState } from "react";
 import { Account, Post } from "@prisma/client";
 import prisma from "@/lib/server/client";
-import { getFormatImagesId } from "@/hooks/useUtils";
+import { setHeadTitle } from "@/hooks/useEvent";
+import { userCheck } from "@/hooks/useData";
+import { useSession } from "next-auth/react";
 
 //CBody 그대로 두고, query string에따라 PostList를 요청받게함
 //Post클릭시 글 이동
 
 interface PostListProps {
   Posts: (Post & { _count: { comments: number } })[];
+  title: string;
 }
 
-const PostList: NextPage<PostListProps> = ({ Posts }) => {
+const PostList: NextPage<PostListProps> = ({ Posts, title }) => {
   const router = useRouter();
+  const setHeadTitleState = setHeadTitle;
+  const { data } = useSession();
+  const isMe = userCheck(data);
+
+  useEffect(() => {}, [isMe]);
   useEffect(() => {}, [router]);
-  useEffect(() => {}, [Posts]);
+  useEffect(() => {
+    setHeadTitleState(title);
+  }, [Posts]);
   return (
     <div>
       {Posts?.length > 0 ? (
         Posts?.map((post) => {
-          return <CPost key={post.id} post={post} />;
+          return (
+            <div
+              className={`${
+                post?.isPrivate ? `${isMe ? "block" : "hidden"}` : "block"
+              }`}
+            >
+              <CPost key={post.id} post={post} />
+            </div>
+          );
         })
       ) : (
         <div className="w-full h-full flex items-center flex-col">
@@ -52,7 +69,7 @@ const PostList: NextPage<PostListProps> = ({ Posts }) => {
 export const getServerSideProps: GetServerSideProps<PostListProps> = async (
   context: GetServerSidePropsContext
 ) => {
-  let { category } = context.query;
+  let { category, name } = context.query;
   let postData;
   if (category) {
     postData = await prisma.post.findMany({
@@ -76,10 +93,11 @@ export const getServerSideProps: GetServerSideProps<PostListProps> = async (
       },
     });
   }
-
+  let title = name ? `${name} 카테고리 글목록` : "Home";
   return {
     props: {
       Posts: JSON.parse(JSON.stringify(postData)),
+      title,
     },
   };
 };

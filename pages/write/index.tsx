@@ -6,12 +6,8 @@ import Preview from "@/components/write/preview";
 import { useTheme } from "next-themes";
 import useCodeMirror from "@/lib/front/use-codemirror";
 import ToolBar from "@/components/write/toolbar";
-import {
-  createErrorMsg,
-  getCategoryData,
-  setLoading,
-  updateCategoryData,
-} from "hooks/useGlobal";
+import { getCategoryData, updateCategoryData } from "@/hooks/useData";
+import { createErrorMsg, setHeadTitle, setLoading } from "@/hooks/useEvent";
 import NextImage from "next/image";
 import { Category, Post, Image } from "@prisma/client";
 import useMutation from "@/lib/server/useMutation";
@@ -56,6 +52,9 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
   const [writeMutation, { loading: mutateLoading, data: resData }] =
     useMutation<WriteResponse>(`/api/write/${postData ? "modify" : "create"}`);
 
+  useEffect(() => {
+    setHeadTitle("글 작성");
+  }, []);
   useEffect(() => {
     if (!postData) return;
     setImagesId(getFormatImagesId(postData.content));

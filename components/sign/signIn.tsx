@@ -3,7 +3,9 @@ import { signIn, useSession } from "next-auth/react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { useRouter } from "next/router";
-import { setLoading } from "@/hooks/useGlobal";
+import { setLoading } from "@/hooks/useEvent";
+import InputField from "../inputField";
+import OkBtn from "../okBtn";
 
 interface ISignInProps {
   enable: boolean;
@@ -20,7 +22,7 @@ interface ISighInData {
 }
 
 const width = 500;
-const height = 500;
+const height = 400;
 
 const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
   const router = useRouter();
@@ -101,22 +103,20 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
           left: windowInfo?.posX,
           top: windowInfo?.posY,
         }}
-        className="bg-white dark:bg-black absolute shadow-xl z-50 border-[1px]  border-gray-300 rounded-lg "
+        className="bg-white
+        dark:bg-zinc-900 absolute shadow-xl z-50 rounded-lg "
       >
         <div
           id="login_win"
-          className={`relative  w-full h-full  bg-transparent `}
+          className={`relative p-4 w-full h-full  bg-transparent `}
         >
-          <div
-            className="w-full h-[60px] rounded-t-lg dark:bg-zinc-900
-      bg-gray-100"
-          >
+          <div className="w-full flex h-8 justify-end">
             <button
               onClick={() => {
                 reset();
                 openCallback("none");
               }}
-              className="absolute right-4 top-4 text-2xl"
+              className="text-2xl"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -124,7 +124,7 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
                 viewBox="0 0 24 24"
                 strokeWidth="1.5"
                 stroke="currentColor"
-                className="w-8 h-6 m-auto"
+                className="w-8 h-8 m-auto"
               >
                 <path
                   strokeLinecap="round"
@@ -134,25 +134,22 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
               </svg>
             </button>
           </div>
+
           <form
             className="w-full"
             method="post"
             onSubmit={handleSubmit(onValid, onInValid)}
           >
-            <div className="relative w-full  flex items-start p-6 flex-col">
-              <div className="relative w-full text-center font-bold text-slate-800 dark:text-gray-200 text-3xl mb-3">
-                <span>로그인</span>
-              </div>
-
-              <div className="w-full h-auto">
-                <div className="relative flex flex-row items-center w-full">
+            <div className="relative w-full  flex items-start flex-col">
+              <div className="w-full h-auto mb-4">
+                <div className="relative flex flex-row items-center mb-2 w-full">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
                     stroke="currentColor"
-                    className="w-8 h-6 mr-2"
+                    className="w-6 h-6 mr-2"
                   >
                     <path
                       strokeLinecap="round"
@@ -160,44 +157,41 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
                       d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
                     />
                   </svg>
-                  <span className="font-normal text-slate-800 dark:text-gray-200 text-2xl mb-2">
-                    email
-                  </span>
+                  <span className="font-semibold text-xl">이메일</span>
                 </div>
-
-                <input
+                <InputField
                   id="email"
-                  {...register("email", {
-                    required: {
-                      value: true,
-                      message: "이메일을 입력해주세요.",
-                    },
-                    pattern: {
-                      value: /\S+@\S+\.\S+/,
-                      message: "이메일 형식이 아닙니다.",
-                    },
-                    onChange: () => {
-                      if (formErrors.errorMsg) {
-                        clearErrors();
-                      }
-                    },
-                  })}
-                  placeholder="input your email"
-                  className="p-2 dark:bg-zinc-900 dark:text-gray-200 border-2 dark:placeholder:text-gray-400 placeholder:text-gray-200 rounded-xl font-serif text-2xl text-slate-800 resize-none w-full h-14 boder-2 border-gray-300"
+                  height="60px"
+                  width="100%"
+                  placeholder="이메일을 입력해주세요."
+                  register={{
+                    ...register("email", {
+                      required: {
+                        value: true,
+                        message: "이메일을 입력해주세요.",
+                      },
+                      pattern: {
+                        value: /\S+@\S+\.\S+/,
+                        message: "이메일 형식이 아닙니다.",
+                      },
+                      onChange: () => {
+                        if (formErrors.errorMsg) {
+                          clearErrors();
+                        }
+                      },
+                    }),
+                  }}
                 />
               </div>
               <div className="w-full h-auto">
-                <div
-                  className="relative w-full flex flex-row items-center
-                "
-                >
+                <div className="relative w-full flex flex-row items-center mb-2">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth={1.5}
                     stroke="currentColor"
-                    className="w-8 h-6 mr-2"
+                    className="w-6 h-6 mr-2"
                   >
                     <path
                       strokeLinecap="round"
@@ -205,32 +199,33 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
                       d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
                     />
                   </svg>
-
-                  <span className="font-normal text-slate-800 dark:text-gray-200 text-2xl my-2">
-                    password
-                  </span>
+                  <span className="font-semibold text-xl">패스워드</span>
                 </div>
-                <input
+                <InputField
                   id="password"
-                  {...register("password", {
-                    required: {
-                      value: true,
-                      message: "비밀번호를 입력해주세요.",
-                    },
-                    minLength: {
-                      value: 8,
-                      message: "비밀번호는 8자 이상이여야 합니다.",
-                    },
-                    onChange: () => {
-                      if (formErrors.errorMsg) {
-                        clearErrors();
-                      }
-                    },
-                  })}
                   type="password"
-                  placeholder="input your password"
-                  className="p-2 dark:bg-zinc-900 dark:text-gray-200 border-2 dark:placeholder:text-gray-400 placeholder:text-gray-200 rounded-xl font-serif text-2xl text-slate-800 resize-none w-full h-14 boder-2 border-gray-300"
+                  height="60px"
+                  width="100%"
+                  placeholder="패스워드를 입력해주세요."
+                  register={{
+                    ...register("password", {
+                      required: {
+                        value: true,
+                        message: "비밀번호를 입력해주세요.",
+                      },
+                      minLength: {
+                        value: 8,
+                        message: "비밀번호는 8자 이상이여야 합니다.",
+                      },
+                      onChange: () => {
+                        if (formErrors.errorMsg) {
+                          clearErrors();
+                        }
+                      },
+                    }),
+                  }}
                 />
+
                 <div
                   className={`relative w-full flex flex-row justify-center mt-2 font-semibold `}
                 >
@@ -254,13 +249,13 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
               </div>
             </div>
 
-            <div className="px-6 h-auto absolute w-full bottom-0 ">
-              <button
+            <div className="px-4 h-auto right-0  absolute w-full bottom-4 ">
+              <OkBtn
                 type="submit"
-                className="my-4 w-full h-14 select-none  items-center inline-block  text-lg font-semibold rounded-xl   bg-emerald-500 hover:bg-emerald-700"
-              >
-                로그인
-              </button>
+                content="로그인"
+                width={"100%"}
+                height={56}
+              />
             </div>
           </form>
         </div>

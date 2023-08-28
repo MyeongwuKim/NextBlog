@@ -6,8 +6,9 @@ import useMutation from "@/lib/server/useMutation";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/server/client";
 import useSWR, { SWRConfig } from "swr";
-import { createErrorMsg, setLoading, updateUserData } from "hooks/useGlobal";
+import { updateUserData } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
+import { setLoading, createErrorMsg, setHeadTitle } from "@/hooks/useEvent";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -60,6 +61,7 @@ const Profile: NextPage = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [prevAvatar, setPrevAvatar] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<boolean>(false);
+  setHeadTitle("프로필 설정");
 
   useEffect(() => {
     if (profile?.avatar) {

@@ -21,6 +21,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           },
         },
       });
+
       res.json({
         ok: true,
         data: postData,

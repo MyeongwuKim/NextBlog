@@ -1,4 +1,4 @@
-import { setLoading } from "@/hooks/useGlobal";
+import { setLoading } from "@/hooks/useEvent";
 import { NextPage } from "next";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
@@ -100,6 +100,7 @@ const SettingBox: NextPage<DropDownProps> = ({ enable, dropdownCallback }) => {
               }
               update();
               setLoading(false);
+              router.replace("/");
             });
           }}
         >

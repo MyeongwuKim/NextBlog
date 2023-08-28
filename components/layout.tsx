@@ -7,20 +7,28 @@ import { useTheme } from "next-themes";
 import { Category } from "@prisma/client";
 import SettingBox from "./settingBox";
 import { useSession } from "next-auth/react";
-import {
-  getCategoryData,
-  getUserData,
-  registUserDataState,
-} from "@/hooks/useGlobal";
+import { registUserDataState, userCheck } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
 
 interface LayoutProps {
   children: React.ReactElement;
+  profile: ProfileType;
+  category: CategoryCountType[];
 }
 
+type CategoryCountType = Category & { post: { isPrivate: boolean }[] };
+
+type ProfileType = {
+  avatar?: string;
+  email: string;
+  github?: string;
+  name: string;
+  id: number;
+  introduce?: string;
+};
 interface UserData {
   profile?: ProfileType;
-  category?: (Category & { _count: { post: number } })[];
+  category?: CategoryCountType[];
 }
 
 interface TopViewProps {
@@ -30,23 +38,12 @@ interface TopViewProps {
 
 interface LeftViewProps {
   profile?: ProfileType;
-  category?: (Category & { _count: { post: number } })[];
+  category?: CategoryCountType[];
 }
-
-type ProfileType = {
-  avatar?: string;
-  email: string;
-  name: string;
-  id: number;
-  github?: string;
-  introduce?: string;
-};
 
 const fullPageList = ["write", "setting"];
 
-const Layout: NextPage<LayoutProps> = ({ children }) => {
-  let profile = getUserData();
-  let category = getCategoryData();
+const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [userData, setUserData] = useState<UserData>();
@@ -66,7 +63,7 @@ const Layout: NextPage<LayoutProps> = ({ children }) => {
   }, []);
 
   return (
-    <div className=" absolute w-full h-full min-w-[640px] bg-white text-slate-800 dark:bg-zinc-900 dark:text-gray-200">
+    <div className=" absolute w-full h-full min-w-[640px] bg-white text-zinc-800 dark:bg-zinc-900  dark:text-gray-200">
       <div className="w-full h-full">
         <SignIn
           enable={signMode == "signin" ? true : false}
@@ -238,7 +235,6 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
             </div>
           </div>
         </button>
-
         <SettingBox enable={ddenable} dropdownCallback={ddEnableCallback} />
       </div>
 
@@ -337,22 +333,23 @@ const RightView: NextPage = () => {
   }, []);
 
   return (
-    <>
+    <div className="h-full w-full py-10">
       <div
         className={`w-full relative flex flex-row justify-start px-6 
         left-0 h-full border-l-[2px] border-gray-200 dark:border-zinc-800`}
       >
         <div></div>
       </div>
-    </>
+    </div>
   );
 };
 
 export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
-  const { theme, setTheme } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const [countAll, setCountAll] = useState<number>(0);
   const router = useRouter();
+  const { data } = useSession();
+  const isMe = userCheck(data);
 
   useEffect(() => {
     setLoaded(true);
@@ -363,12 +360,15 @@ export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
     let totalCount = 0;
     for (let i = 0; i < category.length; i++) {
       let c = category[i];
-      totalCount += c._count.post;
+      let p = c?.post;
+      for (let j = 0; j < p.length; j++) {
+        if (!p[j].isPrivate || (p[j].isPrivate && isMe)) totalCount++;
+      }
     }
     setCountAll(totalCount);
-  }, [category]);
+  }, [category, isMe]);
   return (
-    <div className="pl-10 h-full w-full  py-10">
+    <div className="h-full w-full py-10">
       <div
         className={`overflow-auto w-full px-6 left-0 h-full border-r-[2px] border-gray-200 dark:border-zinc-800 
    
@@ -426,23 +426,33 @@ export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
           >
             전체보기({countAll})
           </div>
-          {category?.map((v, i) => (
-            <div
-              onClick={() => {
-                router.query.category = v.id.toString();
-                router.push(router);
-              }}
-              key={i}
-              className="cursor-pointer
+          {category?.map((v, i) => {
+            let count = 0;
+            for (let i = 0; i < v.post.length; i++) {
+              let p = v.post[i];
+              if (!p.isPrivate || (p.isPrivate && isMe)) {
+                count++;
+              }
+            }
+            return (
+              <div
+                onClick={() => {
+                  router.query.category = v.id.toString();
+                  router.query.name = v.name;
+                  router.push(router);
+                }}
+                key={i}
+                className="cursor-pointer
               p-2
               hover:dark:bg-zinc-800 hover:bg-gray-100
                relative w-full h-auto text-center text-lg "
-            >
-              <span className="w-full break-words">
-                {v.name}({v._count.post})
-              </span>
-            </div>
-          ))}
+              >
+                <span className="w-full break-words">
+                  {v.name}({count})
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

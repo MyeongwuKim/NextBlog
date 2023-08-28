@@ -77,7 +77,7 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
           },
           p({ node, children, ...props }) {
             return (
-              <p className="font-sans mb-[1em] " {...props}>
+              <p className="font-sans mb-[1em]" {...props}>
                 {children}
               </p>
             );
@@ -95,6 +95,9 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
                 {children}
               </Image>
             );
+          },
+          ol({ node, children, ...props }) {
+            return <div className="mb-[1em] list-decimal">{children}</div>;
           },
           code: RemarkCode,
         }}

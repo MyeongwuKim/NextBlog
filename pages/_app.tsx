@@ -5,13 +5,15 @@ import "@/styles/loading.css";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import type { AppContext, AppInitialProps, AppProps } from "next/app";
-import Layout from "@/components/layout";
 import { SWRConfig } from "swr";
 import Loading from "@/components/loading";
 import dynamic from "next/dynamic";
 import { Category } from "@prisma/client";
 import prisma from "@/lib/server/client";
 import App from "next/app";
+import { useState } from "react";
+import { registHeadState } from "@/hooks/useEvent";
+import WithHead from "@/components/WithHead";
 dynamic(import("@/components/write/preview"));
 dynamic(import("@/components/write/editor"));
 
@@ -35,6 +37,8 @@ function MyApp({
   profile,
   category,
 }: AppProps & LayoutData) {
+  const [headTitle, setHeadTitle] = useState<string>("Loading");
+  registHeadState(setHeadTitle);
   return (
     <SessionProvider session={pageProps.session}>
       <ThemeProvider attribute="class">
@@ -58,9 +62,9 @@ function MyApp({
               }),
           }}
         >
-          <Layout>
+          <WithHead title={headTitle} pageProps={pageProps}>
             <Component {...pageProps} />
-          </Layout>
+          </WithHead>
         </SWRConfig>
       </ThemeProvider>
     </SessionProvider>

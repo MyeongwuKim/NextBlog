@@ -1,4 +1,4 @@
-import { registLoadingState } from "@/hooks/useGlobal";
+import { registLoadingState } from "@/hooks/useEvent";
 import { useEffect, useState } from "react";
 
 const Loading = () => {

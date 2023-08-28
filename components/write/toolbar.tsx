@@ -3,7 +3,7 @@ import { EditorSelection, EditorState, Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { createErrorMsg } from "@/hooks/useGlobal";
+import { createErrorMsg } from "@/hooks/useData";
 
 import { useSession } from "next-auth/react";
 import { SearchCursor } from "@codemirror/search";

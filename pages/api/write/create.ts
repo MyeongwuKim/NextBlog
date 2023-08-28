@@ -46,7 +46,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           },
         },
       });
-
+      console;
       if (thumbnail) {
         await prisma.post.update({
           where: {
@@ -80,9 +80,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         ok: true,
       });
     } catch (e) {
+      console.log(e);
+      let error = e?.code
+        ? `Prisma errorCode:${e.code}, Prisma Error ${e.meta.cause}`
+        : "포스트 작성중 에러가 발생했습니다.";
       res.json({
         ok: false,
-        error: `Prisma errorCode:${e.code}, ${e.meta.cause}`,
+        error,
       });
     }
   }

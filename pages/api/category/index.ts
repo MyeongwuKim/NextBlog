@@ -133,7 +133,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       },
       include: {
-        _count: true,
+        post: {
+          select: {
+            isPrivate: true,
+          },
+        },
       },
     });
 

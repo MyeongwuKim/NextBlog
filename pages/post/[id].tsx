@@ -2,21 +2,28 @@ import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
 import OkBtn from "@/components/okBtn";
 import ReactMD from "@/components/write/reactMD";
-import { createErrorMsg, getUserData, setLoading } from "@/hooks/useGlobal";
+import { getUserData, userCheck } from "@/hooks/useData";
 import {
   getDeliveryDomain,
   getFormatDate,
   getFormatFullDate,
 } from "@/hooks/useUtils";
+import {
+  setLoading,
+  createErrorMsg,
+  setHeadTitle,
+  createAlert,
+} from "@/hooks/useEvent";
 import prisma from "@/lib/server/client";
 import useMutation from "@/lib/server/useMutation";
 import { Comment, Post, Reply } from "@prisma/client";
-import { GetStaticPaths, GetStaticProps, NextPage } from "next";
+import { GetServerSideProps, NextPage } from "next";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import useSWR, { SWRConfig, unstable_serialize } from "swr";
+import { getToken } from "next-auth/jwt";
 
 interface PostDataProps {
   postData: Post & {
@@ -30,8 +37,8 @@ interface CommentForm {
   password: string;
 }
 interface ErrorFormData extends CommentForm {}
-interface CommentsResponse {
-  ok: true;
+interface mutationResponse {
+  ok: boolean;
   error: string;
 }
 interface CommentSWR {
@@ -64,18 +71,30 @@ const PostDetail: NextPage<{ postId: number }> = ({ postId }) => {
   const { register, handleSubmit, getValues, reset } = useForm<CommentForm>();
   let { data: sessionData } = useSession();
   let userData = getUserData();
+  let isMe = userCheck(sessionData);
   const [createTime, setCreateTime] = useState<string>();
   const [btnState, setBtnState] = useState<boolean>(false);
   const [createComments, { loading, data: responseData, error }] =
-    useMutation<CommentsResponse>("/api/comments/create");
+    useMutation<mutationResponse>("/api/comments/create");
   const {
     data: { data: postData },
     isLoading,
     mutate: postMutation,
   } = useSWR<CommentSWR>(postId ? `/api/post/${postId}` : null);
+  const [postDeleteMutation, { data: deleteRespose }] =
+    useMutation<mutationResponse>(postId ? `/api/post/delete/${postId}` : null);
 
-  useEffect(() => {}, [postData]);
-
+  useEffect(() => {
+    setHeadTitle(postData?.title);
+  }, [postData]);
+  useEffect(() => {
+    if (!deleteRespose) return;
+    if (deleteRespose.ok) {
+      createErrorMsg("삭제가 완료 되었습니다.", false);
+      router.replace("/");
+    } else {
+    }
+  }, [deleteRespose]);
   useEffect(() => {
     if (!responseData) return;
     if (responseData.ok) {
@@ -113,7 +132,7 @@ const PostDetail: NextPage<{ postId: number }> = ({ postId }) => {
   const checkChange = () => {
     let { content, name, password } = getValues();
 
-    if (sessionData && sessionData.accessToken.id == userData.id) {
+    if (isMe) {
       if (content.length <= 0) setBtnState(false);
       else setBtnState(true);
     } else {
@@ -133,19 +152,31 @@ const PostDetail: NextPage<{ postId: number }> = ({ postId }) => {
         {postData?.title}
       </div>
       <div className="mb-5 flex justify-between">
-        <span className="text-lg dark:text-gray-400 text-slate-400">
-          {createTime} 작성
-        </span>
-        <div
-          className={`flex ${
-            !sessionData || sessionData?.accessToken.id != userData?.id
-              ? "hidden"
-              : "block"
-          }`}
-        >
+        <div className="text-lg dark:text-gray-400 text-slate-400 flex">
+          <span className="mr-2">{createTime} 작성</span>
+          <span className={`${postData?.isPrivate ? "block" : "hidden"} flex`}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className="w-5 h-5 m-auto"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
+              />
+            </svg>
+            비공개
+          </span>
+        </div>
+
+        <div className={`flex ${isMe ? "block" : "hidden"}`}>
           <span
             onClick={() => {
-              router.push(`/write?id=${postId}`);
+              router.push(`/write?id=${postData?.id}`);
             }}
             className="text-lg cursor-pointer
           dark:text-gray-400 text-slate-400 mr-3 underline"
@@ -153,7 +184,17 @@ const PostDetail: NextPage<{ postId: number }> = ({ postId }) => {
             수정
           </span>
           <span
-            onClick={() => {}}
+            onClick={() => {
+              createAlert(
+                "이 글 및 이미지 파일을 완전히 삭제합니다.<br> 계속하시겠습니까?",
+                ["취소", "확인"],
+                () => {
+                  setLoading(true);
+                  postDeleteMutation({});
+                },
+                350
+              );
+            }}
             className="text-lg cursor-pointer
           dark:text-gray-400 text-slate-400 underline"
           >
@@ -197,24 +238,34 @@ const PostDetail: NextPage<{ postId: number }> = ({ postId }) => {
         <div className="mb-4 grid grid-flow-row gap-6">
           {postData?.comments.map((commentData) => (
             <CommentItem
+              allow={postData.allow}
               commentData={commentData}
-              postId={postId}
+              postId={postData?.id}
               key={commentData.id}
             />
           ))}
         </div>
         <div className="border-y-[1px] border-gray-200 dark:border-zinc-800 mb-6" />
-        <form method="post" onSubmit={handleSubmit(onValid, onInValid)}>
+        <div
+          className={` h-[50px] ${
+            postData?.allow ? "hidden" : "block"
+          } text-xl font-semibold text-center text-gray-400`}
+        >
+          댓글작성이 금지된 게시물입니다.
+        </div>
+        <form
+          className={`${postData?.allow ? "block" : "hidden"}`}
+          method="post"
+          onSubmit={handleSubmit(onValid, onInValid)}
+        >
           <div
             className={`${
-              sessionData && sessionData.accessToken.id == userData.id
-                ? "hidden"
-                : "block"
+              isMe ? "hidden" : "block"
             } flex justify-between w-full h-[50px] relative mb-4`}
           >
             <InputField
               register={
-                sessionData && sessionData.accessToken.id == userData.id
+                isMe
                   ? null
                   : {
                       ...register("name", {
@@ -233,7 +284,7 @@ const PostDetail: NextPage<{ postId: number }> = ({ postId }) => {
             />
             <InputField
               register={
-                sessionData && sessionData.accessToken.id == userData.id
+                isMe
                   ? null
                   : {
                       ...register("password", {
@@ -296,29 +347,30 @@ interface CommentItemProps {
   replyCallback: () => void;
   isReply: boolean;
   data: Comment | Reply;
+  allow: boolean;
 }
 
 interface CommentProps {
+  allow: boolean;
   postId: number;
   commentData: Comment & {
     replys: Reply[];
   };
 }
 
-export const CommentItem = ({ commentData, postId }: CommentProps) => {
+export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
   let { data: sessionData } = useSession();
   let userData = getUserData();
+  let isMe = userCheck(sessionData);
   const { register, handleSubmit, getValues, setFocus, reset } =
     useForm<CommentForm>();
   const [enableReply, setEnableReply] = useState<boolean>(false);
   const [showReply, setShowReply] = useState<boolean>(false);
   const [createReply, { loading, data, error }] =
-    useMutation<CommentsResponse>("/api/reply/create");
-  const {
-    data: { data: postData },
-    isLoading,
-    mutate: postMutation,
-  } = useSWR<CommentSWR>(postId ? `/api/post/${postId}` : null);
+    useMutation<mutationResponse>("/api/reply/create");
+  const { isLoading, mutate: postMutation } = useSWR<CommentSWR>(
+    postId ? `/api/post/${postId}` : null
+  );
 
   useEffect(() => {
     if (!data) return;
@@ -335,7 +387,7 @@ export const CommentItem = ({ commentData, postId }: CommentProps) => {
   const checkChange = () => {
     let { content, name, password } = getValues();
 
-    if (sessionData && sessionData.accessToken.id == userData.id) {
+    if (isMe) {
       if (content.length <= 0) setEnableReply(false);
       else setEnableReply(true);
     } else {
@@ -372,6 +424,7 @@ export const CommentItem = ({ commentData, postId }: CommentProps) => {
   return (
     <div className="w-full">
       <CommentBody
+        allow={allow}
         data={commentData}
         isReply={false}
         replyCallback={onReplyBtnClick}
@@ -379,6 +432,7 @@ export const CommentItem = ({ commentData, postId }: CommentProps) => {
       <div className="mt-4 ml-6 grid grid-flow-row gap-4">
         {commentData?.replys?.map((replyData) => (
           <CommentBody
+            allow={allow}
             key={replyData.id}
             data={replyData}
             isReply={true}
@@ -393,14 +447,12 @@ export const CommentItem = ({ commentData, postId }: CommentProps) => {
       >
         <div
           className={`${
-            sessionData && sessionData.accessToken.id == userData.id
-              ? "hidden"
-              : "block"
+            isMe ? "hidden" : "block"
           } flex justify-between w-full h-[50px] relative mb-4`}
         >
           <InputField
             register={
-              sessionData && sessionData.accessToken.id == userData.id
+              isMe
                 ? null
                 : {
                     ...register("name", {
@@ -419,7 +471,7 @@ export const CommentItem = ({ commentData, postId }: CommentProps) => {
           />
           <InputField
             register={
-              sessionData && sessionData.accessToken.id == userData.id
+              isMe
                 ? null
                 : {
                     ...register("password", {
@@ -483,12 +535,14 @@ interface DeleteResponse {
   error: string;
 }
 export const CommentBody = ({
+  allow,
   isReply,
   replyCallback,
   data,
 }: CommentItemProps) => {
   let userData = getUserData();
   let { data: sessionData } = useSession();
+  let isMe = userCheck(sessionData);
   let [commentDelete, { data: commentsResponse, error: commentError }] =
     useMutation<DeleteResponse>("/api/comments/delete");
   let [replyDelete, { data: replyResponse, error: replyError }] =
@@ -611,13 +665,7 @@ border-[1px] dark:border-zinc-800 items-center flex"
               작성자
             </span>
           </div>
-          <div
-            className={`${
-              sessionData && sessionData.accessToken.id == userData.id
-                ? "block"
-                : "hidden"
-            }`}
-          >
+          <div className={`${isMe ? "block" : "hidden"}`}>
             <span
               onClick={onDelete}
               className="text-sm cursor-pointer
@@ -637,7 +685,9 @@ dark:text-gray-400 text-slate-400 underline"
             onClick={() => {
               replyCallback();
             }}
-            className="font-bold text-base text-emerald-400 cursor-pointer"
+            className={`${
+              allow ? "block" : "hidden"
+            } font-bold text-base text-emerald-400 cursor-pointer`}
           >
             답글
           </span>
@@ -646,16 +696,21 @@ dark:text-gray-400 text-slate-400 underline"
     </div>
   );
 };
-export const getStaticPaths: GetStaticPaths = (ctx) => {
-  return {
-    paths: [],
-    fallback: "blocking",
-  };
-};
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+// export const getStaticPaths: GetStaticPaths = (ctx) => {
+//   return {
+//     paths: [],
+//     fallback: "blocking",
+//   };
+// };
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  let token = await getToken({
+    req: ctx.req,
+    cookieName: process.env.NEXTAUTH_TOKENNAME,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
   const postData = await prisma.post.findUnique({
     where: {
-      id: Number(params?.id),
+      id: Number(ctx.params.id),
     },
     include: {
       category: {
@@ -668,9 +723,21 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       },
     },
   });
+
+  let privateCheck = postData?.isPrivate && !token ? true : false;
+
+  if (privateCheck) {
+    return {
+      props: {
+        title: "에러",
+        contents: "접근 권한이 없는 페이지입니다.",
+      },
+    };
+  }
   return {
     props: {
       postData: JSON.parse(JSON.stringify(postData)),
+      title: postData?.title,
     },
   };
 };

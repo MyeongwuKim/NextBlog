@@ -11,9 +11,9 @@ interface InputFieldProps {
   fieldtype?: "input" | "textarea";
 }
 
-const styleClass = `border-2 rounded-xl focus:ring-1 
+const styleClass = `relative border-2 rounded-xl focus:ring-1 
 focus:ring-emerald-500 focus:outline-none font-sans 
-dark:border-zinc-800 blur:border-gray-200 p-2 bg-transparent ring-0
+dark:border-zinc-700 blur:border-gray-200 p-2 bg-transparent ring-0
  dark:text-gray-200 dark:placeholder:text-gray-400 placeholder:text-gray-200 
  text-xl text-slate-800 resize-none`;
 

@@ -8,7 +8,8 @@ import useSWR, { SWRConfig } from "swr";
 import useMutation from "@/lib/server/useMutation";
 import { useSession } from "next-auth/react";
 import prisma from "@/lib/server/client";
-import { updateUserData, createErrorMsg, setLoading } from "@/hooks/useGlobal";
+import { updateUserData } from "@/hooks/useData";
+import { setLoading, createErrorMsg, setHeadTitle } from "@/hooks/useEvent";
 
 let prevTarget: HTMLElement = null;
 let removeIdList: number[] = [];
@@ -21,7 +22,9 @@ interface CategoryResponse {
   updateData?: Category[];
   error: string;
 }
-type CategoryCountType = Category & { _count: { post: number } };
+
+type CategoryCountType = Category & { post: { isPrivate: boolean }[] };
+
 const MyCategory: NextPage = () => {
   const {
     data: { originCategory },
@@ -34,6 +37,7 @@ const MyCategory: NextPage = () => {
   const categoryRef = useRef<any>([]);
   const categoryPageRef = useRef<HTMLDivElement>(null);
   const { data } = useSession();
+  setHeadTitle("카테고리 관리");
 
   useEffect(() => {
     setCategoryData(JSON.parse(JSON.stringify(originCategory)));
