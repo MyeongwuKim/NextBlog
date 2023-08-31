@@ -77,6 +77,7 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
     });
     if (res.ok) {
       update();
+      reset();
       setLoading(false);
       openCallback("none");
     } else {
@@ -255,6 +256,9 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
                 content="로그인"
                 width={"100%"}
                 height={56}
+                onClickEvt={() => {
+                  clearErrors();
+                }}
               />
             </div>
           </form>

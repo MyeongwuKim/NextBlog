@@ -2,14 +2,16 @@ import OkBtn from "@/components/okBtn";
 import { setHeadTitle } from "@/hooks/useEvent";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 interface ErrorPageProps {
   contents: string;
 }
 const ErrorPage: NextPage<ErrorPageProps> = ({ contents }) => {
-  setHeadTitle("에러 페이지");
   const router = useRouter();
-
+  useEffect(() => {
+    setHeadTitle("에러 페이지");
+  }, []);
   return (
     <div className="absolute w-full h-full flex items-center justify-center">
       <div className="flex flex-col items-center">

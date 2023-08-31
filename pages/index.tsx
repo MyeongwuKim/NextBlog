@@ -35,11 +35,12 @@ const PostList: NextPage<PostListProps> = ({ Posts, title }) => {
         Posts?.map((post) => {
           return (
             <div
+              key={post.id}
               className={`${
                 post?.isPrivate ? `${isMe ? "block" : "hidden"}` : "block"
               }`}
             >
-              <CPost key={post.id} post={post} />
+              <CPost post={post} />
             </div>
           );
         })

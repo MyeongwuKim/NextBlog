@@ -9,8 +9,10 @@ import SettingBox from "./settingBox";
 import { useSession } from "next-auth/react";
 import { registUserDataState, userCheck } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
+import LabelBtn from "./labelBtn";
 
 interface LayoutProps {
+  pageProps: any;
   children: React.ReactElement;
   profile: ProfileType;
   category: CategoryCountType[];
@@ -37,13 +39,22 @@ interface TopViewProps {
 }
 
 interface LeftViewProps {
+  hide: boolean;
   profile?: ProfileType;
   category?: CategoryCountType[];
 }
 
-const fullPageList = ["write", "setting"];
+//left 0.25,content 0.5 right 0.25
 
-const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
+const fullPageList = ["write"];
+const rightHidePageList = ["post", "setting"];
+
+const Layout: NextPage<LayoutProps> = ({
+  children,
+  category,
+  profile,
+  pageProps,
+}) => {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [userData, setUserData] = useState<UserData>();
@@ -63,7 +74,7 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
   }, []);
 
   return (
-    <div className=" absolute w-full h-full min-w-[640px] bg-white text-zinc-800 dark:bg-zinc-900  dark:text-gray-200">
+    <div className="absolute w-full h-full min-w-[640px] bg-white text-zinc-800 dark:bg-zinc-900  dark:text-gray-200">
       <div className="w-full h-full">
         <SignIn
           enable={signMode == "signin" ? true : false}
@@ -81,56 +92,67 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
                 fullPageList.some((page) => {
                   return router.pathname.includes(page);
                 })
-                  ? "hidden"
-                  : "block"
-              } flex-[0.25_0.25_0%]`}
-            >
-              <LeftView
-                profile={userData?.profile}
-                category={userData?.category}
-              />
-            </div>
-            <div
-              className={`${
-                router.pathname.includes("setting") ? "block" : "hidden"
-              } flex-[0.25_0.25_0%]`}
-            >
-              <div className="f-full flex-[0.25_0.25_0%] flex justify-center items-center">
-                <SettingSide />
-              </div>
-            </div>
-
-            <div
-              className={`h-[calc(100%-0px)] w-full py-10 ${
-                fullPageList.some((page) => {
-                  return router.pathname.includes(page);
-                })
-                  ? "flex-[1_1_0%]"
-                  : "flex-[0.5_0.5_0%]"
-              }`}
+                  ? "flex-[0_0_0%] hidden"
+                  : "flex-[0.25_0.25_0%]"
+              }
+            `}
             >
               <div
-                className={`h-[calc(100%-0px)] w-full overflow-auto px-10 ${
+                className={`${
+                  router.pathname.includes("setting") ? "hidden" : "block"
+                } w-full h-full`}
+              >
+                <LeftView
+                  hide={rightHidePageList.some((page) => {
+                    return router.pathname.includes(page);
+                  })}
+                  profile={userData?.profile}
+                  category={userData?.category}
+                />
+              </div>
+              <div
+                className={`${
+                  router.pathname.includes("setting") ? "block" : "hidden"
+                }`}
+              >
+                <div className="f-full flex-[0.25_0.25_0%] flex justify-center items-center">
+                  <SettingSide />
+                </div>
+              </div>
+            </div>
+            <div
+              id="scrollArea"
+              className={`h-[calc(100%-0px)] w-full overflow-auto 
+                ${
+                  rightHidePageList.some((page) => {
+                    return router.pathname.includes(page);
+                  })
+                    ? "flex-[0.75_0.75_0%]"
+                    : "flex-[0.5_0.5_0%]"
+                }
+                ${
                   fullPageList.some((page) => {
                     return router.pathname.includes(page);
                   })
                     ? "flex-[1_1_0%]"
                     : "flex-[0.5_0.5_0%]"
                 }`}
-              >
-                {children}
-              </div>
+            >
+              <div className="px-8 mt-4 h-[calc(100%-32px)]">{children}</div>
             </div>
             <div
-              className={`${
+              className={`
+              ${
                 fullPageList.some((page) => {
                   return router.pathname.includes(page);
                 })
-                  ? "hidden"
-                  : "block"
-              } flex-[0.25_0.25_0%]`}
+                  ? "flex-[0_0_0%] hidden"
+                  : "flex-[0.25_0.25_0%]"
+              }
+              ${router.pathname.includes("post") ? "hidden" : "block"}
+             flex-[0.25_0.25_0%]`}
             >
-              <RightView />
+              <RightView hide={router.pathname.includes("post")} />
             </div>
           </div>
         </div>
@@ -159,7 +181,7 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
 
   return (
     <div
-      className="px-6  border-b-[2px] border-gray-200 dark:border-zinc-800
+      className="px-6 border-b-[2px] border-gray-200 dark:border-zinc-800
      relative flex w-auto  h-[60px] justify-end items-center"
     >
       <div className="flex flex-col">
@@ -324,27 +346,45 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
   );
 };
 
-const RightView: NextPage = () => {
-  const { data, update, status } = useSession();
-  const router = useRouter();
-  const [ddenable, setddEnable] = useState<boolean>(false);
-  const ddEnableCallback = useCallback((enable: boolean) => {
-    setddEnable(enable);
-  }, []);
-
+interface RightViewProps {
+  hide: boolean;
+}
+const RightView: NextPage<RightViewProps> = ({ hide }) => {
+  const btnRef = useRef<any>({});
+  const [mdElements, setMdElements] = useState<HTMLElement[]>();
+  useEffect(() => {
+    if (document.getElementById("reactMD")) {
+      let eles = document.getElementById("reactMD").children;
+      let elesArr = [];
+      for (let i = 0; i < eles.length; i++) {
+        if (eles[i].getAttribute("level")) {
+          elesArr.push(eles[i]);
+        }
+      }
+      setMdElements(elesArr);
+    }
+  }, [hide]);
   return (
-    <div className="h-full w-full py-10">
-      <div
-        className={`w-full relative flex flex-row justify-start px-6 
-        left-0 h-full border-l-[2px] border-gray-200 dark:border-zinc-800`}
-      >
-        <div></div>
-      </div>
+    <div className="w-[90%] h-full">
+      {hide ? (
+        ""
+      ) : (
+        <div className="h-full w-full">
+          <div
+            className={`w-full relative items-center justify-center px-6 h-full
+      left-0  border-l-[2px] border-gray-200 dark:border-zinc-800 `}
+          ></div>
+        </div>
+      )}
     </div>
   );
 };
 
-export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
+export const LeftView: NextPage<LeftViewProps> = ({
+  profile,
+  category,
+  hide,
+}) => {
   const [loaded, setLoaded] = useState(false);
   const [countAll, setCountAll] = useState<number>(0);
   const router = useRouter();
@@ -368,9 +408,9 @@ export const LeftView: NextPage<LeftViewProps> = ({ profile, category }) => {
     setCountAll(totalCount);
   }, [category, isMe]);
   return (
-    <div className="h-full w-full py-10">
+    <div className={`${hide ? "hidden" : "block"} h-full`}>
       <div
-        className={`overflow-auto w-full px-6 left-0 h-full border-r-[2px] border-gray-200 dark:border-zinc-800 
+        className={`overflow-auto w-full px-8 left-0 h-full border-r-[2px] border-gray-200 dark:border-zinc-800 
    
        `}
       >
@@ -499,24 +539,17 @@ export const SettingSide = () => {
  `}
       >
         {items.map((item, i) => (
-          <button
-            ref={(element) => {
-              btnRef.current[item.router] = element;
-            }}
-            disabled={false}
-            onClick={(e) => {
+          <LabelBtn
+            key={i}
+            id={item.router}
+            onClick={() => {
               router
                 .push(`/setting/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
-            id={item.router}
-            className="disabled:text-emerald-500 
-            isabled:pointer-events-none text-center p-2 enabled:hover:bg-gray-200 
-            enabled:hover:dark:bg-zinc-800  w-full text-lg font-semibold"
-            key={i}
-          >
-            {item.name}
-          </button>
+            anyRef={btnRef}
+            contents={item.name}
+          />
         ))}
       </div>
     </div>

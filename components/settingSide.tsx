@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
+import LabelBtn from "./labelBtn";
 
 const items: ItemProps[] = [
   { name: "프로필 관리", router: "profile" },
@@ -41,24 +42,15 @@ const SettingSide = () => {
  `}
       >
         {items.map((item, i) => (
-          <button
-            ref={(element) => {
-              btnRef.current[item.router] = element;
-            }}
-            disabled={false}
-            onClick={(e) => {
+          <LabelBtn
+            onClick={() => {
               router
                 .push(`/setting/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
-            id={item.router}
-            className="disabled:text-emerald-500 
-            isabled:pointer-events-none text-center p-2 enabled:hover:bg-gray-200 
-            enabled:hover:dark:bg-zinc-800  w-full text-lg font-semibold"
-            key={i}
-          >
-            {item.name}
-          </button>
+            refValue={btnRef.current[item.router]}
+            contents={item.name}
+          />
         ))}
       </div>
     </div>
