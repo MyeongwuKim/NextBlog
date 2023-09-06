@@ -11,7 +11,7 @@ import dynamic from "next/dynamic";
 import { Category } from "@prisma/client";
 import prisma from "@/lib/server/client";
 import App from "next/app";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { registHeadState } from "@/hooks/useEvent";
 import WithHead from "@/components/WithHead";
 dynamic(import("@/components/write/preview"));

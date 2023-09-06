@@ -48,7 +48,8 @@ const SettingSide = () => {
                 .push(`/setting/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
-            refValue={btnRef.current[item.router]}
+            anyRef={btnRef}
+            id={item.router}
             contents={item.name}
           />
         ))}

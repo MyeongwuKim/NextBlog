@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import WithHead from "./WithHead";
-import CompImg from "./CompImg";
+import CompImg from "@/components/compImg";
 
 interface PostProps {
   post: Post & { _count: { comments: number } };

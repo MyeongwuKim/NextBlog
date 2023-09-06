@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import ReactMarkDown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkBreaks from "remark-breaks";
-import React from "react";
+import React, { useEffect } from "react";
 import Image from "next/image";
 
 interface IReactMD {
@@ -27,7 +27,7 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
           h1({ node, children, ...props }) {
             return (
               <h1
-                className="font-sans mb-[1em] text-[32px] font-bold"
+                className="appendix font-sans mb-[1em] text-[32px] font-bold"
                 {...props}
               >
                 {children}
@@ -37,7 +37,7 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
           h2({ node, children, ...props }) {
             return (
               <h2
-                className="font-sans mb-[1em] text-[24px] font-bold"
+                className="appendix font-sans mb-[1em] text-[24px] font-bold"
                 {...props}
               >
                 {children}
@@ -47,7 +47,7 @@ const ReactMD: NextPage<IReactMD> = ({ doc }) => {
           h3({ node, children, ...props }) {
             return (
               <h3
-                className="font-sans mb-[1em] text-[20px] font-bold"
+                className="appendix font-sans mb-[1em] text-[20px] font-bold"
                 {...props}
               >
                 {children}

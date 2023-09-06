@@ -25,8 +25,7 @@ import { SubmitErrorHandler, useForm } from "react-hook-form";
 import useSWR, { SWRConfig, unstable_serialize } from "swr";
 import { getToken } from "next-auth/jwt";
 import LabelBtn from "@/components/labelBtn";
-import Image from "next/image";
-import CompImg from "@/components/CompImg";
+import CompImg from "@/components/compImg";
 
 interface PostDataProps {
   postData: Post & {
@@ -34,7 +33,13 @@ interface PostDataProps {
     comments: (Comment & { replys: Reply[] })[];
   };
   nearPostData: NearPostType[];
+  headTailData: HeadTailType;
 }
+
+type HeadTailType = {
+  prev: { title: string; id: number };
+  next: { title: string; id: number };
+};
 type NearPostType = {
   title: string;
   id: number;
@@ -60,7 +65,7 @@ interface CommentSWR {
 }
 let commentData: Comment;
 
-const PostSWR = ({ postData, nearPostData }: PostDataProps) => {
+const PostSWR = ({ postData, nearPostData, headTailData }: PostDataProps) => {
   return (
     <SWRConfig
       value={{
@@ -72,14 +77,19 @@ const PostSWR = ({ postData, nearPostData }: PostDataProps) => {
         },
       }}
     >
-      <PostDetail postId={postData.id} nearPostData={nearPostData} />
+      <PostDetail
+        postId={postData.id}
+        nearPostData={nearPostData}
+        headTailData={headTailData}
+      />
     </SWRConfig>
   );
 };
 const PostDetail: NextPage<{
   postId: number;
   nearPostData: NearPostType[];
-}> = ({ postId, nearPostData }) => {
+  headTailData: HeadTailType;
+}> = ({ postId, nearPostData, headTailData }) => {
   const router = useRouter();
   const { register, handleSubmit, getValues, reset } = useForm<CommentForm>();
   let { data: sessionData } = useSession();
@@ -96,11 +106,28 @@ const PostDetail: NextPage<{
   } = useSWR<CommentSWR>(postId ? `/api/post/${postId}` : null);
   const [postDeleteMutation, { data: deleteRespose }] =
     useMutation<mutationResponse>(postId ? `/api/post/delete/${postId}` : null);
+  const [mdElements, setMdElements] = useState<HTMLElement[]>();
+  const [hide, setHide] = useState<boolean>(false);
 
   useEffect(() => {
     setHeadTitle(postData?.title);
-    console.log(nearPostData);
-    document.getElementById("scrollArea").scrollTop = 0;
+    window.scrollTo({ top: 0 });
+    if (document.getElementById("reactMD")) {
+      let eles = document.getElementById("reactMD").children;
+      let elesArr = [];
+
+      for (let i = 0; i < eles.length; i++) {
+        if (eles[i].getAttribute("level")) {
+          elesArr.push(eles[i]);
+        }
+      }
+
+      if (elesArr.length <= 0) setHide(true);
+      else {
+        setHide(false);
+        setMdElements(elesArr);
+      }
+    }
   }, [postData]);
   useEffect(() => {
     if (!deleteRespose) return;
@@ -161,13 +188,16 @@ const PostDetail: NextPage<{
     setCreateTime(getFormatDate(postData?.createdAt));
   }, []);
   return (
-    <div className="flex flex-row w-full">
-      <div className="w-full flex-[0.6_0.6_0%]">
+    <div>
+      <div className={`${hide ? "hidden" : "block"}`}>
+        <Appendix postId={postId} mdElements={mdElements} />
+      </div>
+
+      <div className="w-full">
         <div className="mb-5 text-5xl font-bold leading-tight">
           <span className="mr-2">[{postData?.category.name}]</span>
           {postData?.title}
         </div>
-        <Appendix />
         <div className="mb-5 flex justify-between">
           <div className="text-lg dark:text-gray-400 text-slate-400 flex">
             <span className="mr-2">{createTime} 작성</span>
@@ -757,27 +787,74 @@ export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
     </div>
   );
 };
-export const Appendix = () => {
+
+let scrollTop = 0;
+let prevBtn = null;
+let topPos = 80;
+export const Appendix = ({ postId, mdElements }) => {
   const btnRef = useRef<any>({});
-  const [mdElements, setMdElements] = useState<HTMLElement[]>();
+
   useEffect(() => {
-    if (document.getElementById("reactMD")) {
-      let eles = document.getElementById("reactMD").children;
-      let elesArr = [];
-      for (let i = 0; i < eles.length; i++) {
-        if (eles[i].getAttribute("level")) {
-          elesArr.push(eles[i]);
+    scrollTop = 0;
+    if (!mdElements) return;
+
+    window.addEventListener("scroll", (e) => {
+      scrollEvt(window.scrollY);
+    });
+  }, [postId, mdElements]);
+
+  const scrollEvt = (scrollY) => {
+    if (!btnRef.current[0]) return;
+    scrollTop = scrollY;
+
+    let appendixList = document.getElementsByClassName("appendix");
+    let index = null;
+    for (let i = 0; i < appendixList.length; i++) {
+      let appendix = (appendixList[i] as HTMLElement).getClientRects()[0];
+      let nextAppendix = (
+        appendixList[i + 1] as HTMLElement
+      )?.getClientRects()[0];
+
+      if (appendix && nextAppendix) {
+        if (appendix.top <= -1 && nextAppendix.top > 0) {
+          index = i;
+          break;
+        }
+      } else if (!nextAppendix) {
+        if (appendix.top <= 0) {
+          index = i;
+          break;
         }
       }
-      setMdElements(elesArr);
     }
-  }, []);
+    if (prevBtn) {
+      if (index == null) {
+        prevBtn.disabled = false;
+        prevBtn = null;
+        return;
+      } else {
+        if (Number(prevBtn.id) != index) {
+          prevBtn.disabled = false;
+        }
+      }
+    }
+    if (index > -1 && index != null) {
+      if (btnRef.current[index].disabled) return;
+      btnRef.current[index].disabled = true;
+      prevBtn = btnRef.current[index];
+    }
+  };
 
   return (
-    <div className="relative w-full">
+    <div
+      id="appendix"
+      style={{ top: topPos }}
+      className={`relative flex justify-end left-[260px]`}
+    >
       <div
-        className={`flex flex-col items-start justify-start right-40
-         h-auto w-auto border-l-[2px] border-gray-200 px-4 fixed 
+        id="appendixBody"
+        className={`overscroll-auto fixed flex-col items-start justify-start
+          w-[200px] border-l-[2px] h-auto border-gray-200 px-4
 dark:border-zinc-800
 `}
       >
@@ -788,7 +865,7 @@ dark:border-zinc-800
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-6 h-6 m-auto"
+            className="w-6 h-6"
           >
             <path
               strokeLinecap="round"
@@ -809,7 +886,13 @@ dark:border-zinc-800
           }
           return (
             <LabelBtn
-              id="1"
+              onClick={() => {
+                let { top } = (
+                  document.getElementsByClassName("appendix")[i] as HTMLElement
+                ).getClientRects()[0];
+                window.scrollTo({ top: window.scrollY + top + 1 });
+              }}
+              id={i.toString()}
               key={i}
               contents={ele.innerText}
               addStyle={addStyle}
@@ -855,13 +938,38 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       },
     };
   }
-  const getPageData = async (take, orderBy) => {
+  let privateFilter = !token ? { isPrivate: true } : { isPrivate: null };
+  const getHeadTailData = async (orderBy) => {
+    let data = await prisma.post.findMany({
+      where: {
+        NOT: privateFilter,
+      },
+      cursor: {
+        id: Number(ctx.params.id),
+      },
+      skip: 1,
+      take: 1,
+      select: {
+        title: true,
+        id: true,
+      },
+      orderBy: {
+        createdAt: orderBy,
+      },
+    });
+
+    return data.length > 0 ? data[0] : null;
+  };
+  const getNearCategoryData = async (take, orderBy) => {
     return await prisma.category.findUnique({
       where: {
         id: postData?.category.id,
       },
       select: {
         post: {
+          where: {
+            NOT: privateFilter,
+          },
           cursor: {
             id: Number(ctx.params.id),
           },
@@ -881,8 +989,13 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     });
   };
 
-  let { post: prevPost } = await getPageData(4, "desc");
-  let { post: nextPost } = await getPageData(4, "asc");
+  let headTailData = {
+    prev: await getHeadTailData("desc"),
+    next: await getHeadTailData("asc"),
+  };
+
+  let { post: prevPost } = await getNearCategoryData(4, "desc");
+  let { post: nextPost } = await getNearCategoryData(4, "asc");
   let pageData = [];
   let totalPostCount = prevPost.length + nextPost.length;
 
@@ -926,6 +1039,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     props: {
       postData: JSON.parse(JSON.stringify(postData)),
       nearPostData: JSON.parse(JSON.stringify(pageData)),
+      headTailData: JSON.parse(JSON.stringify(headTailData)),
       title: postData?.title,
     },
   };

@@ -1,8 +1,11 @@
-import { setHeadTitle } from "@/hooks/useData";
+import { setHeadTitle } from "@/hooks/useEvent";
 import { NextPage } from "next";
+import { useEffect } from "react";
 
 const Post: NextPage = () => {
-  setHeadTitle("작성한 글 관리");
+  useEffect(() => {
+    setHeadTitle("작성글");
+  }, []);
   return (
     <div className="h-full  w-full  flex flex-col">
       <div className="w-full h-full">Post!</div>

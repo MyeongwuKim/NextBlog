@@ -17,9 +17,7 @@ interface LayoutProps {
   profile: ProfileType;
   category: CategoryCountType[];
 }
-
 type CategoryCountType = Category & { post: { isPrivate: boolean }[] };
-
 type ProfileType = {
   avatar?: string;
   email: string;
@@ -36,57 +34,73 @@ interface UserData {
 interface TopViewProps {
   openCallback: (mode: "signin" | "signup" | "none") => void;
   profile?: ProfileType;
+  pos: number;
 }
 
-interface LeftViewProps {
+interface CategoryViewProps {
   hide: boolean;
   profile?: ProfileType;
   category?: CategoryCountType[];
 }
-
-//left 0.25,content 0.5 right 0.25
-
 const fullPageList = ["write"];
 const rightHidePageList = ["post", "setting"];
+let lastScroll = 0;
 
-const Layout: NextPage<LayoutProps> = ({
-  children,
-  category,
-  profile,
-  pageProps,
-}) => {
+const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const [userData, setUserData] = useState<UserData>();
-
+  const [topViewPos, setTopViewPos] = useState<number>(0);
   registUserDataState(setUserData);
-
-  useEffect(() => {
-    setUserData({ profile, category });
-  }, [profile, category]);
-
-  const [loading, setLoading] = useState<boolean>(false);
   const [signMode, setSignMode] = useState<"signin" | "signup" | "none">(
     "none"
   );
   const signModeCallback = useCallback((mode: "signin" | "signup" | "none") => {
+    document.body.setAttribute("style", "");
     setSignMode(mode);
+  }, []);
+  useEffect(() => {
+    setUserData({ profile, category });
+  }, [profile, category]);
+
+  const onScrollEvt = (e: Event) => {
+    if (window.scrollY > lastScroll) {
+      setTopViewPos(-60);
+    } else if (window.scrollY < lastScroll) {
+      setTopViewPos(0);
+    }
+    lastScroll = window.scrollY;
+  };
+  useEffect(() => {
+    window.window.addEventListener("scroll", onScrollEvt);
+    return () => {
+      window.removeEventListener("scroll", onScrollEvt);
+    };
   }, []);
 
   return (
-    <div className="absolute w-full h-full min-w-[640px] bg-white text-zinc-800 dark:bg-zinc-900  dark:text-gray-200">
-      <div className="w-full h-full">
-        <SignIn
-          enable={signMode == "signin" ? true : false}
-          openCallback={signModeCallback}
-        />
-        <SignUp
-          enable={signMode == "signup" ? true : false}
-          openCallback={signModeCallback}
-        />
+    <div className="w-full h-full min-w-[640px] bg-white text-zinc-800 dark:bg-zinc-900  dark:text-gray-200">
+      <div className="w-full h-auto relative">
+        <div className="absolute w-full h-full">
+          <SignIn
+            enable={signMode == "signin" ? true : false}
+            openCallback={signModeCallback}
+          />
+          <SignUp
+            enable={signMode == "signup" ? true : false}
+            openCallback={signModeCallback}
+          />
+        </div>
         <div className="flex flex-col w-full h-full">
-          <TopView openCallback={setSignMode} profile={userData?.profile} />
-          <div className="flex w-full h-full flex-row overflow-auto">
+          <div className="h-[60px]">
+            <TopView
+              pos={topViewPos}
+              openCallback={setSignMode}
+              profile={userData?.profile}
+            />
+          </div>
+
+          <div className="flex w-full h-full flex-row">
             <div
               className={`${
                 fullPageList.some((page) => {
@@ -102,7 +116,7 @@ const Layout: NextPage<LayoutProps> = ({
                   router.pathname.includes("setting") ? "hidden" : "block"
                 } w-full h-full`}
               >
-                <LeftView
+                <CategoryView
                   hide={rightHidePageList.some((page) => {
                     return router.pathname.includes(page);
                   })}
@@ -121,38 +135,16 @@ const Layout: NextPage<LayoutProps> = ({
               </div>
             </div>
             <div
-              id="scrollArea"
-              className={`h-[calc(100%-0px)] w-full overflow-auto 
-                ${
-                  rightHidePageList.some((page) => {
-                    return router.pathname.includes(page);
-                  })
-                    ? "flex-[0.75_0.75_0%]"
-                    : "flex-[0.5_0.5_0%]"
-                }
+              className={`flex  w-full  relative
                 ${
                   fullPageList.some((page) => {
                     return router.pathname.includes(page);
                   })
                     ? "flex-[1_1_0%]"
-                    : "flex-[0.5_0.5_0%]"
+                    : "flex-[0.75_0.75_0%]"
                 }`}
             >
-              <div className="px-8 mt-4 h-[calc(100%-32px)]">{children}</div>
-            </div>
-            <div
-              className={`
-              ${
-                fullPageList.some((page) => {
-                  return router.pathname.includes(page);
-                })
-                  ? "flex-[0_0_0%] hidden"
-                  : "flex-[0.25_0.25_0%]"
-              }
-              ${router.pathname.includes("post") ? "hidden" : "block"}
-             flex-[0.25_0.25_0%]`}
-            >
-              <RightView hide={router.pathname.includes("post")} />
+              <div className="px-8 mt-4  flex-[0.65_0.65_0%] ">{children}</div>
             </div>
           </div>
         </div>
@@ -163,7 +155,11 @@ const Layout: NextPage<LayoutProps> = ({
 
 export default Layout;
 
-export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
+export const TopView: NextPage<TopViewProps> = ({
+  pos,
+  openCallback,
+  profile,
+}) => {
   const { theme, setTheme } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const router = useRouter();
@@ -181,12 +177,17 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
 
   return (
     <div
-      className="px-6 border-b-[2px] border-gray-200 dark:border-zinc-800
-     relative flex w-auto  h-[60px] justify-end items-center"
+      style={{
+        transform: `translateY(${pos}px)`,
+        transition: "transform 0.2s linear",
+      }}
+      className={`z-[1] px-6 border-b-[2px] border-gray-200 dark:border-zinc-800 w-full bg-zinc-900
+     fixed flex  h-[60px] justify-end items-center`}
     >
       <div className="flex flex-col">
         <button
           onClick={() => {
+            document.body.setAttribute("style", "overflow:hidden");
             openCallback("signin");
           }}
           className={`inline ${
@@ -346,41 +347,7 @@ export const TopView: NextPage<TopViewProps> = ({ openCallback, profile }) => {
   );
 };
 
-interface RightViewProps {
-  hide: boolean;
-}
-const RightView: NextPage<RightViewProps> = ({ hide }) => {
-  const btnRef = useRef<any>({});
-  const [mdElements, setMdElements] = useState<HTMLElement[]>();
-  useEffect(() => {
-    if (document.getElementById("reactMD")) {
-      let eles = document.getElementById("reactMD").children;
-      let elesArr = [];
-      for (let i = 0; i < eles.length; i++) {
-        if (eles[i].getAttribute("level")) {
-          elesArr.push(eles[i]);
-        }
-      }
-      setMdElements(elesArr);
-    }
-  }, [hide]);
-  return (
-    <div className="w-[90%] h-full">
-      {hide ? (
-        ""
-      ) : (
-        <div className="h-full w-full">
-          <div
-            className={`w-full relative items-center justify-center px-6 h-full
-      left-0  border-l-[2px] border-gray-200 dark:border-zinc-800 `}
-          ></div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const LeftView: NextPage<LeftViewProps> = ({
+export const CategoryView: NextPage<CategoryViewProps> = ({
   profile,
   category,
   hide,

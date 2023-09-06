@@ -105,7 +105,7 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
           top: windowInfo?.posY,
         }}
         className="bg-white
-        dark:bg-zinc-900 absolute shadow-xl z-50 rounded-lg "
+        dark:bg-zinc-900  shadow-xl z-50 rounded-md fixed "
       >
         <div
           id="login_win"

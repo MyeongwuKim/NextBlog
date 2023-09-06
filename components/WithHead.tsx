@@ -7,9 +7,9 @@ import { useEffect } from "react";
 const WithHead = ({ children, title, pageProps }) => {
   let profile = getUserData();
   let category = getCategoryData();
-
+  useEffect(() => {});
   return (
-    <div>
+    <>
       <Head>
         <title>{title}</title>
       </Head>
@@ -20,7 +20,7 @@ const WithHead = ({ children, title, pageProps }) => {
           {children}
         </Layout>
       )}
-    </div>
+    </>
   );
 };
 

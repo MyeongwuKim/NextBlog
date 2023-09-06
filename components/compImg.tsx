@@ -1,6 +1,5 @@
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import Image from "next/image";
-import { useEffect } from "react";
 
 interface CompImgProps {
   thumbnail: string;
@@ -11,7 +10,7 @@ const CompImg = ({ thumbnail, style, onClickEvt }: CompImgProps) => {
   return (
     <div
       onClick={() => {
-        if (onClickEvt) onClickEvt;
+        if (onClickEvt) onClickEvt();
       }}
       className={`${onClickEvt ? "cursor-pointer" : ""} ${style}`}
     >
