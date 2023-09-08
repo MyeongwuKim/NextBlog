@@ -6,6 +6,7 @@ interface LabelBtnProps {
   contents: string;
   id?: string;
   addStyle?: string;
+  isDisable?: boolean;
 }
 
 const LabelBtn = ({
@@ -14,6 +15,7 @@ const LabelBtn = ({
   contents,
   id,
   addStyle,
+  isDisable,
 }: LabelBtnProps) => {
   return (
     <button
@@ -21,11 +23,12 @@ const LabelBtn = ({
       ref={(element) => {
         if (anyRef) anyRef.current[id] = element;
       }}
-      disabled={false}
+      disabled={isDisable}
       onClick={onClick}
-      className={`enabled:text-gray-400 text-left enabled:dark:text-gray-500 disabled:text-emerald-500
-      disabled:pointer-events-none  enabled:hover:text-zinc-800
-        enabled:hover:dark:text-gray-200 truncate  w-auto text-lg font-semibold ${addStyle}`}
+      className={`enabled:text-gray-400 enabled:dark:text-gray-500  
+      disabled:dark:text-gray-300 disabled:text-zinc-800  disabled:pointer-events-none
+      enabled:hover:text-zinc-800 enabled:hover:dark:text-gray-300
+       text-center truncate  w-auto text-lg font-semibold ${addStyle}`}
     >
       <span className="relative"> {contents}</span>
     </button>

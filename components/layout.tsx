@@ -38,7 +38,7 @@ interface TopViewProps {
 }
 
 interface CategoryViewProps {
-  hide: boolean;
+  hide?: boolean;
   profile?: ProfileType;
   category?: CategoryCountType[];
 }
@@ -72,81 +72,88 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
     lastScroll = window.scrollY;
   };
   useEffect(() => {
-    window.window.addEventListener("scroll", onScrollEvt);
+    window.addEventListener("scroll", onScrollEvt);
     return () => {
       window.removeEventListener("scroll", onScrollEvt);
     };
   }, []);
 
   return (
-    <div className="w-full h-full min-w-[640px] bg-white text-zinc-800 dark:bg-zinc-900  dark:text-gray-200">
-      <div className="w-full h-auto relative">
-        <div className="absolute w-full h-full">
-          <SignIn
-            enable={signMode == "signin" ? true : false}
-            openCallback={signModeCallback}
-          />
-          <SignUp
-            enable={signMode == "signup" ? true : false}
-            openCallback={signModeCallback}
-          />
-        </div>
-        <div className="flex flex-col w-full h-full">
-          <div className="h-[60px]">
-            <TopView
-              pos={topViewPos}
-              openCallback={setSignMode}
+    <div id="layoutComp" className="w-full h-auto flex flex-col">
+      <div
+        className={`absolute w-full h-full ${
+          signMode == "none" ? "hidden" : "block"
+        }`}
+      >
+        <SignIn
+          enable={signMode == "signin" ? true : false}
+          openCallback={signModeCallback}
+        />
+        <SignUp
+          enable={signMode == "signup" ? true : false}
+          openCallback={signModeCallback}
+        />
+      </div>
+      <div id="topViewContainer" className="h-[60px] relative w-full">
+        <TopView
+          pos={topViewPos}
+          openCallback={setSignMode}
+          profile={userData?.profile}
+        />
+      </div>
+      <div
+        className={`realtive w-full  pr-[340px] h-full  flex-1 ${
+          fullPageList.some((page) => {
+            return router.pathname.includes(page);
+          })
+            ? ""
+            : "pl-[340px]"
+        }
+      `}
+      >
+        <div
+          className={`relative w-full ${
+            fullPageList.some((page) => {
+              return router.pathname.includes(page);
+            })
+              ? "hidden"
+              : "block"
+          }
+            `}
+        >
+          <div
+            id="categoryViewContainer"
+            className={`fixed left-0 w-[300px] h-full ${
+              router.pathname.includes("post") ? "hidden" : "block"
+            } `}
+          >
+            <CategoryView
               profile={userData?.profile}
+              category={userData?.category}
             />
           </div>
-
-          <div className="flex w-full h-full flex-row">
-            <div
-              className={`${
-                fullPageList.some((page) => {
-                  return router.pathname.includes(page);
-                })
-                  ? "flex-[0_0_0%] hidden"
-                  : "flex-[0.25_0.25_0%]"
-              }
-            `}
-            >
-              <div
-                className={`${
-                  router.pathname.includes("setting") ? "hidden" : "block"
-                } w-full h-full`}
-              >
-                <CategoryView
-                  hide={rightHidePageList.some((page) => {
-                    return router.pathname.includes(page);
-                  })}
-                  profile={userData?.profile}
-                  category={userData?.category}
-                />
-              </div>
-              <div
-                className={`${
-                  router.pathname.includes("setting") ? "block" : "hidden"
-                }`}
-              >
-                <div className="f-full flex-[0.25_0.25_0%] flex justify-center items-center">
-                  <SettingSide />
-                </div>
-              </div>
-            </div>
-            <div
-              className={`flex  w-full  relative
-                ${
-                  fullPageList.some((page) => {
-                    return router.pathname.includes(page);
-                  })
-                    ? "flex-[1_1_0%]"
-                    : "flex-[0.75_0.75_0%]"
-                }`}
-            >
-              <div className="px-8 mt-4  flex-[0.65_0.65_0%] ">{children}</div>
+          <div
+            id="settingViewContainer"
+            className={`fixed left-0 w-[300px] h-full ${
+              router.pathname.includes("setting") ? "block" : "hidden"
+            }`}
+          >
+            <div className="f-full">
+              <SettingSide />
             </div>
           </div>
+        </div>
+        <div
+          className={`py-8
+                 ${
+                   fullPageList.some((page) => {
+                     return router.pathname.includes(page);
+                   })
+                     ? "absolute w-full h-[calc(100%-70px)]"
+                     : ""
+                 }`}
+        >
+          {children}
         </div>
       </div>
     </div>
@@ -181,7 +188,8 @@ export const TopView: NextPage<TopViewProps> = ({
         transform: `translateY(${pos}px)`,
         transition: "transform 0.2s linear",
       }}
-      className={`z-[1] px-6 border-b-[2px] border-gray-200 dark:border-zinc-800 w-full bg-zinc-900
+      className={`z-[1] px-6 border-b-[2px] border-gray-200 dark:border-zinc-800 w-full bg-white
+      dark:bg-zinc-900
      fixed flex  h-[60px] justify-end items-center`}
     >
       <div className="flex flex-col">
@@ -374,6 +382,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
     }
     setCountAll(totalCount);
   }, [category, isMe]);
+
   return (
     <div className={`${hide ? "hidden" : "block"} h-full`}>
       <div
@@ -422,16 +431,15 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
           <div className="w-full text-center font-semibold my-4 border-b-2 py-4 border-gray-200 dark:border-zinc-800">
             {profile?.introduce}
           </div>
-          <div
-            onClick={() => {
-              router.push("/");
-            }}
-            className="cursor-pointer
-              p-2
-              hover:dark:bg-zinc-800 hover:bg-gray-100
-               relative w-full h-auto  text-lg text-center"
-          >
-            전체보기({countAll})
+          <div className="relative">
+            <LabelBtn
+              onClick={() => {
+                router.push("/");
+              }}
+              isDisable={Object.keys(router.query).length <= 0 ? true : false}
+              id={"total"}
+              contents={`전체(${countAll})`}
+            />
           </div>
           {category?.map((v, i) => {
             let count = 0;
@@ -442,22 +450,20 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
               }
             }
             return (
-              <div
+              <LabelBtn
                 onClick={() => {
+                  // btnRef.current["category" + v.id].disabled = true;
                   router.query.category = v.id.toString();
-                  router.query.name = v.name;
-                  router.push(router);
+
+                  router.push(`/?category=${v.id.toString()}&name=${v.name}`);
                 }}
+                isDisable={
+                  router?.query?.category == v.id.toString() ? true : false
+                }
+                id={"category" + v.id.toString()}
                 key={i}
-                className="cursor-pointer
-              p-2
-              hover:dark:bg-zinc-800 hover:bg-gray-100
-               relative w-full h-auto text-center text-lg "
-              >
-                <span className="w-full break-words">
-                  {v.name}({count})
-                </span>
-              </div>
+                contents={`${v.name}(${count})`}
+              />
             );
           })}
         </div>

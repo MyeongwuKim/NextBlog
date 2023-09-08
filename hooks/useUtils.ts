@@ -16,7 +16,7 @@ export const getTimeStamp = () => {
   return fn;
 };
 /**Date값 년,월,일로 포맷해서 가져옴 */
-export const getFormatDate = (date: Date): string => {
+export const getFormatDate = (date: Date | string): string => {
   const formatDate = [
     new Date(date).getFullYear(),
     ".",

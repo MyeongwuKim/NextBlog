@@ -14,24 +14,8 @@ interface ItemProps {
   router: string;
 }
 
-let prevBtn = null;
 const SettingSide = () => {
   const router = useRouter();
-  const [selectedBtn, setSelectedBtn] = useState<HTMLButtonElement>(null);
-  const btnRef = useRef<any>({});
-
-  useEffect(() => {
-    if (!router.pathname.includes("setting")) return;
-    let path = router.pathname.replace("/setting/", "");
-    if (!prevBtn) {
-      btnRef.current[path].disabled = true;
-      prevBtn = btnRef.current[path];
-    } else {
-      prevBtn.disabled = false;
-      btnRef.current[path].disabled = true;
-      prevBtn = btnRef.current[path];
-    }
-  }, [router]);
 
   return (
     <div className="pl-10 py-10 h-full w-full">
@@ -48,7 +32,11 @@ const SettingSide = () => {
                 .push(`/setting/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
-            anyRef={btnRef}
+            isDisable={
+              router.pathname.replace("/setting/", "") == item.router
+                ? true
+                : false
+            }
             id={item.router}
             contents={item.name}
           />

@@ -30,9 +30,9 @@ const PostList: NextPage<PostListProps> = ({ Posts, title }) => {
     setHeadTitleState(title);
   }, [Posts]);
   return (
-    <div className="h-full">
+    <div className="h-auto relative">
       <ServiceView />
-      <div className="mr-8">
+      <div className="h-auto relative">
         {Posts?.length > 0 ? (
           Posts?.map((post) => {
             return (

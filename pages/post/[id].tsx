@@ -121,7 +121,6 @@ const PostDetail: NextPage<{
           elesArr.push(eles[i]);
         }
       }
-
       if (elesArr.length <= 0) setHide(true);
       else {
         setHide(false);
@@ -281,9 +280,11 @@ const PostDetail: NextPage<{
           </div>
         </div>
         <div>
-          <div className="w-full mb-16">
+          <div className="w-full mb-16 ">
             <div className="mb-4 text-xl font-semibold">
-              [{postData?.category?.name}] 카테고리 관련글
+              {nearPostData.length > 0
+                ? `[${postData?.category?.name}] 카테고리 관련글`
+                : ""}
             </div>
             <div className="grid grid-cols-4 gap-4">
               {nearPostData?.map((nearPost, i) => (
@@ -297,7 +298,12 @@ const PostDetail: NextPage<{
               ))}
             </div>
           </div>
-          <div className="mb-16 min-h-[100px] w-full"></div>
+          <div className="mb-16 h-[90px] w-full flex flex-row justify-between gap-2">
+            {Object.keys(headTailData).map((dir, i) => {
+              if (!headTailData[dir]) return;
+              return <NextPost key={i} data={headTailData[dir]} dir={dir} />;
+            })}
+          </div>
           <div className="border-t-[1px]  border-gray-200 dark:border-zinc-800 flex items-center ">
             <div className="text-lg my-4 font-semibold">
               {postData?.comments.length}개의 댓글
@@ -426,6 +432,53 @@ interface CommentProps {
     replys: Reply[];
   };
 }
+export const NextPost = ({
+  dir,
+  data,
+}: {
+  data: { id: number; title: string };
+  dir: string;
+}) => {
+  const router = useRouter();
+  return (
+    <button
+      onClick={() => {
+        router.push(`/post/${data.id}`);
+      }}
+      className="w-[48%] px-4 bg-zinc-800 shadow-[0_9px_0_rgb(0,0,0)] 
+      hover:shadow-[0_4px_0px_rgb(0,0,0)] ease-out hover:translate-y-1 transition-all rounded"
+    >
+      <div
+        className={`w-full flex ${
+          dir == "prev" ? "flex-row" : "flex-row-reverse"
+        } h-full justify-start items-center`}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.5}
+          stroke="currentColor"
+          className={`flex-none relative w-8 h-8 ${
+            dir == "prev" ? "mr-4" : "rotate-180 ml-4"
+          }`}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div className="w-[50px] flex-1 relative">
+          <div className="w-auto">{dir == "prev" ? "이전" : "다음"} 게시물</div>
+          <div className="font-bold text-lg  relative truncate">
+            {data.title}
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+};
 
 export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
   let { data: sessionData } = useSession();
@@ -768,9 +821,11 @@ dark:text-gray-400 text-slate-400 underline"
 
 export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
   const router = useRouter();
+  const [createTime, setCreateTime] = useState<string>();
+  useEffect(() => {}, []);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 items-center">
       <CompImg
         onClickEvt={() => {
           router.push(`/post/${id}`);
@@ -784,6 +839,7 @@ export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
           router.push(`/post/${id}`);
         }}
       />
+      <div className="text-sm text-gray-400">{getFormatDate(createdAt)}</div>
     </div>
   );
 };
