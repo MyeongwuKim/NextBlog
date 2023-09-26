@@ -9,21 +9,24 @@ import useMutation from "@/lib/server/useMutation";
 import { useSession } from "next-auth/react";
 import prisma from "@/lib/server/client";
 import { updateUserData } from "@/hooks/useData";
-import { setLoading, createErrorMsg, setHeadTitle } from "@/hooks/useEvent";
+import { setLoading, createCautionMsg, setHeadTitle } from "@/hooks/useEvent";
 
 let prevTarget: HTMLElement = null;
 let removeIdList: number[] = [];
 
 interface CategoryProps {
-  originCategory: (Category & { _count: { post: number } })[];
+  originCategory: CategoryCountType[];
 }
 interface CategoryResponse {
   ok: boolean;
-  updateData?: Category[];
+  updateData?: CategoryCountType[];
   error: string;
 }
 
-type CategoryCountType = Category & { post: { isPrivate: boolean }[] };
+type CategoryCountType = Category & {
+  post: { isPrivate: boolean }[];
+  _count: { post: number };
+};
 
 const MyCategory: NextPage = () => {
   const {
@@ -37,9 +40,10 @@ const MyCategory: NextPage = () => {
   const categoryRef = useRef<any>([]);
   const categoryPageRef = useRef<HTMLDivElement>(null);
   const { data } = useSession();
-  setHeadTitle("카테고리 관리");
 
   useEffect(() => {
+    setHeadTitle("카테고리 관리");
+
     setCategoryData(JSON.parse(JSON.stringify(originCategory)));
   }, []);
 
@@ -48,10 +52,10 @@ const MyCategory: NextPage = () => {
     setLoading(false);
     if (resData.ok) {
       setSaveState(false);
-      createErrorMsg("변경사항을 저장하였습니다.", false);
-      updateUserData(resData.updateData as CategoryCountType[]);
+      createCautionMsg("변경사항을 저장하였습니다.", false);
+      updateUserData(resData.updateData);
     } else {
-      createErrorMsg(resData.error, true);
+      createCautionMsg(resData.error, true);
     }
   }, [resData]);
 
@@ -74,9 +78,13 @@ const MyCategory: NextPage = () => {
 
   const categoryMutate = () => {
     if (!categoryValid()) {
-      createErrorMsg("변경사항을 저장할수 없습니다.", true);
+      createCautionMsg("변경사항을 저장할수 없습니다.", true);
     } else {
       setLoading(true);
+      categoryData.forEach((item) => {
+        item.createdAt = new Date();
+        item.updatedAt = new Date();
+      });
       const data = { mutate: categoryData, remove: removeIdList };
       categoryMutation(data);
     }

@@ -3,7 +3,7 @@ import { EditorSelection, EditorState, Text } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { createErrorMsg } from "@/hooks/useData";
+import { createCautionMsg } from "@/hooks/useEvent";
 
 import { useSession } from "next-auth/react";
 import { SearchCursor } from "@codemirror/search";
@@ -77,7 +77,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           },
         });
       } catch {
-        createErrorMsg("이미지 업로드중 실패하였습니다", true);
+        createCautionMsg("이미지 업로드중 실패하였습니다", true);
       }
 
       // editorView?.dispatch({

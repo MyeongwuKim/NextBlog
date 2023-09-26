@@ -7,7 +7,10 @@ interface UserData {
   category?: CategoryCountType[];
 }
 
-type CategoryCountType = Category & { post: { isPrivate: boolean }[] };
+type CategoryCountType = Category & {
+  post: { isPrivate: boolean }[];
+  _count: { post: number };
+};
 type ProfileType = {
   avatar?: string;
   email: string;

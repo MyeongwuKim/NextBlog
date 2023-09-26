@@ -4,19 +4,14 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 import bcrypt from "bcryptjs";
 import { getToken } from "next-auth/jwt";
 
-interface CommentsBody {
-  content: string;
-  name: string;
-  password: string;
-  commentId: number;
-  categoryId: number;
-  postId: number;
-}
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
     try {
-      let { content, name, password, postId, commentId, categoryId } =
-        req.body as CommentsBody;
+      let {
+        content,
+        data: { postId, categoryId, id, isReply },
+      } = req.body;
+      console.log(req.body);
 
       let token = await getToken({
         req,
@@ -24,8 +19,35 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         secret: process.env.NEXTAUTH_SECRET,
       });
 
+      if (!token)
+        throw new Error("세션 만료", {
+          cause: "세션 만료 에러가 발생했습니다.",
+        });
+
+      let commentId;
+      if (isReply) {
+        const { commentId: replyCommentId } = await prisma.reply.findUnique({
+          where: {
+            id,
+          },
+          select: {
+            commentId: true,
+          },
+        });
+        commentId = replyCommentId;
+      } else {
+        const { id: originId } = await prisma.comment.findUnique({
+          where: {
+            id,
+          },
+          select: {
+            id: true,
+          },
+        });
+        commentId = originId;
+      }
+
       let {
-        accountId,
         account: { name: ownerName },
       } = await prisma.post.findUnique({
         where: { id: postId },
@@ -39,28 +61,19 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       });
 
-      const isMe = token && token.id == accountId ? true : false;
-
-      if (!isMe && !name && !password)
-        throw new Error("세션 만료", {
-          cause: "세션 만료 에러가 발생했습니다.",
-        });
-
-      let encodedpassword = null;
-      if (!isMe) encodedpassword = await bcrypt.hash(password, 10);
-
       let reply = await prisma.reply.create({
         data: {
           content,
-          name: isMe ? ownerName : name,
-          password: encodedpassword,
-          isMe,
+          name: ownerName,
+          password: null,
+          isMe: true,
           post: { connect: { id: postId } },
           comment: { connect: { id: commentId } },
           category: { connect: { id: categoryId } },
         },
       });
-      let history = await prisma.history.create({
+
+      await prisma.history.create({
         data: {
           isReply: true,
           reply: {
@@ -73,9 +86,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         ok: true,
       });
     } catch (e) {
+      console.log(e);
       res.json({
         ok: false,
-        error: e.cause ? e.cause : "코멘트 댓글 작성중 오류가 발생했습니다.",
+        error: e.cause ? e.cause : "답글 작성중 오류가 발생했습니다.",
       });
     }
   } else {
@@ -85,5 +99,5 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default ProtectHanlder({
   handler,
   methods: ["POST"],
-  isPrivate: false,
+  isPrivate: true,
 });

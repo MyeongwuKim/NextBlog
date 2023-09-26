@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from "react";
-import ErrorMsg from "@/components/errorMsg";
+import CautionMsg from "@/components/cautionMsg";
 import * as ReactDOMClient from "react-dom/client";
 import Alert from "@/components/alert";
 
@@ -25,16 +25,16 @@ export const setLoading = (enable: boolean) => {
   loadingState(enable);
 };
 
-export const createErrorMsg = (msg: string, isWarning: boolean) => {
+export const createCautionMsg = (msg: string, isWarning: boolean) => {
   loadingState((prev) => (prev == true ? !prev : prev));
   if (!document.getElementById("cautionWindow")) {
-    root = ReactDOMClient.createRoot(document.getElementById("errorCont"));
+    root = ReactDOMClient.createRoot(document.getElementById("cautionCont"));
   } else {
     root.unmount();
-    root = ReactDOMClient.createRoot(document.getElementById("errorCont"));
+    root = ReactDOMClient.createRoot(document.getElementById("cautionCont"));
   }
 
-  root.render(<ErrorMsg root={root} msg={msg} isWarning={isWarning} />);
+  root.render(<CautionMsg root={root} msg={msg} isWarning={isWarning} />);
 };
 
 export const createAlert = (

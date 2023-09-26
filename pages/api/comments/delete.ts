@@ -13,9 +13,18 @@ interface CommentsBody {
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { commentId } = req.body;
-    await prisma.comment.delete({
+    let { historyId } = await prisma.comment.findUnique({
       where: {
         id: commentId,
+      },
+      select: {
+        historyId: true,
+      },
+    });
+
+    await prisma.history.delete({
+      where: {
+        id: historyId,
       },
     });
     res.json({

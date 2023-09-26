@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import useCodeMirror from "@/lib/front/use-codemirror";
 import ToolBar from "@/components/write/toolbar";
 import { getCategoryData, updateCategoryData } from "@/hooks/useData";
-import { createErrorMsg, setHeadTitle, setLoading } from "@/hooks/useEvent";
+import { createCautionMsg, setHeadTitle, setLoading } from "@/hooks/useEvent";
 import NextImage from "next/image";
 import { Category, Post, Image } from "@prisma/client";
 import useMutation from "@/lib/server/useMutation";
@@ -63,14 +63,14 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
   useEffect(() => {
     if (!resData) return;
     if (resData.ok) {
-      createErrorMsg(
+      createCautionMsg(
         `포스트 ${postData ? "수정" : "작성"}을 완료하였습니다.`,
         false
       );
       updateCategory();
       router.replace("/");
     } else {
-      createErrorMsg(resData.error, true);
+      createCautionMsg(resData.error, true);
     }
   }, [resData]);
   //프리뷰 만들기
@@ -160,9 +160,9 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
 
   const onWriteValid = () => {
     if (title.length <= 0) {
-      createErrorMsg("제목을 입력해주세요.", true);
+      createCautionMsg("제목을 입력해주세요.", true);
     } else if (doc.length <= 0) {
-      createErrorMsg("내용을 입력해주세요.", true);
+      createCautionMsg("내용을 입력해주세요.", true);
     } else {
       setEnablePopup(true);
     }
@@ -397,7 +397,7 @@ export const WritePopup = ({
       setPopupState(false);
     } catch {
       setLoading(false);
-      createErrorMsg("썸네일 이미지 업로드중 오류가 발생했습니다", true);
+      createCautionMsg("썸네일 이미지 업로드중 오류가 발생했습니다", true);
     }
   };
   const onCategorySelect = useCallback((category: CategoryCountType) => {

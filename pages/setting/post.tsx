@@ -1,16 +1,21 @@
 import { setHeadTitle } from "@/hooks/useEvent";
-import { NextPage } from "next";
+import { GetServerSidePropsContext, NextPage } from "next";
 import { useEffect } from "react";
 
-const Post: NextPage = () => {
+const PostList: NextPage = () => {
   useEffect(() => {
     setHeadTitle("작성글");
   }, []);
   return (
     <div className="h-full  w-full  flex flex-col">
-      <div className="w-full h-full">Post!</div>
+      <div className="relative text-xl mb-5 font-bold">글 관리</div>
     </div>
   );
 };
 
-export default Post;
+export async function getServerSideProps(ctx: GetServerSidePropsContext) {
+  return {
+    props: {},
+  };
+}
+export default PostList;

@@ -9,11 +9,13 @@ interface CommentsBody {
   name: string;
   password: string;
   postId: number;
+  categoryId: number;
 }
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
     try {
-      let { content, name, password, postId } = req.body as CommentsBody;
+      let { content, name, password, postId, categoryId } =
+        req.body as CommentsBody;
 
       let token = await getToken({
         req,
@@ -21,10 +23,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         secret: process.env.NEXTAUTH_SECRET,
       });
 
-      let { accountId } = await prisma.post.findUnique({
+      let {
+        accountId,
+        account: { name: ownerName },
+      } = await prisma.post.findUnique({
         where: { id: postId },
         select: {
           accountId: true,
+          account: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
 
@@ -38,15 +48,25 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       let encodedpassword = null;
       if (!isMe) encodedpassword = await bcrypt.hash(password, 10);
 
-      await prisma.comment.create({
+      let comment = await prisma.comment.create({
         data: {
           content,
-          name,
+          name: isMe ? ownerName : name,
           password: encodedpassword,
           isMe,
           post: { connect: { id: postId } },
+          category: { connect: { id: categoryId } },
         },
       });
+
+      let history = await prisma.history.create({
+        data: {
+          comment: {
+            connect: { id: comment.id },
+          },
+        },
+      });
+
       res.json({
         ok: true,
       });

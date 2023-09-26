@@ -43,7 +43,7 @@ function MyApp({
     <SessionProvider session={pageProps.session}>
       <ThemeProvider attribute="class">
         <Loading />
-        <div id="errorCont" />
+        <div id="cautionCont" />
         <SWRConfig
           value={{
             fallback: {
@@ -92,17 +92,27 @@ MyApp.getInitialProps = async (
       name: true,
       id: true,
       introduce: true,
-      category: {
-        orderBy: { order: "asc" },
-      },
     },
   });
 
-  let profile = { ...profileData };
-  delete profile.category;
-  let { category } = profileData;
-
-  return { ...ctx, profile, category };
+  let categoryData = await prisma.category.findMany({
+    where: {
+      account: {
+        email: "mw1992@naver.com",
+      },
+    },
+    include: {
+      _count: {
+        select: { post: true },
+      },
+      post: {
+        select: {
+          isPrivate: true,
+        },
+      },
+    },
+  });
+  return { ...ctx, profile: profileData, category: categoryData };
 };
 
 export default MyApp;

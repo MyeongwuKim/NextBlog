@@ -5,5 +5,8 @@ module.exports = {
   darkMode: "class", // Tailwindcss 3.0 default is 'media',  'class'
   theme: {},
 
-  plugins: [require("@tailwindcss/typography")],
+  plugins: [
+    require("@tailwindcss/typography"),
+    require("@tailwindcss/forms")({ strategy: "class" }),
+  ],
 };

@@ -11,7 +11,7 @@ const fixedTime = 2;
 let fixedWidth = 0;
 let timer = null;
 
-const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
+const CautionMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
   useEffect(() => {
     fixedWidth = document.getElementById("cautionBody").clientWidth;
     if (timer) {
@@ -80,4 +80,4 @@ const ErrorMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
   );
 };
 
-export default ErrorMsg;
+export default CautionMsg;

@@ -32,7 +32,7 @@ export const getFormatDate = (date: Date | string): string => {
   return formatDate;
 };
 /**Date값 년,월,일,초 로 포맷해서 가져옴 */
-export const getFormatFullDate = (date: Date): string => {
+export const getFormatFullDate = (date: Date | string): string => {
   const formatDate = [
     new Date(date).getFullYear(),
     ".",

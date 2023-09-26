@@ -112,6 +112,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
               post: true,
             },
           },
+          post: {
+            select: {
+              isPrivate: true,
+            },
+          },
         },
       });
       res.json({
@@ -133,6 +138,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       },
       include: {
+        _count: {
+          select: { post: true },
+        },
         post: {
           select: {
             isPrivate: true,

@@ -34,6 +34,8 @@ model Category {
   updatedAt DateTime? @updatedAt
   account   Account   @relation(fields: [accountId], references: [id])
   accountId Int
+  Comment   Comment[]
+  Reply     Reply[]
 }
 
 model Post {
@@ -56,30 +58,38 @@ model Post {
 }
 
 model Comment {
-  id        Int       @id @default(autoincrement())
-  content   String    @db.VarChar(500)
-  name      String?
-  password  String?
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
-  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    Int?
-  isMe      Boolean   @default(false)
-  replys    Reply[]
+  id         Int       @id @default(autoincrement())
+  content    String    @db.VarChar(500)
+  name       String?
+  password   String?
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  post       Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     Int?
+  isMe       Boolean   @default(false)
+  replys     Reply[]
+  history    History?  @relation(fields: [historyId], references: [id], onDelete: Cascade)
+  historyId  Int?      @unique
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId Int
 }
 
 model Reply {
-  id        Int       @id @default(autoincrement())
-  content   String
-  name      String?
-  password  String?
-  isMe      Boolean   @default(false)
-  createdAt DateTime? @default(now())
-  updatedAt DateTime? @updatedAt
-  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    Int?
-  comment   Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  commentId Int?
+  id         Int       @id @default(autoincrement())
+  content    String
+  name       String?
+  password   String?
+  isMe       Boolean   @default(false)
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+  post       Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId     Int?
+  comment    Comment?  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  commentId  Int?
+  history    History?  @relation(fields: [historyId], references: [id], onDelete: Cascade)
+  historyId  Int?      @unique
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId Int
 }
 
 model Image {
@@ -89,4 +99,13 @@ model Image {
   imageId   String    @unique
   Post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int?
+}
+
+model History {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  comment   Comment?
+  reply     Reply?
+  isReply   Boolean   @default(false)
 }

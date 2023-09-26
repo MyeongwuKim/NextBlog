@@ -10,7 +10,7 @@ import {
 } from "@/hooks/useUtils";
 import {
   setLoading,
-  createErrorMsg,
+  createCautionMsg,
   setHeadTitle,
   createAlert,
 } from "@/hooks/useEvent";
@@ -127,11 +127,12 @@ const PostDetail: NextPage<{
         setMdElements(elesArr);
       }
     }
-  }, [postData]);
+  }, [postId]);
+
   useEffect(() => {
     if (!deleteRespose) return;
     if (deleteRespose.ok) {
-      createErrorMsg("삭제가 완료 되었습니다.", false);
+      createCautionMsg("삭제가 완료 되었습니다.", false);
       router.replace("/");
     } else {
     }
@@ -144,16 +145,16 @@ const PostDetail: NextPage<{
         return prev;
       });
       setLoading(false);
-    } else createErrorMsg(responseData.error, true);
+    } else createCautionMsg(responseData.error, true);
   }, [responseData]);
 
   useEffect(() => {
-    if (error) createErrorMsg(error as any, true);
+    if (error) createCautionMsg(error as any, true);
   }, [error]);
 
   const onValid = (data) => {
     setLoading(true);
-    data = { ...data, postId: postData.id };
+    data = { ...data, postId: postData.id, categoryId: postData.categoryId };
     commentData = data;
     createComments(data);
   };
@@ -167,7 +168,7 @@ const PostDetail: NextPage<{
     } else if (content) {
       message = content.message;
     }
-    createErrorMsg(message, true);
+    createCautionMsg(message, true);
   };
 
   const checkChange = () => {
@@ -280,7 +281,7 @@ const PostDetail: NextPage<{
           </div>
         </div>
         <div>
-          <div className="w-full mb-16 ">
+          <div className="w-full mb-16 min-h-[40px]">
             <div className="mb-4 text-xl font-semibold">
               {nearPostData.length > 0
                 ? `[${postData?.category?.name}] 카테고리 관련글`
@@ -300,7 +301,9 @@ const PostDetail: NextPage<{
           </div>
           <div className="mb-16 h-[90px] w-full flex flex-row justify-between gap-2">
             {Object.keys(headTailData).map((dir, i) => {
-              if (!headTailData[dir]) return;
+              if (!headTailData[dir]) {
+                return <div key={i}></div>;
+              }
               return <NextPost key={i} data={headTailData[dir]} dir={dir} />;
             })}
           </div>
@@ -309,13 +312,14 @@ const PostDetail: NextPage<{
               {postData?.comments.length}개의 댓글
             </div>
           </div>
-          <div className="grid grid-flow-row gap-6">
+          <div className="grid grid-flow-row">
             {postData?.comments.map((commentData) => (
               <CommentItem
                 allow={postData.allow}
                 commentData={commentData}
                 postId={postData?.id}
                 key={commentData.id}
+                categoryId={postData?.categoryId}
               />
             ))}
           </div>
@@ -335,7 +339,7 @@ const PostDetail: NextPage<{
             <div
               className={`${
                 isMe ? "hidden" : "block"
-              } flex justify-between w-full h-[50px] relative mb-4`}
+              } flex  gap-4 w-full h-[50px] relative mb-4`}
             >
               <InputField
                 register={
@@ -352,7 +356,7 @@ const PostDetail: NextPage<{
                       }
                 }
                 height="100%"
-                width="49%"
+                width="20%"
                 placeholder="이름"
                 id="name"
               />
@@ -372,7 +376,7 @@ const PostDetail: NextPage<{
                       }
                 }
                 height="100%"
-                width="49%"
+                width="20%"
                 placeholder="비밀번호"
                 id="password"
                 type="password"
@@ -428,6 +432,7 @@ interface CommentItemProps {
 interface CommentProps {
   allow: boolean;
   postId: number;
+  categoryId: number;
   commentData: Comment & {
     replys: Reply[];
   };
@@ -445,8 +450,10 @@ export const NextPost = ({
       onClick={() => {
         router.push(`/post/${data.id}`);
       }}
-      className="w-[48%] px-4 bg-zinc-800 shadow-[0_9px_0_rgb(0,0,0)] 
-      hover:shadow-[0_4px_0px_rgb(0,0,0)] ease-out hover:translate-y-1 transition-all rounded"
+      className="w-[48%] px-4 dark:bg-zinc-800 bg-gray-100 
+      shadow-[0_6px_0_rgba(0,0,0,0.2)] hover:shadow-[0_4px_0px_rgba(0,0,0,0.2)]
+      dark:shadow-[0_6px_0_rgb(0,0,0)] dark:hover:shadow-[0_4px_0px_rgb(0,0,0)]
+       ease-out hover:translate-y-1 transition-all rounded"
     >
       <div
         className={`w-full flex ${
@@ -480,7 +487,12 @@ export const NextPost = ({
   );
 };
 
-export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
+export const CommentItem = ({
+  commentData,
+  postId,
+  allow,
+  categoryId,
+}: CommentProps) => {
   let { data: sessionData } = useSession();
   let userData = getUserData();
   let isMe = userCheck(sessionData);
@@ -503,7 +515,7 @@ export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
       setShowReply(false);
       postMutation((prev) => prev);
     } else {
-      createErrorMsg(data.error, true);
+      createCautionMsg(data.error, true);
     }
   }, [data]);
   const checkChange = () => {
@@ -527,7 +539,12 @@ export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
 
   const onValid = (data) => {
     setLoading(true);
-    data = { ...data, commentId: commentData.id, postId };
+    data = {
+      ...data,
+      commentId: commentData.id,
+      postId,
+      categoryId,
+    };
     createReply(data);
   };
   const onInValid: SubmitErrorHandler<ErrorFormData> = (error) => {
@@ -540,7 +557,7 @@ export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
     } else if (content) {
       message = content.message;
     }
-    createErrorMsg(message, true);
+    createCautionMsg(message, true);
   };
 
   return (
@@ -551,7 +568,7 @@ export const CommentItem = ({ commentData, postId, allow }: CommentProps) => {
         isReply={false}
         replyCallback={onReplyBtnClick}
       />
-      <div className="mt-4 ml-6 grid grid-flow-row gap-4">
+      <div className="mt-4 ml-6 grid grid-flow-row">
         {commentData?.replys?.map((replyData) => (
           <CommentBody
             allow={allow}
@@ -662,23 +679,49 @@ export const CommentBody = ({
   replyCallback,
   data,
 }: CommentItemProps) => {
-  let userData = getUserData();
-  let { data: sessionData } = useSession();
-  let isMe = userCheck(sessionData);
+  const router = useRouter();
+  const { data: sessionData } = useSession();
+  const userData = getUserData();
+  const isMe = userCheck(sessionData);
+  const [targetEle, setTargetEle] = useState<HTMLElement>(null);
+  const [eleAnimate, setEleAnimate] = useState<boolean>(false);
+
   let [commentDelete, { data: commentsResponse, error: commentError }] =
     useMutation<DeleteResponse>("/api/comments/delete");
   let [replyDelete, { data: replyResponse, error: replyError }] =
     useMutation<DeleteResponse>("/api/reply/delete");
-
   const { isLoading, mutate: postMutation } = useSWR<CommentSWR>(
     data?.postId ? `/api/post/${data?.postId}` : null
   );
 
   useEffect(() => {
+    if (!data) return;
+    let query = { ...router.query };
+    delete query.id;
+    let targetEle = document.getElementById(
+      Object.keys(query)[0] + query[Object.keys(query)[0]]
+    );
+    if (targetEle) {
+      setTargetEle(targetEle);
+      let { top } = (targetEle as HTMLElement).getClientRects()[0];
+      window.scrollTo({ top: window.scrollY + top });
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (targetEle) {
+      setEleAnimate(true);
+      setTimeout(() => {
+        setEleAnimate(false);
+      }, 5000);
+    }
+  }, [targetEle]);
+
+  useEffect(() => {
     if (commentError) {
-      createErrorMsg(commentError as any, true);
+      createCautionMsg(commentError as any, true);
     } else if (replyError) {
-      createErrorMsg(replyError as any, true);
+      createCautionMsg(replyError as any, true);
     }
   }, [commentError, replyError]);
 
@@ -695,10 +738,10 @@ export const CommentBody = ({
       }
 
       if (ok) {
-        createErrorMsg("삭제를 완료했습니다", false);
+        createCautionMsg("삭제를 완료했습니다", false);
         postMutation();
       } else {
-        createErrorMsg(error, true);
+        createCautionMsg(error, true);
       }
     }
   }, [commentsResponse, replyResponse]);
@@ -715,11 +758,18 @@ export const CommentBody = ({
     }
   };
   return (
-    <div className="w-full flex flex-row">
+    <div
+      id={isReply ? `reply${data.id}` : `comment${data.id}`}
+      className={`${
+        eleAnimate &&
+        targetEle?.id == (isReply ? `reply${data.id}` : `comment${data.id}`)
+          ? "animate-pulse dark:bg-zinc-700 bg-gray-200"
+          : ""
+      } w-full flex flex-row mb-4`}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
-        style={{}}
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
@@ -934,26 +984,32 @@ dark:border-zinc-800
         {mdElements?.map((ele, i) => {
           let level = ele.getAttribute("level");
           let addStyle = "";
+
           switch (level) {
             case "2":
               addStyle = "ml-2";
+              break;
             case "3":
               addStyle = "ml-4";
+              break;
           }
           return (
-            <LabelBtn
-              onClick={() => {
-                let { top } = (
-                  document.getElementsByClassName("appendix")[i] as HTMLElement
-                ).getClientRects()[0];
-                window.scrollTo({ top: window.scrollY + top + 1 });
-              }}
-              id={i.toString()}
-              key={i}
-              contents={ele.innerText}
-              addStyle={addStyle}
-              anyRef={btnRef}
-            />
+            <div key={i}>
+              <LabelBtn
+                onClick={() => {
+                  let { top } = (
+                    document.getElementsByClassName("appendix")[
+                      i
+                    ] as HTMLElement
+                  ).getClientRects()[0];
+                  window.scrollTo({ top: window.scrollY + top + 1 });
+                }}
+                id={i.toString()}
+                contents={ele.innerText}
+                addStyle={addStyle}
+                anyRef={btnRef}
+              />
+            </div>
           );
         })}
       </div>

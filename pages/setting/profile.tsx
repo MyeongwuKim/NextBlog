@@ -8,7 +8,8 @@ import prisma from "@/lib/server/client";
 import useSWR, { SWRConfig } from "swr";
 import { updateUserData } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
-import { setLoading, createErrorMsg, setHeadTitle } from "@/hooks/useEvent";
+import { setLoading, createCautionMsg, setHeadTitle } from "@/hooks/useEvent";
+import InputField from "@/components/inputField";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -61,9 +62,10 @@ const Profile: NextPage = () => {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [prevAvatar, setPrevAvatar] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<boolean>(false);
-  setHeadTitle("프로필 설정");
 
   useEffect(() => {
+    setHeadTitle("프로필 설정");
+
     if (profile?.avatar) {
       setAvatarPreview(`${getDeliveryDomain(profile?.avatar, "avatar")}`);
       setPrevAvatar(profile?.avatar);
@@ -90,9 +92,9 @@ const Profile: NextPage = () => {
   useEffect(() => {
     if (!ResponseData) return;
     if (ResponseData.ok) {
-      createErrorMsg("변경사항을 저장하였습니다.", false);
+      createCautionMsg("변경사항을 저장하였습니다.", false);
     } else {
-      createErrorMsg(ResponseData.error, true);
+      createCautionMsg(ResponseData.error, true);
     }
   }, [ResponseData]);
 
@@ -165,7 +167,7 @@ const Profile: NextPage = () => {
         delete data.avatar;
       }
     } catch {
-      createErrorMsg("이미지서버 통신 오류입니다.", true);
+      createCautionMsg("이미지서버 통신 오류입니다.", true);
       return;
     }
 
@@ -175,7 +177,7 @@ const Profile: NextPage = () => {
         profile.password
       );
       if (!passwordResult) {
-        createErrorMsg("기존 비밀번호를 확인해주세요.", true);
+        createCautionMsg("기존 비밀번호를 확인해주세요.", true);
         return;
       }
       const changePassword = await bcrypt.hash(data.changePassword, 10);
@@ -209,7 +211,7 @@ const Profile: NextPage = () => {
     } else if (github) {
       msg = github.message;
     }
-    createErrorMsg(msg, true);
+    createCautionMsg(msg, true);
   };
 
   return (
@@ -274,43 +276,43 @@ const Profile: NextPage = () => {
             <div className="w-1/4 pl-4 text-2xl font-semibold font-sans">
               유저이름
             </div>
-            <input
-              {...register("name", {
-                required: {
-                  value: true,
-                  message: "이름을 입력해주세요.",
-                },
-                onChange(e) {
-                  onCheckSaveState();
-                },
-              })}
+            <InputField
+              register={{
+                ...register("name", {
+                  required: {
+                    value: true,
+                    message: "이름을 입력해주세요.",
+                  },
+                  onChange(e) {
+                    onCheckSaveState();
+                  },
+                }),
+              }}
               id="name"
               type="text"
-              defaultValue={profile?.name}
+              width="76%"
+              height="56px"
+              fieldtype="input"
               placeholder="이름을 입력해주세요"
-              className="border-2 rounded-xl focus:ring-1 
-          focus:ring-emerald-500
-          focus:outline-none font-sans dark:border-zinc-800 blur:border-gray-200 
-          p-2 bg-transparent ring-0 dark:text-gray-200  dark:placeholder:text-gray-400 placeholder:text-gray-200 text-2xl text-slate-800 w-3/4 h-14"
             />
           </div>
           <div className="relative items-center mb-4 h-14 w-full flex">
             <div className="w-1/4 pl-4 text-2xl font-semibold font-sans">
               깃허브주소
             </div>
-            <input
-              {...register("github", {
-                onChange() {
-                  onCheckSaveState();
-                },
-              })}
+            <InputField
+              register={{
+                ...register("github", {
+                  onChange() {
+                    onCheckSaveState();
+                  },
+                }),
+              }}
               id="github"
               type="text"
-              defaultValue={profile?.github}
-              className="border-2 rounded-xl focus:ring-1 
-          focus:ring-emerald-500
-          focus:outline-none font-sans dark:border-zinc-800 blur:border-gray-200 
-          p-2 bg-transparent ring-0 dark:text-gray-200  dark:placeholder:text-gray-400 placeholder:text-gray-200 text-2xl text-slate-800 w-3/4 h-14"
+              width="76%"
+              height="56px"
+              fieldtype="input"
             />
           </div>
           <div className="relative items-center mb-4 h-14 w-full flex">
@@ -348,43 +350,45 @@ const Profile: NextPage = () => {
                   취소
                 </button>
               </div>
-              <input
-                {...register("originPassword", {
-                  required: {
-                    value: passwordState,
-                    message: "기존 비밀번호를 입력해주세요.",
-                  },
-                  minLength: {
-                    value: 8,
-                    message: "비밀번호는 8자 이상이여야 합니다.",
-                  },
-                })}
+              <InputField
+                register={{
+                  ...register("originPassword", {
+                    required: {
+                      value: passwordState,
+                      message: "기존 비밀번호를 입력해주세요.",
+                    },
+                    minLength: {
+                      value: 8,
+                      message: "비밀번호는 8자 이상이여야 합니다.",
+                    },
+                  }),
+                }}
                 id="originPassword"
                 type="password"
                 placeholder="기존 비밀번호"
-                className="border-2 rounded-xl focus:ring-1 
-          focus:ring-emerald-500 w-1/3
-          focus:outline-none font-sans dark:border-slate-800 blur:border-gray-200
-          p-2 bg-transparent ring-0 dark:text-gray-200  dark:placeholder:text-gray-400 placeholder:text-gray-200 text-2xl text-slate-800"
+                width="33%"
+                height="56px"
+                fieldtype="input"
               />
-              <input
-                {...register("changePassword", {
-                  required: {
-                    value: passwordState,
-                    message: "변경할 비밀번호를 입력해주세요.",
-                  },
-                  minLength: {
-                    value: 8,
-                    message: "비밀번호는 8자 이상이여야 합니다.",
-                  },
-                })}
+              <InputField
+                register={{
+                  ...register("changePassword", {
+                    required: {
+                      value: passwordState,
+                      message: "변경할 비밀번호를 입력해주세요.",
+                    },
+                    minLength: {
+                      value: 8,
+                      message: "비밀번호는 8자 이상이여야 합니다.",
+                    },
+                  }),
+                }}
                 id="changePassword"
                 type="password"
                 placeholder="변경할 비밀번호"
-                className="border-2 rounded-xl focus:ring-1 
-          focus:ring-emerald-500 w-1/3
-          focus:outline-none font-sans dark:border-slate-800 blur:border-gray-200
-          p-2 bg-transparent ring-0 dark:text-gray-200  dark:placeholder:text-gray-400 placeholder:text-gray-200 text-2xl text-slate-800"
+                width="33%"
+                height="56px"
+                fieldtype="input"
               />
             </div>
           </div>
@@ -393,18 +397,18 @@ const Profile: NextPage = () => {
               블로그 소개
             </div>
             <div className="w-full h-36 pl-4">
-              <textarea
-                {...register("introduce", {
-                  onChange() {
-                    onCheckSaveState();
-                  },
-                })}
+              <InputField
+                register={{
+                  ...register("introduce", {
+                    onChange() {
+                      onCheckSaveState();
+                    },
+                  }),
+                }}
                 id="introduce"
-                defaultValue={profile?.introduce}
-                className="focus:ring-1 
-            focus:ring-emerald-500 border-2 h-full rounded-xl dark:border-zinc-800
-          focus:outline-none font-sans border-gray-200 p-2 bg-transparent ring-0 
-          dark:text-gray-200  dark:placeholder:text-gray-400 placeholder:text-gray-200 text-2xl text-slate-800 resize-none w-full boder-2 "
+                width="100%"
+                height="100%"
+                fieldtype="textarea"
               />
             </div>
           </div>

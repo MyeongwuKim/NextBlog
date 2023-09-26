@@ -5,11 +5,12 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Category } from "@prisma/client";
-import SettingBox from "./settingBox";
-import { useSession } from "next-auth/react";
+import DropDownBox from "./dropdownBox";
+import { signOut, useSession } from "next-auth/react";
 import { registUserDataState, userCheck } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import LabelBtn from "./labelBtn";
+import { setLoading } from "@/hooks/useEvent";
 
 interface LayoutProps {
   pageProps: any;
@@ -17,7 +18,10 @@ interface LayoutProps {
   profile: ProfileType;
   category: CategoryCountType[];
 }
-type CategoryCountType = Category & { post: { isPrivate: boolean }[] };
+type CategoryCountType = Category & {
+  post: { isPrivate: boolean }[];
+  _count: { post: number };
+};
 type ProfileType = {
   avatar?: string;
   email: string;
@@ -43,7 +47,7 @@ interface CategoryViewProps {
   category?: CategoryCountType[];
 }
 const fullPageList = ["write"];
-const rightHidePageList = ["post", "setting"];
+const categoryHideList = ["post", "setting"];
 let lastScroll = 0;
 
 const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
@@ -124,7 +128,11 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
           <div
             id="categoryViewContainer"
             className={`fixed left-0 w-[300px] h-full ${
-              router.pathname.includes("post") ? "hidden" : "block"
+              categoryHideList.some((page) => {
+                return router.pathname.includes(page);
+              })
+                ? "hidden"
+                : "block"
             } `}
           >
             <CategoryView
@@ -173,9 +181,16 @@ export const TopView: NextPage<TopViewProps> = ({
 
   const { data, update, status } = useSession();
 
-  const [ddenable, setddEnable] = useState<boolean>(false);
+  const [dropBoxInfo, setDropBoxInfo] = useState<{
+    left: number;
+    top: number;
+    enable: boolean;
+  }>();
+
   const ddEnableCallback = useCallback((enable: boolean) => {
-    setddEnable(enable);
+    setDropBoxInfo((prev) => {
+      return { ...prev, enable };
+    });
   }, []);
 
   useEffect(() => {
@@ -209,8 +224,15 @@ export const TopView: NextPage<TopViewProps> = ({
           </div>
         </button>
         <button
+          id="userProfileBtn"
           onClick={(e) => {
-            setddEnable(true);
+            let btn = document.getElementById("userProfileBtn");
+
+            setDropBoxInfo({
+              left: btn.getClientRects()[0].left,
+              top: btn.getClientRects()[0].top + 25,
+              enable: true,
+            });
           }}
           className={`${
             status == "authenticated" ? "span" : "hidden"
@@ -232,7 +254,11 @@ export const TopView: NextPage<TopViewProps> = ({
                 } w-full h-full rounded-full absolute `}
               />
             </div>
-            <div className={`w-4 h-4 ml-2 ${ddenable ? "inline" : "hidden"}`}>
+            <div
+              className={`w-4 h-4 ml-2 ${
+                dropBoxInfo?.enable ? "inline" : "hidden"
+              }`}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -248,7 +274,11 @@ export const TopView: NextPage<TopViewProps> = ({
                 />
               </svg>
             </div>
-            <div className={`w-4 h-4 ml-2 ${!ddenable ? "inline" : "hidden"}`}>
+            <div
+              className={`w-4 h-4 ml-2 ${
+                !dropBoxInfo?.enable ? "inline" : "hidden"
+              }`}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -266,9 +296,43 @@ export const TopView: NextPage<TopViewProps> = ({
             </div>
           </div>
         </button>
-        <SettingBox enable={ddenable} dropdownCallback={ddEnableCallback} />
+        <DropDownBox
+          info={{ left: dropBoxInfo?.left, top: dropBoxInfo?.top }}
+          items={[
+            {
+              name: "관리",
+              clickEvt: () => {
+                router.push("/setting/profile");
+              },
+            },
+            {
+              name: "글쓰기",
+              clickEvt: () => {
+                router.push("/write");
+              },
+            },
+            {
+              name: "로그아웃",
+              clickEvt: () => {
+                setLoading(true);
+                signOut({ redirect: false }).then((res) => {
+                  if (
+                    router.pathname.includes("setting") ||
+                    router.pathname.includes("write")
+                  ) {
+                    router.reload();
+                  }
+                  update();
+                  setLoading(false);
+                  router.replace("/");
+                });
+              },
+            },
+          ]}
+          enable={dropBoxInfo?.enable}
+          dropdownCallback={ddEnableCallback}
+        />
       </div>
-
       <div className="basis-10 flex items-center">
         <button
           onClick={() => {
@@ -360,15 +424,10 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
   category,
   hide,
 }) => {
-  const [loaded, setLoaded] = useState(false);
   const [countAll, setCountAll] = useState<number>(0);
   const router = useRouter();
   const { data } = useSession();
   const isMe = userCheck(data);
-
-  useEffect(() => {
-    setLoaded(true);
-  }, [loaded]);
 
   useEffect(() => {
     if (!category) return;
@@ -376,7 +435,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
     for (let i = 0; i < category.length; i++) {
       let c = category[i];
       let p = c?.post;
-      for (let j = 0; j < p.length; j++) {
+      for (let j = 0; j < p?.length; j++) {
         if (!p[j].isPrivate || (p[j].isPrivate && isMe)) totalCount++;
       }
     }
@@ -443,12 +502,13 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
           </div>
           {category?.map((v, i) => {
             let count = 0;
-            for (let i = 0; i < v.post.length; i++) {
+            for (let i = 0; i < v.post?.length; i++) {
               let p = v.post[i];
               if (!p.isPrivate || (p.isPrivate && isMe)) {
                 count++;
               }
             }
+
             return (
               <LabelBtn
                 onClick={() => {
@@ -484,24 +544,8 @@ interface ItemProps {
   router: string;
 }
 
-let prevBtn = null;
 export const SettingSide = () => {
   const router = useRouter();
-  const [selectedBtn, setSelectedBtn] = useState<HTMLButtonElement>(null);
-  const btnRef = useRef<any>({});
-
-  useEffect(() => {
-    if (!router.pathname.includes("setting")) return;
-    let path = router.pathname.replace("/setting/", "");
-    if (!prevBtn) {
-      btnRef.current[path].disabled = true;
-      prevBtn = btnRef.current[path];
-    } else {
-      prevBtn.disabled = false;
-      btnRef.current[path].disabled = true;
-      prevBtn = btnRef.current[path];
-    }
-  }, [router]);
 
   return (
     <div className="pl-10 py-10 h-full w-full">
@@ -513,6 +557,11 @@ export const SettingSide = () => {
       >
         {items.map((item, i) => (
           <LabelBtn
+            isDisable={
+              router.pathname.replace(`/setting/`, "") == item.router
+                ? true
+                : false
+            }
             key={i}
             id={item.router}
             onClick={() => {
@@ -520,7 +569,6 @@ export const SettingSide = () => {
                 .push(`/setting/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
-            anyRef={btnRef}
             contents={item.name}
           />
         ))}

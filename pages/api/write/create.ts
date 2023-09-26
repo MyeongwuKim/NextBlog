@@ -46,7 +46,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           },
         },
       });
-      console;
+
       if (thumbnail) {
         await prisma.post.update({
           where: {

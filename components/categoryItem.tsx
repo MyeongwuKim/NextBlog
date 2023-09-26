@@ -2,6 +2,7 @@ import { Category } from "@prisma/client";
 import { NextPage } from "next";
 import { useRef, useState } from "react";
 import { DragEvent } from "react";
+import NormalBtn from "./normalBtn";
 
 interface CategoryItemProps {
   data: Category;
@@ -126,44 +127,46 @@ const CategoryItem: NextPage<CategoryItemProps> = ({
         defaultValue={data?.name}
       />
       <div className={`${itemFocus ? "block" : "hidden"} absolute right-4`}>
-        <div className={`${itemModify ? "hidden" : ""}`}>
-          <button
-            onClick={() => {
+        <div className={`${itemModify ? "hidden" : ""} flex flex-row gap-2`}>
+          <NormalBtn
+            onClickEvt={() => {
               setItemModify(true);
               inputRef.current.focus();
             }}
-            className="mr-2 font-sans p-1 relative select-none w-12 h-auto inline-block dark:text-gray-200  text-lg bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-900"
-          >
-            수정
-          </button>
-          <button
-            onClick={() => {
+            width={45}
+            height={40}
+            content="수정"
+          />
+          <NormalBtn
+            onClickEvt={() => {
               removeCallback(index);
             }}
-            className="font-sans p-1 relative select-none w-12 h-auto inline-block dark:text-gray-200  text-lg bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-900"
-          >
-            삭제
-          </button>
+            width={45}
+            height={40}
+            content="삭제"
+          />
         </div>
-        <div className={`${itemModify ? "block" : "hidden"}`}>
-          <button
-            onClick={() => {
+        <div
+          className={`${itemModify ? "block" : "hidden"} flex flex-row gap-2`}
+        >
+          <NormalBtn
+            onClickEvt={() => {
               setItemModify(false);
             }}
-            className="mr-2 font-sans p-1 relative select-none w-12 h-auto inline-block dark:text-gray-200  text-lg bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-900"
-          >
-            취소
-          </button>
-          <button
-            onClick={() => {
+            width={45}
+            height={40}
+            content="취소"
+          />
+          <NormalBtn
+            onClickEvt={() => {
               inputRef.current.value = inputRef.current.value;
               changeStateCallback(index, inputRef.current.value);
               setItemModify(false);
             }}
-            className="font-sans p-1 relative select-none w-12 h-auto inline-block dark:text-gray-200  text-lg bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-900"
-          >
-            확인
-          </button>
+            width={45}
+            height={40}
+            content="확인"
+          />
         </div>
       </div>
     </div>
