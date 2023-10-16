@@ -48,6 +48,7 @@ const Preview: React.FC<Props> = (props) => {
         className="font-bold text-2xl p-4 select-none relative h-auto break-words whitespace-pre-line"
       />
       <div
+        id="previewContent"
         ref={(element) => {
           props?.setCotentPreview(element);
         }}

@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 interface DropDownProps {
   info: { top: number; left: number; width?: number; height?: number };
   enable: boolean;
-  items: { name: string; clickEvt?: () => void }[];
+  items: {
+    categoryName: string | null;
+    child: {
+      name: string;
+      clickEvt?: () => void;
+    }[];
+  }[];
   dropdownCallback: (enable: boolean, selectData?: string) => void;
   defaultItemNumber?: number | string;
 }
@@ -53,7 +59,7 @@ const DropDownBox: NextPage<DropDownProps> = ({
         dropdownCallback(false);
       }}
       style={{ width: closePanelSize?.width, height: closePanelSize?.height }}
-      className={`${enable ? "block" : "hidden"} fixed left-0 top-0`}
+      className={`${enable ? "block" : "hidden"} fixed left-0 top-0 z-50`}
     >
       <div
         id="dropdown-menu"
@@ -75,31 +81,51 @@ const DropDownBox: NextPage<DropDownProps> = ({
         >
           {items?.map((item, i) => {
             return (
-              <button
-                type="button"
-                ref={(ele) => {
-                  btnRef.current["dropItem" + i] = ele;
-                }}
-                key={i}
-                className="w-full flex hover:dark:bg-zinc-700 hover:bg-gray-200 justify-center"
-                onClick={() => {
-                  if (typeof defaultItemNumber != "undefined") {
-                    if (selectedBtn)
-                      selectedBtn.classList.remove("text-emerald-500");
+              <div key={i} className="w-full">
+                {item.categoryName ? (
+                  <div className="mt-4 relative w-auto text-sm text-gray-400 dark:text-slate-300">
+                    <span className="ml-2">{item.categoryName}</span>
+                  </div>
+                ) : null}
+                {item.child?.map((childItem, j) => {
+                  return (
+                    <button
+                      type="button"
+                      ref={(ele) => {
+                        btnRef.current["dropItem" + i] = ele;
+                      }}
+                      key={j}
+                      className={`w-full py-1 relative text-gray-600 dark:text-white
+                        hover:dark:bg-zinc-700 hover:bg-gray-200 flex flex-row justify-start`}
+                      onClick={() => {
+                        if (typeof defaultItemNumber != "undefined") {
+                          if (selectedBtn)
+                            selectedBtn.classList.remove("text-emerald-500");
 
-                    let ele = btnRef.current[`dropItem${i}`] as HTMLElement;
-                    ele.classList.add("text-emerald-500");
-                    selectedBtn = ele;
-                  }
+                          let ele = btnRef.current[
+                            `dropItem${i}`
+                          ] as HTMLElement;
+                          ele.classList.add("text-emerald-500");
+                          selectedBtn = ele;
+                        }
 
-                  item.clickEvt();
-                  dropdownCallback(false, item.name);
-                }}
-              >
-                <div id={"dropItem" + i.toString()} defaultValue={""}>
-                  {item.name}
-                </div>
-              </button>
+                        childItem?.clickEvt();
+                        dropdownCallback(false, childItem?.name);
+                      }}
+                    >
+                      <span
+                        className={`w-auto ${
+                          item.categoryName ? "ml-6" : "ml-4"
+                        }`}
+                        id={"dropItem" + i.toString()}
+                        defaultValue={""}
+                      >
+                        {childItem.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
         </div>

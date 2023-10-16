@@ -46,7 +46,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
   const { data: sessionData } = useSession();
   const [enablePopup, setEnablePopup] = useState<boolean>(false);
   const router = useRouter();
-  const [doc, setDoc] = useState<string>(postData?.content);
+  const [doc, setDoc] = useState<string>(postData?.html);
   const [title, setTitle] = useState<string>(postData ? postData.title : "");
   const [imagesId, setImagesId] = useState<string[]>([]); //취소했을시 지울 요청할 이미지id 배열
   const [writeMutation, { loading: mutateLoading, data: resData }] =
@@ -57,7 +57,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
   }, []);
   useEffect(() => {
     if (!postData) return;
-    setImagesId(getFormatImagesId(postData.content));
+    setImagesId(getFormatImagesId(postData.html));
   }, [postData]);
 
   useEffect(() => {
@@ -133,7 +133,10 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     setSelectCategory(category);
     let data = {
       title,
-      content: doc,
+      html: doc,
+      content: document
+        .getElementById("previewContent")
+        .outerText.replace(/\n/g, ""),
       categoryId: category.id,
       allow,
       isPrivate,

@@ -4,12 +4,16 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
-    await prisma.post.delete({
-      where: {
-        id: Number(req.query.id),
-      },
-    });
+    let ids = req.body;
+    if (typeof req.body != "number") {
+      ids = req.body.map((number) => {
+        return Number(number);
+      });
+    }
     try {
+      await prisma.post.deleteMany({
+        where: { id: { in: ids } },
+      });
       res.json({
         ok: true,
       });

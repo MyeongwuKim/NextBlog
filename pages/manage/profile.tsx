@@ -64,7 +64,7 @@ const Profile: NextPage = () => {
   const [saveState, setSaveState] = useState<boolean>(false);
 
   useEffect(() => {
-    setHeadTitle("프로필 설정");
+    setHeadTitle("프로필 관리");
 
     if (profile?.avatar) {
       setAvatarPreview(`${getDeliveryDomain(profile?.avatar, "avatar")}`);

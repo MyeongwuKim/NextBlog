@@ -45,10 +45,10 @@ export const createAlert = (
 ) => {
   loadingState((prev) => (prev == true ? !prev : prev));
   if (!document.getElementById("cautionWindow")) {
-    root = ReactDOMClient.createRoot(document.getElementById("errorCont"));
+    root = ReactDOMClient.createRoot(document.getElementById("cautionCont"));
   } else {
     root.unmount();
-    root = ReactDOMClient.createRoot(document.getElementById("errorCont"));
+    root = ReactDOMClient.createRoot(document.getElementById("cautionCont"));
   }
 
   root.render(

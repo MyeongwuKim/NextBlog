@@ -64,6 +64,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           comment: {
             connect: { id: comment.id },
           },
+          post: {
+            connect: { id: postId },
+          },
         },
       });
 

@@ -20,6 +20,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             name: true,
           },
         },
+        post: {
+          select: {
+            title: true,
+          },
+        },
       };
       let selectInfo = {};
       if (content) {

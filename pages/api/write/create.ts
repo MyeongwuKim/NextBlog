@@ -6,6 +6,7 @@ import { getFormatImagesId } from "@/hooks/useUtils";
 interface RequestBodyData {
   title: string;
   content: string;
+  html: string;
   categoryId: number;
   allow: boolean;
   isPrivate: boolean;
@@ -21,6 +22,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         allow,
         categoryId,
         content,
+        html,
         isPrivate,
         thumbnail,
         title,
@@ -30,6 +32,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       let post = await prisma.post.create({
         data: {
           content,
+          html,
           title,
           allow,
           preview,

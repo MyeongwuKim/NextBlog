@@ -105,7 +105,7 @@ const PostDetail: NextPage<{
     mutate: postMutation,
   } = useSWR<CommentSWR>(postId ? `/api/post/${postId}` : null);
   const [postDeleteMutation, { data: deleteRespose }] =
-    useMutation<mutationResponse>(postId ? `/api/post/delete/${postId}` : null);
+    useMutation<mutationResponse>(postId ? `/api/post/delete` : null);
   const [mdElements, setMdElements] = useState<HTMLElement[]>();
   const [hide, setHide] = useState<boolean>(false);
 
@@ -239,7 +239,7 @@ const PostDetail: NextPage<{
                   ["취소", "확인"],
                   () => {
                     setLoading(true);
-                    postDeleteMutation({});
+                    postDeleteMutation(postData?.id);
                   },
                   350
                 );
@@ -253,7 +253,7 @@ const PostDetail: NextPage<{
         </div>
         <div className="border-y-[1px] border-gray-200 dark:border-zinc-800" />
         <div className="my-16" id="reactMD">
-          <ReactMD doc={postData?.content} />
+          <ReactMD doc={postData?.html} />
         </div>
         <div className="mb-8 text-xl font-semibold">Post By</div>
         <div className="py-12 mb-16 border-y-[1px] flex border-gray-200 dark:border-zinc-800">

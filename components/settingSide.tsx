@@ -29,11 +29,11 @@ const SettingSide = () => {
           <LabelBtn
             onClick={() => {
               router
-                .push(`/setting/${item.router}`, undefined, { shallow: true })
+                .push(`/manage/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
             isDisable={
-              router.pathname.replace("/setting/", "") == item.router
+              router.pathname.replace("/manage/", "") == item.router
                 ? true
                 : false
             }

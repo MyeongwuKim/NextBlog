@@ -47,7 +47,7 @@ interface CategoryViewProps {
   category?: CategoryCountType[];
 }
 const fullPageList = ["write"];
-const categoryHideList = ["post", "setting"];
+const categoryHideList = ["post", "manage"];
 let lastScroll = 0;
 
 const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
@@ -143,7 +143,7 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
           <div
             id="settingViewContainer"
             className={`fixed left-0 w-[300px] h-full ${
-              router.pathname.includes("setting") ? "block" : "hidden"
+              router.pathname.includes("manage") ? "block" : "hidden"
             }`}
           >
             <div className="f-full">
@@ -300,33 +300,38 @@ export const TopView: NextPage<TopViewProps> = ({
           info={{ left: dropBoxInfo?.left, top: dropBoxInfo?.top }}
           items={[
             {
-              name: "관리",
-              clickEvt: () => {
-                router.push("/setting/profile");
-              },
-            },
-            {
-              name: "글쓰기",
-              clickEvt: () => {
-                router.push("/write");
-              },
-            },
-            {
-              name: "로그아웃",
-              clickEvt: () => {
-                setLoading(true);
-                signOut({ redirect: false }).then((res) => {
-                  if (
-                    router.pathname.includes("setting") ||
-                    router.pathname.includes("write")
-                  ) {
-                    router.reload();
-                  }
-                  update();
-                  setLoading(false);
-                  router.replace("/");
-                });
-              },
+              categoryName: null,
+              child: [
+                {
+                  name: "관리",
+                  clickEvt: () => {
+                    router.push("/manage/profile");
+                  },
+                },
+                {
+                  name: "글쓰기",
+                  clickEvt: () => {
+                    router.push("/write");
+                  },
+                },
+                {
+                  name: "로그아웃",
+                  clickEvt: () => {
+                    setLoading(true);
+                    signOut({ redirect: false }).then((res) => {
+                      if (
+                        router.pathname.includes("manage") ||
+                        router.pathname.includes("write")
+                      ) {
+                        router.reload();
+                      }
+                      update();
+                      setLoading(false);
+                      router.replace("/");
+                    });
+                  },
+                },
+              ],
             },
           ]}
           enable={dropBoxInfo?.enable}
@@ -558,7 +563,7 @@ export const SettingSide = () => {
         {items.map((item, i) => (
           <LabelBtn
             isDisable={
-              router.pathname.replace(`/setting/`, "") == item.router
+              router.pathname.replace(`/manage/`, "") == item.router
                 ? true
                 : false
             }
@@ -566,7 +571,7 @@ export const SettingSide = () => {
             id={item.router}
             onClick={() => {
               router
-                .push(`/setting/${item.router}`, undefined, { shallow: true })
+                .push(`/manage/${item.router}`, undefined, { shallow: true })
                 .then(() => {});
             }}
             contents={item.name}

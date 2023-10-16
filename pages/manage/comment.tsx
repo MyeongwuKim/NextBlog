@@ -42,6 +42,7 @@ type historyType = {
   category: string;
   categoryId: number;
   historyId: number;
+  post: { title: string };
 };
 
 const CommentListSWR = ({
@@ -52,11 +53,11 @@ const CommentListSWR = ({
   query: any;
 }) => {
   let { name, content } = query;
-  let urlKey = "/api/history";
+  let urlKey = "/api/manage/comment";
   if (name) {
-    urlKey = `/api/history?name=${name}`;
+    urlKey = `/api/manage/comment?name=${name}`;
   } else if (content) {
-    urlKey = `/api/history?content=${content}`;
+    urlKey = `/api/manage/comment?content=${content}`;
   }
 
   return (
@@ -117,9 +118,9 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
     []
   );
   const [historyDelete, { data: deleteResponse, error: deleteErr }] =
-    useMutation<historyResponse>("/api/history/delete");
+    useMutation<historyResponse>("/api/manage/comment/delete");
   const [historyCreate, { data: createResponse, error: createErr }] =
-    useMutation<historyResponse>("/api/history/create");
+    useMutation<historyResponse>("/api/manage/comment/create");
 
   const deleteCallback = useCallback(
     (id?: number) => {
@@ -170,7 +171,13 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
     if (!createResponse) return;
     if (createResponse.ok) {
       createCautionMsg("답글을 작성 하였습니다.", false);
-      let { category, categoryId, name, postId } = replyWindow.data;
+      let {
+        category,
+        categoryId,
+        name,
+        postId,
+        post: { title },
+      } = replyWindow.data;
       let newData: historyType = {
         id: historyData[0].id + 1,
         isMe: true,
@@ -179,6 +186,7 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
         content: getValues("replyInput"),
         category,
         name,
+        post: { title },
         categoryId,
         historyId: historyData[0].historyId + 1,
         postId,
@@ -191,10 +199,6 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
       createCautionMsg(createResponse.error, true);
     }
   }, [createResponse]);
-
-  const checkDeleteBtn = (checked) => {
-    setDeleteEnable(checked);
-  };
 
   const onValid = (data) => {
     let { searchInput } = data;
@@ -226,24 +230,22 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
       createCautionMsg(message, true);
     }
   };
-  useEffect(() => {
-    for (let i = 0; i < Object.keys(checkBoxRef.current).length; i++) {
-      let checkbox = checkBoxRef.current[Object.keys(checkBoxRef.current)[i]];
-      if (checkbox) checkbox.checked = allCheckbox;
-    }
-    checkDeleteBtn(allCheckbox);
-  }, [allCheckbox]);
 
   const checkboxEvt = useCallback(() => {
     let checked = false;
+    let checkBoxLength = Object.keys(checkBoxRef.current).length;
+    let enableCount = 0;
     for (let i = 0; i < Object.keys(checkBoxRef.current).length; i++) {
       let checkbox = checkBoxRef.current[Object.keys(checkBoxRef.current)[i]];
       if (checkbox.checked) {
         checked = true;
-        break;
+        enableCount++;
       }
     }
-    checkDeleteBtn(checked);
+    if (enableCount == checkBoxLength) setAllCheckBox(true);
+    else setAllCheckBox(false);
+
+    setDeleteEnable(checked);
   }, []);
 
   return (
@@ -290,7 +292,7 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
           <div className="flex flex-row gap-2 items-center">
             <div
               onClick={() => {
-                router.back();
+                router.push(router.pathname);
               }}
             >
               <svg
@@ -323,7 +325,23 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
       >
         <div className="flex items-center">
           <input
-            onChange={(e) => setAllCheckBox(e.target.checked)}
+            onChange={(e) => {
+              if (Object.keys(checkBoxRef.current).length <= 0) {
+                setAllCheckBox(false);
+                return;
+              } else setAllCheckBox(e.target.checked);
+
+              for (
+                let i = 0;
+                i < Object.keys(checkBoxRef.current).length;
+                i++
+              ) {
+                let checkbox =
+                  checkBoxRef.current[Object.keys(checkBoxRef.current)[i]];
+                if (checkbox) checkbox.checked = e.target.checked;
+              }
+              setDeleteEnable(e.target.checked);
+            }}
             type="checkbox"
             checked={allCheckbox}
             className="mr-4 w-6 h-6 rounded ring-0
@@ -505,16 +523,21 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
         defaultItemNumber={0}
         items={[
           {
-            name: "작성자",
-            clickEvt: () => {
-              setDropBoxText("작성자");
-            },
-          },
-          {
-            name: "내용",
-            clickEvt: () => {
-              setDropBoxText("내용");
-            },
+            categoryName: null,
+            child: [
+              {
+                name: "작성자",
+                clickEvt: () => {
+                  setDropBoxText("작성자");
+                },
+              },
+              {
+                name: "내용",
+                clickEvt: () => {
+                  setDropBoxText("내용");
+                },
+              },
+            ],
           },
         ]}
       />
@@ -553,27 +576,7 @@ export const Item = ({
       className={`relative mb-1 w-full h-auto p-2 hover:dark:bg-zinc-800 hover:bg-gray-50
       select-none border-b-2 flex items-center dark:border-zinc-800 dark:bg-zinc-900`}
     >
-      <div
-        className={`${
-          enableHiddenView ? "block" : "hidden"
-        } absolute  flex flex-row right-2 gap-2`}
-      >
-        <NormalBtn
-          onClickEvt={() => {
-            replayState({ enable: true, data });
-          }}
-          content="답글"
-          width={45}
-          height={40}
-        />
-        <NormalBtn
-          onClickEvt={() => deleteCallback(data.historyId)}
-          content="삭제"
-          width={45}
-          height={40}
-        />
-      </div>
-      <div className="flex flex-row">
+      <div className="flex flex-row w-full">
         <input
           id={data?.historyId.toString()}
           onChange={(e) => {
@@ -584,13 +587,14 @@ export const Item = ({
             checkBoxRef.current[data?.historyId] = element;
           }}
           type="checkbox"
-          className="mr-4 w-6 h-6 rounded ring-0 m-auto
+          className="flex-none
+          mr-4 w-6 h-6 rounded ring-0 m-auto
             bg-gray-50 border-gray-400 outline-none
             dark:bg-zinc-800 dark:border-zinc-700 focus:dark:ring-transparent
             checked:accent-blue-500 focus:dark:ring-0
             focus:dark:ring-offset-0"
         />
-        <div className="flex flex-col gap-2">
+        <div className="grow flex flex-col gap-2">
           <div className="flex flex-row gap-2">
             <span
               onClick={() => {
@@ -609,22 +613,46 @@ export const Item = ({
               {getFormatFullDate(data?.createdAt)} 작성
             </span>
           </div>
-          <div
-            className="cursor-pointer"
-            onClick={() => {
-              let query = "comment";
-              if (data.isReply) query = "reply";
-              router.push(`/post/${data.postId}?${query}=${data.id}`);
-            }}
-          >
+          <div>
             {data?.isReply ? (
               <span className="font-bold text-emerald-500 mr-2">[답글]</span>
             ) : null}
-            {data?.content}
+            <span
+              className="cursor-pointer"
+              onClick={() => {
+                let query = "comment";
+                if (data.isReply) query = "reply";
+                router.push(`/post/${data.postId}?${query}=${data.id}`);
+              }}
+            >
+              {data?.content}
+            </span>
           </div>
           <span className="dark:text-gray-400 text-slate-400 mr-4">
-            {data?.category}
+            {data?.post.title}
           </span>
+        </div>
+        <div className="flex-none w-[120px] ml-2  flex justify-end items-center">
+          <div
+            className={`${
+              enableHiddenView ? "block" : "hidden"
+            } flex flex-row right-2 gap-2`}
+          >
+            <NormalBtn
+              onClickEvt={() => {
+                replayState({ enable: true, data });
+              }}
+              content="답글"
+              width={45}
+              height={40}
+            />
+            <NormalBtn
+              onClickEvt={() => deleteCallback(data.historyId)}
+              content="삭제"
+              width={45}
+              height={40}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -645,6 +673,11 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       select: {
         id: true,
         name: true,
+      },
+    },
+    post: {
+      select: {
+        title: true,
       },
     },
   };
@@ -721,6 +754,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       category = item.comment.category.name;
       categoryId = item.comment.category.id;
     }
+
     return {
       ...formatData,
       isReply: item.isReply,

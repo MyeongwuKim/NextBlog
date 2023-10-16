@@ -42,6 +42,7 @@ model Post {
   id         Int       @id @default(autoincrement())
   title      String
   content    String    @db.Text()
+  html       String    @db.Text()
   thumbnail  String?
   isPrivate  Boolean?  @default(false)
   category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -55,6 +56,7 @@ model Post {
   account    Account   @relation(fields: [accountId], references: [id])
   accountId  Int
   replys     Reply[]
+  history    History[]
 }
 
 model Comment {
@@ -108,4 +110,6 @@ model History {
   comment   Comment?
   reply     Reply?
   isReply   Boolean   @default(false)
+  post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    Int?
 }
