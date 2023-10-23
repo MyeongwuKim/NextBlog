@@ -23,7 +23,7 @@ const Alert: NextPage<AlertProps> = ({
   width,
 }) => {
   return (
-    <div id="alertWindow" className="absolute left-0 top-0 ">
+    <div id="alertWindow" className="fixed left-0 top-0 z-[9998]">
       <div
         style={{
           width,

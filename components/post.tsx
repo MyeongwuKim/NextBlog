@@ -22,7 +22,10 @@ const CPost: NextPage<PostProps> = ({ post }) => {
     <div className="w-full h-auto mb-16">
       <div className="flex felx-row items-center mb-4">
         <CompImg
-          style="mr-4 flex-none basis-2/6 h-40"
+          onClickEvt={() => {
+            router.push(`/post/${post?.id}`);
+          }}
+          style="mr-4 flex-none basis-2/6 h-44"
           thumbnail={post?.thumbnail}
         />
         <div className="basis-4/6 flex flex-col">
@@ -45,7 +48,10 @@ const CPost: NextPage<PostProps> = ({ post }) => {
             <span>{post._count.comments}</span>
           </div>
           <div
-            className="mb-4 text-3xl font-bold basis-[100px]
+            onClick={() => {
+              router.push(`/post/${post?.id}`);
+            }}
+            className="cursor-pointer mb-4 text-3xl font-bold basis-[100px]
           max-h-28 overflow-hidden break-all text-ellipsis"
           >
             {post.title}
@@ -67,17 +73,6 @@ const CPost: NextPage<PostProps> = ({ post }) => {
         >
           {post?.preview}
         </p>
-      </div>
-      <div className="relative h-8">
-        <button
-          className="absolute text-white right-0 items-center 
-         inline-block p-2 text-lg font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-700"
-          onClick={() => {
-            router.push(`/post/${post?.id}`);
-          }}
-        >
-          Read More
-        </button>
       </div>
     </div>
   );

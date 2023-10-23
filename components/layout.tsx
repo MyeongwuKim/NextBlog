@@ -85,7 +85,7 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
   return (
     <div id="layoutComp" className="w-full h-auto flex flex-col">
       <div
-        className={`absolute w-full h-full ${
+        className={`fixed z-50 w-full h-full top-0 left-0 ${
           signMode == "none" ? "hidden" : "block"
         }`}
       >
@@ -498,7 +498,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
           <div className="relative">
             <LabelBtn
               onClick={() => {
-                router.push("/");
+                router.push("/", null);
               }}
               isDisable={Object.keys(router.query).length <= 0 ? true : false}
               id={"total"}
@@ -520,7 +520,10 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
                   // btnRef.current["category" + v.id].disabled = true;
                   router.query.category = v.id.toString();
 
-                  router.push(`/?category=${v.id.toString()}&name=${v.name}`);
+                  router.push(
+                    `/?category=${v.id.toString()}&name=${v.name}`,
+                    `/?category=${v.id.toString()}`
+                  );
                 }}
                 isDisable={
                   router?.query?.category == v.id.toString() ? true : false

@@ -1,43 +1,141 @@
 import CPost from "@/components/post";
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Account, Post } from "@prisma/client";
 import prisma from "@/lib/server/client";
-import { setHeadTitle } from "@/hooks/useEvent";
+import { setHeadTitle, setLoading } from "@/hooks/useEvent";
 import { userCheck } from "@/hooks/useData";
 import { useSession } from "next-auth/react";
+import post from "./api/post";
 
 //CBody 그대로 두고, query string에따라 PostList를 요청받게함
 //Post클릭시 글 이동
 
 interface PostListProps {
-  Posts: (Post & { _count: { comments: number } })[];
-  title: string;
+  query: any;
 }
 
-const PostList: NextPage<PostListProps> = ({ Posts, title }) => {
+interface SWRResponse {
+  ok: boolean;
+  data: (Post & { _count: { comments: number } })[];
+}
+
+let pageOffset = 0;
+
+function saveScrollPos(url) {
+  const scrollPos = { x: window.scrollX, y: window.scrollY };
+  sessionStorage.setItem(url, JSON.stringify(scrollPos));
+}
+
+function restoreScrollPos(url) {
+  const scrollPos = JSON.parse(sessionStorage.getItem(url));
+  if (scrollPos) {
+    window.scrollTo(scrollPos.x, scrollPos.y);
+  }
+}
+
+const PostList: NextPage<PostListProps> = ({ query }) => {
+  const {
+    data: pagePostsData,
+    setSize,
+    size,
+  } = useSWRInfinite<SWRResponse>(
+    (pageOffset, previousPageData: SWRResponse) => {
+      if (previousPageData && previousPageData.data.length <= 0) {
+        return null;
+      }
+      return `/api/post?pageOffset=${pageOffset}${
+        query.category ? `&categoryId=${query.category}` : ""
+      }`;
+    }
+  );
   const router = useRouter();
-  const setHeadTitleState = setHeadTitle;
   const { data } = useSession();
   const isMe = userCheck(data);
+  const [postsData, setPostsData] = useState<
+    (Post & { _count: { comments: number } })[]
+  >([]);
 
-  useEffect(() => {}, [isMe]);
-  useEffect(() => {}, [router]);
   useEffect(() => {
-    setHeadTitleState(title);
-  }, [Posts]);
+    const { name } = router.query;
+    let title = name ? `${name} 카테고리 글목록` : "Home";
+    setHeadTitle(title);
+
+    window.history.scrollRestoration = "manual";
+    if ("scrollRestoration" in window.history) {
+      //카테고리 이동시에는 스크롤값 삭제, 카테고리 ->포스트 이동시 스크롤값 저장
+      const onRouteChangeStart = (url) => {
+        if (url.indexOf("category") > 0 || url == "/") {
+          if (router.asPath != url) sessionStorage.removeItem(router.asPath);
+        } else saveScrollPos(router.asPath);
+      };
+
+      const onRouteChangeComplete = (url) => {
+        restoreScrollPos(url);
+      };
+
+      router.events.on("routeChangeStart", onRouteChangeStart);
+      router.events.on("routeChangeComplete", onRouteChangeComplete);
+      // router.beforePopState(() => {
+      //   console.log("%c beforePopState", "background:green; color:white");
+      //   return true;
+      // });
+
+      return () => {
+        router.events.off("routeChangeStart", onRouteChangeStart);
+        router.events.off("routeChangeComplete", onRouteChangeComplete);
+        router.beforePopState(() => true);
+      };
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!pagePostsData) return;
+    let arr = [];
+    let pageData = pagePostsData?.map((pageData) => {
+      let { data } = pageData;
+      arr = [...arr, ...data];
+      return data;
+    });
+    setPostsData(arr);
+  }, [pagePostsData]);
+
+  // useEffect(() => {
+  //   pageOffset = 0;
+  //   const { name } = router.query;
+  //   let title = name ? `${name} 카테고리 글목록` : "Home";
+  //   setHeadTitleState(title);
+  //   setPostsData(posts);
+  // }, [posts]);
+
+  const scrollToBottomEvt = useCallback(async () => {
+    if (document.body.clientHeight - window.scrollY - window.innerHeight <= 0) {
+      const { category } = router.query;
+      setSize((size) => {
+        return size + 1;
+      });
+    }
+  }, [pagePostsData]);
+
+  useEffect(() => {
+    window.addEventListener("scroll", scrollToBottomEvt);
+    return () => {
+      window.removeEventListener("scroll", scrollToBottomEvt);
+    };
+  }, [pagePostsData]);
+
   return (
     <div className="h-auto relative">
       <ServiceView />
       <div className="h-auto relative">
-        {Posts?.length > 0 ? (
-          Posts?.map((post) => {
+        {postsData?.length > 0 ? (
+          postsData?.map((post, i) => {
             return (
               <div
-                key={post.id}
+                key={i}
                 className={`${
                   post?.isPrivate ? `${isMe ? "block" : "hidden"}` : "block"
                 }`}
@@ -99,36 +197,11 @@ const ServiceView: NextPage = ({}) => {
 export const getServerSideProps: GetServerSideProps<PostListProps> = async (
   context: GetServerSidePropsContext
 ) => {
-  let { category, name } = context.query;
-  let postData;
-  if (category) {
-    postData = await prisma.post.findMany({
-      where: {
-        categoryId: Number(category),
-      },
-      include: {
-        _count: { select: { comments: true } },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  } else {
-    postData = await prisma.post.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        _count: { select: { comments: true } },
-      },
-    });
-  }
-  let title = name ? `${name} 카테고리 글목록` : "Home";
   return {
     props: {
-      Posts: JSON.parse(JSON.stringify(postData)),
-      title,
+      query: context.query,
     },
   };
 };
+
 export default PostList;

@@ -27,6 +27,7 @@ const SettingSide = () => {
       >
         {items.map((item, i) => (
           <LabelBtn
+            key={i}
             onClick={() => {
               router
                 .push(`/manage/${item.router}`, undefined, { shallow: true })
