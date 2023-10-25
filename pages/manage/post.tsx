@@ -96,7 +96,7 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
       data: { postHistory, categoryList },
     },
     mutate: historyMutate,
-  } = useSWR<SWRdataProps>(url);
+  } = useSWR<SWRdataProps>(url, null, { revalidateIfStale: false });
   const updateCategory = updateCategoryData();
   const router = useRouter();
   const [postDeleteMutation, { data: deleteResponse }] =
@@ -120,8 +120,6 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
     width: number;
   }>();
 
-  useEffect(() => {}, []);
-
   const [dropBoxText, setDropBoxText] = useState<string>("제목");
   const checkBoxRef = useRef<any>({});
   const dropdownCallback = useCallback(
@@ -135,7 +133,9 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
     },
     []
   );
-
+  useEffect(() => {
+    console.log(postHistory);
+  }, [postHistory]);
   useEffect(() => {
     setHeadTitle("글 관리");
   }, []);

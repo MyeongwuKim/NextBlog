@@ -3,6 +3,7 @@ import DropDownBox from "@/components/dropdownBox";
 import InputField from "@/components/inputField";
 import NormalBtn from "@/components/normalBtn";
 import OkBtn from "@/components/okBtn";
+import Pagination from "@/components/pagination";
 import { createCautionMsg, setHeadTitle, setLoading } from "@/hooks/useEvent";
 import { getFormatFullDate, getTimeStamp } from "@/hooks/useUtils";
 import prisma from "@/lib/server/client";
@@ -19,10 +20,10 @@ import {
   useState,
 } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
-import useSWR, { SWRConfig, unstable_serialize } from "swr";
+import useSWR, { SWRConfig, unstable_serialize, useSWRConfig } from "swr";
 
 interface SWRdataProps {
-  data: historyType[];
+  data: { historyData: historyType[]; maxCount: number };
   ok: boolean;
 }
 
@@ -45,42 +46,41 @@ type historyType = {
   post: { title: string };
 };
 
+const pageSize = 5;
+
 const CommentListSWR = ({
   historyData,
-  query,
+  maxCount,
 }: {
   historyData: historyType[];
-  query: any;
+  maxCount: number;
 }) => {
-  let { name, content } = query;
-  let urlKey = "/api/manage/comment";
-  if (name) {
-    urlKey = `/api/manage/comment?name=${name}`;
-  } else if (content) {
-    urlKey = `/api/manage/comment?content=${content}`;
-  }
-
+  const router = useRouter();
   return (
     <SWRConfig
       value={{
         fallback: {
-          [unstable_serialize(urlKey)]: {
+          [unstable_serialize("/api" + router.asPath)]: {
             ok: true,
-            data: historyData,
+            data: { historyData, maxCount },
           },
         },
       }}
     >
-      <CommentList url={urlKey} />
+      <CommentList />
     </SWRConfig>
   );
 };
-const CommentList: NextPage<{ url: string }> = ({ url }) => {
+const CommentList: NextPage = () => {
   const router = useRouter();
   let {
-    data: { data: historyData },
+    data: {
+      data: { historyData, maxCount },
+    },
     mutate: historyMutate,
-  } = useSWR<SWRdataProps>(url);
+  } = useSWR<SWRdataProps>("/api" + router.asPath, null, {
+    revalidateIfStale: false,
+  });
 
   const { register, reset, handleSubmit } = useForm();
   const {
@@ -92,7 +92,7 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
     setError,
     setFocus,
   } = useForm<{ replyInput: string }>();
-
+  const [countArr, setCountArr] = useState<number[]>();
   const [allCheckbox, setAllCheckBox] = useState<boolean>(false);
   const [deleteEnable, setDeleteEnable] = useState<boolean>(false);
   const [dropBoxInfo, setDropBoxInfo] = useState<{
@@ -117,6 +117,27 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
     },
     []
   );
+  useEffect(() => {
+    console.log("historyData!!!");
+    setAllCheckBox(false);
+    let curNumber = Number(
+      router.query.pageoffset == undefined ? 1 : router.query.pageoffset
+    );
+    let endPageNumber = Math.ceil(maxCount / pageSize);
+    let arr = [curNumber];
+    let size = endPageNumber < pageSize ? endPageNumber : pageSize;
+    let prev = curNumber;
+    let next = curNumber;
+    while (arr.length != size) {
+      prev = prev - 1;
+      next = next + 1;
+      if (prev > 0) arr.splice(0, 0, prev);
+      if (next <= endPageNumber) arr.splice(arr.length, 0, next);
+    }
+    setCountArr(arr);
+    return () => {};
+  }, [historyData]);
+
   const [historyDelete, { data: deleteResponse, error: deleteErr }] =
     useMutation<historyResponse>("/api/manage/comment/delete");
   const [historyCreate, { data: createResponse, error: createErr }] =
@@ -129,7 +150,7 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
         newHistory = historyData.filter((item) => {
           if (item.historyId != id) return item;
         });
-        historyDelete(id);
+        // historyDelete(id);
       } else {
         let ids = [];
         newHistory = historyData.filter((item) => {
@@ -140,10 +161,16 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
             return item;
           } else ids.push(item.historyId);
         });
-        historyDelete(ids);
+        //historyDelete(ids);
       }
       historyMutate((prev) => {
-        return { ...prev, data: newHistory };
+        return {
+          ok: true,
+          data: {
+            historyData: newHistory,
+            maxCount: maxCount - newHistory.length,
+          },
+        };
       }, false);
       setAllCheckBox(false);
     },
@@ -192,7 +219,13 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
         postId,
       };
       historyMutate((prev) => {
-        return { ...prev, data: [newData, ...prev.data] };
+        return {
+          ...prev,
+          data: {
+            historyData: [newData, ...prev.data.historyData],
+            maxCount: prev.data.maxCount,
+          },
+        };
       }, false);
       setReplyWindow({ data: null, enable: false });
     } else {
@@ -235,13 +268,15 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
     let checked = false;
     let checkBoxLength = Object.keys(checkBoxRef.current).length;
     let enableCount = 0;
+
     for (let i = 0; i < Object.keys(checkBoxRef.current).length; i++) {
       let checkbox = checkBoxRef.current[Object.keys(checkBoxRef.current)[i]];
-      if (checkbox.checked) {
+      if (checkbox && checkbox.checked) {
         checked = true;
         enableCount++;
       }
     }
+
     if (enableCount == checkBoxLength) setAllCheckBox(true);
     else setAllCheckBox(false);
 
@@ -286,7 +321,9 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
         </form>
       </div>
       <div className="relative text-xl mb-5 font-bold">
-        {Object.keys(router.query).length <= 0 ? (
+        {["name"].some((page) => {
+          return !router.asPath.includes(page);
+        }) ? (
           "댓글 관리"
         ) : (
           <div className="flex flex-row gap-2 items-center">
@@ -310,9 +347,7 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
                 />
               </svg>
             </div>
-            <span className="text-red-400">
-              {router.query[Object.keys(router.query)[0]]}
-            </span>
+            <span className="text-red-400">{router.query["name"]}</span>
             검색결과
           </div>
         )}
@@ -330,7 +365,6 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
                 setAllCheckBox(false);
                 return;
               } else setAllCheckBox(e.target.checked);
-
               for (
                 let i = 0;
                 i < Object.keys(checkBoxRef.current).length;
@@ -509,9 +543,16 @@ const CommentList: NextPage<{ url: string }> = ({ url }) => {
           id={i}
           checkBoxRef={checkBoxRef}
           checkBoxEvt={checkboxEvt}
-          key={i}
+          key={itemData.historyId}
         />
       ))}
+      <div className="relative mt-4">
+        <Pagination
+          pageSize={pageSize}
+          endPageNumber={Math.ceil(maxCount / pageSize)}
+          pageNumberArr={countArr}
+        />
+      </div>
       <DropDownBox
         info={{
           left: dropBoxInfo?.left,
@@ -562,8 +603,6 @@ export const Item = ({
 }) => {
   const router = useRouter();
   const [enableHiddenView, setEnableHiddenView] = useState<boolean>(false);
-
-  useEffect(() => {}, []);
 
   return (
     <div
@@ -660,7 +699,8 @@ export const Item = ({
 };
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  let { name, content } = ctx.query;
+  let { name, content, pageoffset } = ctx.query;
+  const pageSize = 5;
 
   let selectList = {
     id: true,
@@ -724,6 +764,16 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       ],
     };
   }
+  let maxCount = await prisma.history.count();
+
+  if (Math.ceil(maxCount / pageSize) < Number(pageoffset)) {
+    return {
+      redirect: {
+        destination: "/manage/comment",
+        permanent: false,
+      },
+    };
+  }
   let commentsData = await prisma.history.findMany({
     orderBy: { createdAt: "desc" },
     where: selectInfo,
@@ -737,6 +787,9 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
         select: selectList,
       },
     },
+    take: pageSize,
+    skip:
+      Number(pageoffset == undefined ? 0 : Number(pageoffset) - 1) * pageSize,
   });
 
   let formatCommentsData = commentsData.map((item) => {
@@ -767,7 +820,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   return {
     props: {
       historyData: JSON.parse(JSON.stringify(formatCommentsData)),
-      query: ctx.query,
+      maxCount,
     },
   };
 };

@@ -3,10 +3,12 @@ import prisma from "@/lib/server/client";
 import { getToken } from "next-auth/jwt";
 import ProtectHanlder from "@/lib/server/protectHanlder";
 
+const pageSize = 5;
+
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "GET") {
     try {
-      let { name, content } = req.query;
+      let { name, content, pageoffset } = req.query;
       let selectList = {
         id: true,
         content: true,
@@ -69,6 +71,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           ],
         };
       }
+      let maxCount = await prisma.history.count();
+
       let commentsData = await prisma.history.findMany({
         orderBy: { createdAt: "desc" },
         where: selectInfo,
@@ -82,6 +86,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             select: selectList,
           },
         },
+        take: pageSize,
+        skip: Number(!pageoffset ? 0 : Number(pageoffset) - 1) * pageSize,
       });
 
       let formatCommentsData = commentsData.map((item) => {
@@ -110,7 +116,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       res.json({
         ok: true,
-        data: formatCommentsData,
+        data: { historyData: formatCommentsData, maxCount },
       });
     } catch {
       res.json({

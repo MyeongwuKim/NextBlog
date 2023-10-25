@@ -319,15 +319,9 @@ export const TopView: NextPage<TopViewProps> = ({
                   clickEvt: () => {
                     setLoading(true);
                     signOut({ redirect: false }).then((res) => {
-                      if (
-                        router.pathname.includes("manage") ||
-                        router.pathname.includes("write")
-                      ) {
-                        router.reload();
-                      }
                       update();
                       setLoading(false);
-                      router.replace("/");
+                      router.replace("/").then(() => {});
                     });
                   },
                 },
@@ -520,10 +514,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
                   // btnRef.current["category" + v.id].disabled = true;
                   router.query.category = v.id.toString();
 
-                  router.push(
-                    `/?category=${v.id.toString()}&name=${v.name}`,
-                    `/?category=${v.id.toString()}`
-                  );
+                  router.push(`/?category=${v.id.toString()}&name=${v.name}`);
                 }}
                 isDisable={
                   router?.query?.category == v.id.toString() ? true : false

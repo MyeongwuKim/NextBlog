@@ -80,6 +80,7 @@ const SignIn: NextPage<ISignInProps> = ({ enable, openCallback }) => {
       reset();
       setLoading(false);
       openCallback("none");
+      router.replace("/");
     } else {
       setLoading(false);
       setError("errorMsg", { message: res.error });
