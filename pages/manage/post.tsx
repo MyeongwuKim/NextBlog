@@ -1,5 +1,6 @@
 import DropDownBox from "@/components/dropdownBox";
 import NormalBtn from "@/components/normalBtn";
+import Pagination from "@/components/pagination";
 import { updateCategoryData } from "@/hooks/useData";
 import {
   createAlert,
@@ -20,7 +21,7 @@ import {
   useState,
 } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
-import useSWR, { SWRConfig, unstable_serialize } from "swr";
+import useSWR, { SWRConfig, unstable_serialize, useSWRConfig } from "swr";
 
 interface PostHistory {
   id: number;
@@ -45,7 +46,11 @@ interface Category {
 }
 
 interface SWRdataProps {
-  data: { postHistory: PostHistory[]; categoryList: Category[] };
+  data: {
+    postHistory: PostHistory[];
+    categoryList: Category[];
+    endPageCount: number;
+  };
   ok: boolean;
 }
 
@@ -53,52 +58,59 @@ interface MutationResponse {
   ok: boolean;
   error: string;
 }
+const pageSize = 5;
+
 const PostListSWR = ({
   categoryList,
   postHistory,
-  query,
+  endPageCount,
 }: {
   postHistory: PostHistory[];
   categoryList: Category[];
-  query: any;
+  endPageCount: number;
 }) => {
-  let { title, content, category } = query;
-  let urlKey = "/api/manage/post";
-  if (title) {
-    urlKey = `/api/manage/post?title=${title}`;
-  } else if (content) {
-    urlKey = `/api/manage/post?content=${content}`;
-  } else if (category) {
-    urlKey = `/api/manage/post?category=${category}`;
-  }
-
+  const router = useRouter();
+  const { mutate } = useSWRConfig();
+  //화면 진입시 useSWR훅안에있는 Mutate의 prev값이 없을때가있어서 해당 키값 미리 업데이트
+  mutate("/api" + router.asPath, {
+    ok: true,
+    data: {
+      categoryList,
+      postHistory,
+      endPageCount,
+    },
+  });
   return (
     <SWRConfig
       value={{
         fallback: {
-          [unstable_serialize(urlKey)]: {
+          [unstable_serialize("/api" + router.asPath)]: {
             ok: true,
             data: {
               categoryList,
               postHistory,
+              endPageCount,
             },
           },
         },
       }}
     >
-      <PostList url={urlKey} />
+      <PostList />
     </SWRConfig>
   );
 };
-const PostList: NextPage<{ url: string }> = ({ url }) => {
+const PostList: NextPage = () => {
+  const router = useRouter();
   let {
     data: {
-      data: { postHistory, categoryList },
+      data: { postHistory, categoryList, endPageCount },
     },
     mutate: historyMutate,
-  } = useSWR<SWRdataProps>(url, null, { revalidateIfStale: false });
+  } = useSWR<SWRdataProps>("/api" + router.asPath, null, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+  });
   const updateCategory = updateCategoryData();
-  const router = useRouter();
   const [postDeleteMutation, { data: deleteResponse }] =
     useMutation<MutationResponse>(`/api/post/delete`);
   const [mutateMutation, { data: mutateResponse }] =
@@ -119,7 +131,7 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
     enable: boolean;
     width: number;
   }>();
-
+  const [pageNumArr, setPageNumArr] = useState<number[]>();
   const [dropBoxText, setDropBoxText] = useState<string>("제목");
   const checkBoxRef = useRef<any>({});
   const dropdownCallback = useCallback(
@@ -134,11 +146,28 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
     []
   );
   useEffect(() => {
-    console.log(postHistory);
-  }, [postHistory]);
-  useEffect(() => {
     setHeadTitle("글 관리");
-  }, []);
+  }, [router]);
+  useEffect(() => {
+    setAllCheckBox(false);
+    if (endPageCount > 0) {
+      let curNumber = Number(
+        router.query.pageoffset == undefined ? 1 : router.query.pageoffset
+      );
+      let endPageNumber = Math.ceil(endPageCount / pageSize);
+      let arr = [curNumber];
+      let size = endPageNumber < pageSize ? endPageNumber : pageSize;
+      let prev = curNumber;
+      let next = curNumber;
+      while (arr.length != size) {
+        prev = prev - 1;
+        next = next + 1;
+        if (prev > 0) arr.splice(0, 0, prev);
+        if (next <= endPageNumber) arr.splice(arr.length, 0, next);
+      }
+      setPageNumArr(arr);
+    }
+  }, [postHistory]);
   useEffect(() => {
     if (!mutateResponse) return;
     if (mutateResponse.ok) {
@@ -153,6 +182,7 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
     if (deleteResponse.ok) {
       updateCategory();
       createCautionMsg("포스트를 삭제하였습니다.", false);
+      router.replace(router.asPath);
     } else {
       createCautionMsg(deleteResponse.error, true);
     }
@@ -198,24 +228,25 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
   const onDeleteEvt = useCallback(
     (id?: number) => {
       let newHistory;
+      let newEndPageCount = endPageCount;
       if (id >= 0) {
         newHistory = postHistory.filter((item) => {
           if (item.id != id) return item;
         });
+        newEndPageCount--;
         postDeleteMutation(id);
       } else {
         let ids = [];
         newHistory = postHistory.filter((item) => {
           let checkBox = checkBoxRef.current[item.id] as HTMLInputElement;
+          if (checkBox.checked) ids.push(item.id);
           if (!checkBox.checked) {
             return item;
-          } else ids.push(item.id);
+          }
         });
+        newEndPageCount -= ids.length;
         postDeleteMutation(ids);
       }
-      historyMutate((prev) => {
-        return { ...prev, data: { ...prev.data, postHistory: newHistory } };
-      }, false);
       setAllCheckBox(false);
     },
     [postHistory]
@@ -256,7 +287,7 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
     let enableCount = 0;
     for (let i = 0; i < Object.keys(checkBoxRef.current).length; i++) {
       let checkbox = checkBoxRef.current[Object.keys(checkBoxRef.current)[i]];
-      if (checkbox.checked) {
+      if (checkbox != undefined && checkbox.checked) {
         checked = true;
         enableCount++;
       }
@@ -269,7 +300,11 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
   return (
     <div className="h-full  w-full  flex flex-col">
       <div className="relative text-xl mb-5 font-bold">
-        {Object.keys(router.query).length <= 0 ? (
+        {["title", "content", "category"].filter((page, i) => {
+          if (router.asPath.includes(page)) {
+            return true;
+          }
+        }).length <= 0 ? (
           "글 관리"
         ) : (
           <div className="flex flex-row gap-2 items-center">
@@ -294,7 +329,13 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
               </svg>
             </div>
             <span className="text-red-400">
-              {router.query[Object.keys(router.query)[0]]}
+              {
+                router.query[
+                  Object.keys(router.query).filter((v) => {
+                    return v != "pageoffset";
+                  })[0]
+                ]
+              }
             </span>
             검색결과
           </div>
@@ -505,9 +546,16 @@ const PostList: NextPage<{ url: string }> = ({ url }) => {
           checkBoxRef={checkBoxRef}
           checkBoxEvt={checkboxEvt}
           deleteEvt={onDeleteEvt}
-          key={i}
+          key={post.id}
         />
       ))}
+      <div className="relative mt-4">
+        <Pagination
+          pageSize={pageSize}
+          endPageNumber={Math.ceil(endPageCount / pageSize)}
+          pageNumberArr={pageNumArr}
+        />
+      </div>
       <DropDownBox
         info={{
           left: dropBoxInfo?.left,
@@ -797,8 +845,10 @@ export const getServerSideProps: GetServerSideProps<{
   postHistory: PostHistory[];
   categoryList: Category[];
 }> = async (ctx: GetServerSidePropsContext) => {
-  let { title, content, category } = ctx.query;
+  let { title, content, category, pageoffset } = ctx.query;
+  const pageSize = 5;
   let selectInfo = {};
+
   if (content) {
     selectInfo = {
       OR: {
@@ -830,6 +880,9 @@ export const getServerSideProps: GetServerSideProps<{
       },
     };
   }
+  const endPageCount = await prisma.post.count({
+    where: selectInfo,
+  });
   const postData = await prisma.post.findMany({
     where: selectInfo,
     orderBy: {
@@ -855,6 +908,8 @@ export const getServerSideProps: GetServerSideProps<{
         },
       },
     },
+    take: pageSize,
+    skip: Number(!pageoffset ? 0 : Number(pageoffset) - 1) * pageSize,
   });
 
   const categoryData = await prisma.category.findMany({
@@ -867,7 +922,7 @@ export const getServerSideProps: GetServerSideProps<{
     props: {
       categoryList: JSON.parse(JSON.stringify(categoryData)),
       postHistory: JSON.parse(JSON.stringify(postData)),
-      query: ctx.query,
+      endPageCount,
     },
   };
 };

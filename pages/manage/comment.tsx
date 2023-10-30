@@ -56,6 +56,13 @@ const CommentListSWR = ({
   maxCount: number;
 }) => {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+  //화면 진입시 useSWR훅안에있는 Mutate의 prev값이 없을때가있어서 해당 키값 미리 업데이트
+  mutate("/api" + router.asPath, {
+    ok: true,
+    data: { historyData, maxCount },
+  });
+
   return (
     <SWRConfig
       value={{
@@ -92,7 +99,7 @@ const CommentList: NextPage = () => {
     setError,
     setFocus,
   } = useForm<{ replyInput: string }>();
-  const [countArr, setCountArr] = useState<number[]>();
+  const [pageNumArr, setPageNumArr] = useState<number[]>();
   const [allCheckbox, setAllCheckBox] = useState<boolean>(false);
   const [deleteEnable, setDeleteEnable] = useState<boolean>(false);
   const [dropBoxInfo, setDropBoxInfo] = useState<{
@@ -118,23 +125,26 @@ const CommentList: NextPage = () => {
     []
   );
   useEffect(() => {
-    console.log("historyData!!!");
     setAllCheckBox(false);
+
     let curNumber = Number(
       router.query.pageoffset == undefined ? 1 : router.query.pageoffset
     );
-    let endPageNumber = Math.ceil(maxCount / pageSize);
-    let arr = [curNumber];
-    let size = endPageNumber < pageSize ? endPageNumber : pageSize;
-    let prev = curNumber;
-    let next = curNumber;
-    while (arr.length != size) {
-      prev = prev - 1;
-      next = next + 1;
-      if (prev > 0) arr.splice(0, 0, prev);
-      if (next <= endPageNumber) arr.splice(arr.length, 0, next);
+    if (maxCount > 0) {
+      let endPageNumber = Math.ceil(maxCount / pageSize);
+      let arr = [curNumber];
+      let size = endPageNumber < pageSize ? endPageNumber : pageSize;
+      let prev = curNumber;
+      let next = curNumber;
+      while (arr.length != size) {
+        prev = prev - 1;
+        next = next + 1;
+        if (prev > 0) arr.splice(0, 0, prev);
+        if (next <= endPageNumber) arr.splice(arr.length, 0, next);
+      }
+      setPageNumArr(arr);
     }
-    setCountArr(arr);
+
     return () => {};
   }, [historyData]);
 
@@ -150,7 +160,7 @@ const CommentList: NextPage = () => {
         newHistory = historyData.filter((item) => {
           if (item.historyId != id) return item;
         });
-        // historyDelete(id);
+        historyDelete(id);
       } else {
         let ids = [];
         newHistory = historyData.filter((item) => {
@@ -161,18 +171,8 @@ const CommentList: NextPage = () => {
             return item;
           } else ids.push(item.historyId);
         });
-        //historyDelete(ids);
+        historyDelete(ids);
       }
-      historyMutate((prev) => {
-        return {
-          ok: true,
-          data: {
-            historyData: newHistory,
-            maxCount: maxCount - newHistory.length,
-          },
-        };
-      }, false);
-      setAllCheckBox(false);
     },
     [historyData]
   );
@@ -189,6 +189,7 @@ const CommentList: NextPage = () => {
     if (!deleteResponse) return;
     if (deleteResponse.ok) {
       createCautionMsg("댓글을 삭제 하였습니다.", false);
+      router.replace(router.asPath);
     } else {
       createCautionMsg(deleteResponse.error, true);
     }
@@ -219,10 +220,15 @@ const CommentList: NextPage = () => {
         postId,
       };
       historyMutate((prev) => {
+        prev.data.historyData.splice(
+          prev.data.historyData.length - 1,
+          1,
+          newData
+        );
         return {
           ...prev,
           data: {
-            historyData: [newData, ...prev.data.historyData],
+            historyData: prev.data.historyData,
             maxCount: prev.data.maxCount,
           },
         };
@@ -550,7 +556,7 @@ const CommentList: NextPage = () => {
         <Pagination
           pageSize={pageSize}
           endPageNumber={Math.ceil(maxCount / pageSize)}
-          pageNumberArr={countArr}
+          pageNumberArr={pageNumArr}
         />
       </div>
       <DropDownBox
@@ -764,8 +770,10 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       ],
     };
   }
-  let maxCount = await prisma.history.count();
-
+  let maxCount = await prisma.history.count({
+    where: selectInfo,
+  });
+  console.log(maxCount);
   if (Math.ceil(maxCount / pageSize) < Number(pageoffset)) {
     return {
       redirect: {

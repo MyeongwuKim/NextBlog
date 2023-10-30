@@ -14,10 +14,6 @@ import post from "./api/post";
 //CBody 그대로 두고, query string에따라 PostList를 요청받게함
 //Post클릭시 글 이동
 
-interface PostListProps {
-  query: any;
-}
-
 interface SWRResponse {
   ok: boolean;
   data: (Post & { _count: { comments: number } })[];
@@ -34,7 +30,8 @@ function restoreScrollPos(url) {
   }
 }
 
-const PostList: NextPage<PostListProps> = ({ query }) => {
+const PostList: NextPage = () => {
+  const router = useRouter();
   const {
     data: pagePostsData,
     setSize,
@@ -45,11 +42,10 @@ const PostList: NextPage<PostListProps> = ({ query }) => {
         return null;
       }
       return `/api/post?pageoffset=${pageOffset}${
-        query.category ? `&categoryId=${query.category}` : ""
+        router?.query.category ? `&categoryId=${router?.query.category}` : ""
       }`;
     }
   );
-  const router = useRouter();
   const { data } = useSession();
   const isMe = userCheck(data);
   const [postsData, setPostsData] = useState<
@@ -215,13 +211,11 @@ const ServiceView: NextPage = ({}) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps<PostListProps> = async (
+export const getServerSideProps: GetServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
   return {
-    props: {
-      query: context.query,
-    },
+    props: {},
   };
 };
 

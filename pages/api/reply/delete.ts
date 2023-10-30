@@ -5,7 +5,6 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 interface CommentsBody {
   content: string;
   name: string;
-  password: string;
   postId: number;
 }
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -20,7 +19,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         historyId: true,
       },
     });
-
     await prisma.history.delete({
       where: {
         id: historyId,

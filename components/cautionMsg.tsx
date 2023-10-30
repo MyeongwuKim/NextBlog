@@ -18,7 +18,7 @@ const CautionMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
       clearInterval(timer);
     }
     timeoutLogic();
-  });
+  }, []);
 
   const timeoutLogic = () => {
     let timeBar = document.getElementById("cautionTimeBar");

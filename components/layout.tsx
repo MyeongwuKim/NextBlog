@@ -13,7 +13,6 @@ import LabelBtn from "./labelBtn";
 import { setLoading } from "@/hooks/useEvent";
 
 interface LayoutProps {
-  pageProps: any;
   children: React.ReactElement;
   profile: ProfileType;
   category: CategoryCountType[];

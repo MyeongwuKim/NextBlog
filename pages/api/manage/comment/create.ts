@@ -11,8 +11,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         content,
         data: { postId, categoryId, id, isReply },
       } = req.body;
-      console.log(req.body);
-
       let token = await getToken({
         req,
         cookieName: process.env.NEXTAUTH_TOKENNAME,
@@ -65,7 +63,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         data: {
           content,
           name: ownerName,
-          password: null,
           isMe: true,
           post: { connect: { id: postId } },
           comment: { connect: { id: commentId } },

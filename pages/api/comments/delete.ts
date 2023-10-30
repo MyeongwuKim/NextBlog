@@ -7,12 +7,12 @@ import { getToken } from "next-auth/jwt";
 interface CommentsBody {
   content: string;
   name: string;
-  password: string;
   postId: number;
 }
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const { commentId } = req.body;
+
     let { historyId } = await prisma.comment.findUnique({
       where: {
         id: commentId,

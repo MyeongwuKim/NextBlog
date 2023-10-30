@@ -7,16 +7,13 @@ import { getToken } from "next-auth/jwt";
 interface CommentsBody {
   content: string;
   name: string;
-  password: string;
   postId: number;
   categoryId: number;
 }
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
     try {
-      let { content, name, password, postId, categoryId } =
-        req.body as CommentsBody;
-
+      let { content, name, postId, categoryId } = req.body as CommentsBody;
       let token = await getToken({
         req,
         cookieName: process.env.NEXTAUTH_TOKENNAME,
@@ -40,19 +37,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const isMe = token && token.id == accountId ? true : false;
 
-      if (!isMe && !name && !password)
+      if (!isMe && !name)
         throw new Error("세션 만료", {
           cause: "세션 만료 에러가 발생했습니다.",
         });
-
-      let encodedpassword = null;
-      if (!isMe) encodedpassword = await bcrypt.hash(password, 10);
 
       let comment = await prisma.comment.create({
         data: {
           content,
           name: isMe ? ownerName : name,
-          password: encodedpassword,
           isMe,
           post: { connect: { id: postId } },
           category: { connect: { id: categoryId } },
@@ -69,7 +62,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           },
         },
       });
-
       res.json({
         ok: true,
       });

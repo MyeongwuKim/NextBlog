@@ -37,13 +37,11 @@ function MyApp({
   profile,
   category,
 }: AppProps & LayoutData) {
-  const [headTitle, setHeadTitle] = useState<string>("Loading");
-  registHeadState(setHeadTitle);
   return (
     <SessionProvider session={pageProps.session}>
       <ThemeProvider attribute="class">
         <Loading />
-        <div id="cautionCont" />
+        <div id="cautionCont" className="fixed z-[99]" />
         <SWRConfig
           value={{
             fallback: {
@@ -62,7 +60,7 @@ function MyApp({
               }),
           }}
         >
-          <WithHead title={headTitle} pageProps={pageProps}>
+          <WithHead>
             <Component {...pageProps} />
           </WithHead>
         </SWRConfig>

@@ -18,7 +18,13 @@ const Pagination = ({
       <div className="inline-flex -space-x-px text-sm">
         <div
           className={`${
-            Number(router.query.pageoffset) - 3 <= 0 ? "hidden" : "block"
+            Number(
+              router.query.pageoffset == undefined ? 1 : router.query.pageoffset
+            ) -
+              3 <=
+            0
+              ? "hidden"
+              : "block"
           }`}
         >
           <Link
@@ -55,7 +61,11 @@ const Pagination = ({
         ))}
         <div
           className={`${
-            Number(router.query.pageoffset) + 3 > endPageNumber
+            Number(
+              router.query.pageoffset == undefined ? 1 : router.query.pageoffset
+            ) +
+              3 >
+            endPageNumber
               ? "hidden"
               : "block"
           }`}

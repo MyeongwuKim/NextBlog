@@ -6,8 +6,10 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "GET") {
     try {
-      let { title, content, category } = req.query;
+      let { title, content, category, pageoffset } = req.query;
       let selectInfo = {};
+      const pageSize = 5;
+
       if (content) {
         selectInfo = {
           OR: {
@@ -39,6 +41,10 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           },
         };
       }
+      const endPageCount = await prisma.post.count({
+        where: selectInfo,
+      });
+
       const postData = await prisma.post.findMany({
         where: selectInfo,
         orderBy: {
@@ -64,6 +70,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
             },
           },
         },
+        take: pageSize,
+        skip: Number(!pageoffset ? 0 : Number(pageoffset) - 1) * pageSize,
       });
 
       const categoryData = await prisma.category.findMany({
@@ -78,6 +86,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         data: {
           categoryList: categoryData,
           postHistory: postData,
+          endPageCount,
         },
       });
     } catch {

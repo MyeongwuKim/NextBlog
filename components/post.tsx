@@ -1,10 +1,8 @@
 import { getDeliveryDomain, getFormatDate } from "@/hooks/useUtils";
 import { Post } from "@prisma/client";
 import { NextPage } from "next";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import WithHead from "./WithHead";
 import CompImg from "@/components/compImg";
 
 interface PostProps {

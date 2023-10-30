@@ -1,22 +1,27 @@
 import { getCategoryData, getUserData } from "@/hooks/useData";
 import Head from "next/head";
 import Layout from "./layout";
-import ErrorPage from "@/pages/ErrorPage";
-import { useEffect } from "react";
+import { useRouter } from "next/router";
+import ErrorPage from "../pages/ErrorPage";
+import { useEffect, useState } from "react";
+import { registHeadState } from "@/hooks/useEvent";
 
-const WithHead = ({ children, title, pageProps }) => {
+const WithHead = ({ children }) => {
+  const router = useRouter();
   let profile = getUserData();
   let category = getCategoryData();
-  useEffect(() => {});
+  const [headTitle, setHeadTitle] = useState<string>("Loading");
+  registHeadState(setHeadTitle);
+
   return (
     <>
       <Head>
-        <title>{title}</title>
+        <title>{headTitle == undefined ? "Loading" : headTitle}</title>
       </Head>
-      {pageProps.title == "에러" ? (
-        <ErrorPage contents={pageProps.contents}></ErrorPage>
+      {router?.pathname.includes("ErrorPage") ? (
+        <ErrorPage />
       ) : (
-        <Layout category={category} profile={profile} pageProps={pageProps}>
+        <Layout category={category} profile={profile}>
           {children}
         </Layout>
       )}

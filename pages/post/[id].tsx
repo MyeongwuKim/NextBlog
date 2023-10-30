@@ -14,7 +14,6 @@ import {
   setHeadTitle,
   createAlert,
 } from "@/hooks/useEvent";
-import prisma from "@/lib/server/client";
 import useMutation from "@/lib/server/useMutation";
 import { Comment, Post, Reply } from "@prisma/client";
 import { GetServerSideProps, NextPage } from "next";
@@ -22,23 +21,23 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
-import useSWR, { SWRConfig, unstable_serialize } from "swr";
+import useSWR, { KeyedMutator, useSWRConfig } from "swr";
 import { getToken } from "next-auth/jwt";
 import LabelBtn from "@/components/labelBtn";
 import CompImg from "@/components/compImg";
 
-interface PostDataProps {
-  postData: Post & {
-    category: { name: string };
-    comments: (Comment & { replys: Reply[] })[];
-  };
-  nearPostData: NearPostType[];
-  headTailData: HeadTailType;
+interface CommentForm {
+  content: string;
+  name: string;
 }
-
-type HeadTailType = {
-  prev: { title: string; id: number };
-  next: { title: string; id: number };
+interface ErrorFormData extends CommentForm {}
+interface mutationResponse {
+  ok: boolean;
+  error: string;
+}
+type PostDataType = Post & {
+  category: { name: string };
+  comments: (Comment & { replys: Reply[] })[];
 };
 type NearPostType = {
   title: string;
@@ -46,50 +45,32 @@ type NearPostType = {
   createdAt: string;
   thumbnail: string;
 };
-interface CommentForm {
-  content: string;
-  name: string;
-  password: string;
-}
-interface ErrorFormData extends CommentForm {}
-interface mutationResponse {
-  ok: boolean;
-  error: string;
-}
-interface CommentSWR {
-  data: Post & {
-    category: { name: string };
-    comments: (Comment & { replys: Reply[] })[];
+type HeadtailDataType = {
+  prev: { title: string; id: number };
+  next: { title: string; id: number };
+};
+interface PostResponse {
+  data: {
+    postData: PostDataType;
+    headTailPostData: HeadtailDataType[];
+    nearPostData: NearPostType[];
   };
   ok: boolean;
 }
 let commentData: Comment;
 
-const PostSWR = ({ postData, nearPostData, headTailData }: PostDataProps) => {
-  return (
-    <SWRConfig
-      value={{
-        fallback: {
-          [unstable_serialize(`/api/post/${postData.id}`)]: {
-            ok: true,
-            data: postData,
-          },
-        },
-      }}
-    >
-      <PostDetail
-        postId={postData.id}
-        nearPostData={nearPostData}
-        headTailData={headTailData}
-      />
-    </SWRConfig>
-  );
+export const getPostData = async (id) => {
+  let req = await fetch(`${process.env.NEXTAUTH_URL}/api/post/${id}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  let res = await req.json();
+  return res;
 };
-const PostDetail: NextPage<{
-  postId: number;
-  nearPostData: NearPostType[];
-  headTailData: HeadTailType;
-}> = ({ postId, nearPostData, headTailData }) => {
+
+const PostDetail: NextPage = () => {
   const router = useRouter();
   const { register, handleSubmit, getValues, reset } = useForm<CommentForm>();
   let { data: sessionData } = useSession();
@@ -97,21 +78,27 @@ const PostDetail: NextPage<{
   let isMe = userCheck(sessionData);
   const [createTime, setCreateTime] = useState<string>();
   const [btnState, setBtnState] = useState<boolean>(false);
-  const [createComments, { loading, data: responseData, error }] =
+  const [createComment, { loading, data: responseData, error }] =
     useMutation<mutationResponse>("/api/comments/create");
   const {
-    data: { data: postData },
+    data: postResponse,
     isLoading,
     mutate: postMutation,
-  } = useSWR<CommentSWR>(postId ? `/api/post/${postId}` : null);
+  } = useSWR<PostResponse>(`/api/post/${router.query.id}`);
   const [postDeleteMutation, { data: deleteRespose }] =
-    useMutation<mutationResponse>(postId ? `/api/post/delete` : null);
+    useMutation<mutationResponse>(`/api/post/delete`);
   const [mdElements, setMdElements] = useState<HTMLElement[]>();
   const [hide, setHide] = useState<boolean>(false);
+  let [commentDelete, { data: commentsResponse, error: commentError }] =
+    useMutation<DeleteResponse>("/api/comments/delete");
+  let [replyDelete, { data: replyResponse, error: replyError }] =
+    useMutation<DeleteResponse>("/api/reply/delete");
 
   useEffect(() => {
-    setHeadTitle(postData?.title);
-    window.scrollTo({ top: 0 });
+    setHeadTitle(postResponse?.data.postData?.title);
+    setCreateTime(getFormatDate(postResponse?.data.postData?.createdAt));
+
+    //window.scrollTo({ top: 0 });
     if (document.getElementById("reactMD")) {
       let eles = document.getElementById("reactMD").children;
       let elesArr = [];
@@ -127,7 +114,7 @@ const PostDetail: NextPage<{
         setMdElements(elesArr);
       }
     }
-  }, [postId]);
+  }, [postResponse]);
 
   useEffect(() => {
     if (!deleteRespose) return;
@@ -140,11 +127,7 @@ const PostDetail: NextPage<{
   useEffect(() => {
     if (!responseData) return;
     if (responseData.ok) {
-      reset();
-      postMutation((prev) => {
-        return prev;
-      });
-      setLoading(false);
+      postMutation();
     } else createCautionMsg(responseData.error, true);
   }, [responseData]);
 
@@ -152,19 +135,106 @@ const PostDetail: NextPage<{
     if (error) createCautionMsg(error as any, true);
   }, [error]);
 
+  useEffect(() => {
+    if (!commentsResponse) return;
+    if (commentsResponse.ok)
+      createCautionMsg("댓글 삭제를 완료했습니다", false);
+    else createCautionMsg(commentsResponse.error, false);
+  }, [commentsResponse]);
+
+  useEffect(() => {
+    if (!replyResponse) return;
+
+    if (replyResponse.ok) createCautionMsg("답글 삭제를 완료했습니다", false);
+    else createCautionMsg(replyResponse.error, false);
+  }, [replyResponse]);
+
+  const commentDeleteMutate = useCallback(
+    (id, isReply: boolean, commentIndex, replyIndex) => {
+      if (isReply) {
+        //대댓글 삭제
+        postMutation((prev) => {
+          return {
+            ...prev,
+            data: {
+              ...prev.data,
+              postData: {
+                ...prev.data.postData,
+                comments: prev.data.postData.comments.map((comment, i) => {
+                  if (commentIndex == i) {
+                    return {
+                      ...comment,
+                      replys: comment.replys.filter((reply, j) => {
+                        if (j != replyIndex) return { ...reply };
+                      }),
+                    };
+                  }
+                  return { ...comment };
+                }),
+              },
+            },
+          };
+        }, false);
+        replyDelete({ replyId: id });
+      } else {
+        //코멘트삭제
+        postMutation((prev) => {
+          prev.data.postData.comments.splice(commentIndex, 1);
+          return {
+            ...prev,
+            data: {
+              ...prev.data,
+              postData: {
+                ...prev.data.postData,
+                comments: [...prev.data.postData.comments],
+              },
+            },
+          };
+        }, false);
+        commentDelete({ commentId: id });
+      }
+    },
+    [postResponse]
+  );
+
   const onValid = (data) => {
-    setLoading(true);
-    data = { ...data, postId: postData.id, categoryId: postData.categoryId };
-    commentData = data;
-    createComments(data);
+    reset();
+    postMutation((prev) => {
+      let commentMutationData: Comment & { replys: Reply[] } = {
+        categoryId: prev.data.postData.categoryId,
+        content: data.content,
+        createdAt: new Date(),
+        historyId: null,
+        id: null,
+        isMe,
+        name: data.name,
+        postId: prev.data.postData.id,
+        replys: [],
+        updatedAt: new Date(),
+      };
+      data = {
+        ...data,
+        postId: prev.data.postData.id,
+        categoryId: prev.data.postData.categoryId,
+      };
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          postData: {
+            ...prev.data.postData,
+            comments: [...prev.data.postData.comments, commentMutationData],
+          },
+        },
+      };
+    }, false);
+    createComment(data);
   };
   const onInValid: SubmitErrorHandler<ErrorFormData> = (error) => {
-    let { password, content, name } = error;
+    let { content, name } = error;
     let message = "";
     if (name) {
       message = name.message;
-    } else if (password) {
-      message = password.message;
     } else if (content) {
       message = content.message;
     }
@@ -172,37 +242,64 @@ const PostDetail: NextPage<{
   };
 
   const checkChange = () => {
-    let { content, name, password } = getValues();
+    let { content, name } = getValues();
 
     if (isMe) {
       if (content.length <= 0) setBtnState(false);
       else setBtnState(true);
     } else {
-      if (content.length <= 0 || name.length <= 0 || password.length <= 0)
-        setBtnState(false);
+      if (content.length <= 0 || name.length <= 0) setBtnState(false);
       else setBtnState(true);
     }
   };
 
-  useEffect(() => {
-    setCreateTime(getFormatDate(postData?.createdAt));
-  }, []);
+  if (isLoading)
+    return (
+      <div
+        id="PostLoading"
+        className="flex items-center justify-center w-full h-[300px]"
+      >
+        <svg
+          aria-hidden="true"
+          className="w-24 h-24 text-gray-200 animate-spin dark:text-gray-600 fill-blue-500"
+          viewBox="0 0 100 101"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+            fill="currentColor"
+          />
+          <path
+            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+            fill="currentFill"
+          />
+        </svg>
+      </div>
+    );
   return (
     <div>
       <div className={`${hide ? "hidden" : "block"}`}>
-        <Appendix postId={postId} mdElements={mdElements} />
+        <Appendix
+          postId={postResponse?.data?.postData?.id}
+          mdElements={mdElements}
+        />
       </div>
 
       <div className="w-full">
         <div className="mb-5 text-5xl font-bold leading-tight">
-          <span className="mr-2">[{postData?.category.name}]</span>
-          {postData?.title}
+          <span className="mr-2">
+            [{postResponse?.data?.postData?.category.name}]
+          </span>
+          {postResponse?.data?.postData?.title}
         </div>
         <div className="mb-5 flex justify-between">
           <div className="text-lg dark:text-gray-400 text-slate-400 flex">
             <span className="mr-2">{createTime} 작성</span>
             <span
-              className={`${postData?.isPrivate ? "block" : "hidden"} flex`}
+              className={`${
+                postResponse?.data?.postData?.isPrivate ? "block" : "hidden"
+              } flex`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -225,7 +322,7 @@ const PostDetail: NextPage<{
           <div className={`flex ${isMe ? "block" : "hidden"}`}>
             <span
               onClick={() => {
-                router.push(`/write?id=${postData?.id}`);
+                router.push(`/write?id=${postResponse?.data.postData?.id}`);
               }}
               className="text-lg cursor-pointer
           dark:text-gray-400 text-slate-400 mr-3 underline"
@@ -239,7 +336,7 @@ const PostDetail: NextPage<{
                   ["취소", "확인"],
                   () => {
                     setLoading(true);
-                    postDeleteMutation(postData?.id);
+                    postDeleteMutation(postResponse?.data.postData?.id);
                   },
                   350
                 );
@@ -253,7 +350,7 @@ const PostDetail: NextPage<{
         </div>
         <div className="border-y-[1px] border-gray-200 dark:border-zinc-800" />
         <div className="my-16" id="reactMD">
-          <ReactMD doc={postData?.html} />
+          <ReactMD doc={postResponse?.data?.postData?.html} />
         </div>
         <div className="mb-8 text-xl font-semibold">Post By</div>
         <div className="py-12 mb-16 border-y-[1px] flex border-gray-200 dark:border-zinc-800">
@@ -283,12 +380,12 @@ const PostDetail: NextPage<{
         <div>
           <div className="w-full mb-16 min-h-[40px]">
             <div className="mb-4 text-xl font-semibold">
-              {nearPostData.length > 0
-                ? `[${postData?.category?.name}] 카테고리 관련글`
+              {postResponse?.data?.nearPostData.length > 0
+                ? `[${postResponse?.data?.postData?.category?.name}] 카테고리 관련글`
                 : ""}
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {nearPostData?.map((nearPost, i) => (
+              {postResponse?.data?.nearPostData?.map((nearPost, i) => (
                 <NearPost
                   key={i}
                   title={nearPost?.title}
@@ -300,39 +397,54 @@ const PostDetail: NextPage<{
             </div>
           </div>
           <div className="mb-16 h-[90px] w-full flex flex-row justify-between gap-2">
-            {Object.keys(headTailData).map((dir, i) => {
-              if (!headTailData[dir]) {
-                return <div key={i}></div>;
-              }
-              return <NextPost key={i} data={headTailData[dir]} dir={dir} />;
-            })}
+            {!postResponse?.data?.headTailPostData
+              ? []
+              : Object.keys(postResponse?.data?.headTailPostData).map(
+                  (dir, i) => {
+                    if (!postResponse?.data?.headTailPostData[dir]) {
+                      return <div key={i}></div>;
+                    }
+                    return (
+                      <NextPost
+                        key={i}
+                        data={postResponse?.data?.headTailPostData[dir]}
+                        dir={dir}
+                      />
+                    );
+                  }
+                )}
           </div>
           <div className="border-t-[1px]  border-gray-200 dark:border-zinc-800 flex items-center ">
             <div className="text-lg my-4 font-semibold">
-              {postData?.comments.length}개의 댓글
+              {postResponse?.data?.postData?.comments.length}개의 댓글
             </div>
           </div>
           <div className="grid grid-flow-row">
-            {postData?.comments.map((commentData) => (
+            {postResponse?.data?.postData?.comments.map((commentData, i) => (
               <CommentItem
-                allow={postData.allow}
+                postMutation={postMutation}
+                allow={postResponse?.data?.postData.allow}
                 commentData={commentData}
-                postId={postData?.id}
+                postId={postResponse?.data?.postData?.id}
+                categoryId={postResponse?.data?.postData?.categoryId}
+                index={i}
                 key={commentData.id}
-                categoryId={postData?.categoryId}
+                commentDeleteMutate={commentDeleteMutate}
               />
             ))}
           </div>
           <div className="border-y-[1px] border-gray-200 dark:border-zinc-800 mb-6" />
           <div
             className={`h-[50px] mb-8 ${
-              postData?.allow ? "hidden" : "block"
+              postResponse?.data?.postData?.allow ? "hidden" : "block"
             } text-xl font-semibold flex items-center justify-center text-gray-400`}
           >
             <span>댓글 작성이 금지된 게시물입니다.</span>
           </div>
           <form
-            className={`${postData?.allow ? "block" : "hidden"}`}
+            className={`${
+              postResponse?.data?.postData?.allow ? "block" : "hidden"
+            }`}
             method="post"
             onSubmit={handleSubmit(onValid, onInValid)}
           >
@@ -356,30 +468,9 @@ const PostDetail: NextPage<{
                       }
                 }
                 height="100%"
-                width="20%"
+                width="40%"
                 placeholder="이름"
                 id="name"
-              />
-              <InputField
-                register={
-                  isMe
-                    ? null
-                    : {
-                        ...register("password", {
-                          required: true,
-                          minLength: {
-                            value: 4,
-                            message: "비밀번호는 4자 이상이여야 합니다.",
-                          },
-                          onChange: checkChange,
-                        }),
-                      }
-                }
-                height="100%"
-                width="20%"
-                placeholder="비밀번호"
-                id="password"
-                type="password"
               />
             </div>
             <InputField
@@ -427,15 +518,24 @@ interface CommentItemProps {
   isReply: boolean;
   data: Comment | Reply;
   allow: boolean;
+  deleteEvt: () => void;
 }
 
 interface CommentProps {
   allow: boolean;
   postId: number;
+  index: number;
   categoryId: number;
   commentData: Comment & {
     replys: Reply[];
   };
+  postMutation: KeyedMutator<PostResponse>;
+  commentDeleteMutate: (
+    id: number,
+    isReply: boolean,
+    commentIndex: number,
+    replyIndex?: number
+  ) => void;
 }
 export const NextPost = ({
   dir,
@@ -492,6 +592,9 @@ export const CommentItem = ({
   postId,
   allow,
   categoryId,
+  postMutation,
+  commentDeleteMutate,
+  index,
 }: CommentProps) => {
   let { data: sessionData } = useSession();
   let userData = getUserData();
@@ -500,33 +603,26 @@ export const CommentItem = ({
     useForm<CommentForm>();
   const [enableReply, setEnableReply] = useState<boolean>(false);
   const [showReply, setShowReply] = useState<boolean>(false);
-  const [createReply, { loading, data, error }] =
+  const [createReply, { loading, data: replyResponse, error }] =
     useMutation<mutationResponse>("/api/reply/create");
-  const { isLoading, mutate: postMutation } = useSWR<CommentSWR>(
-    postId ? `/api/post/${postId}` : null
-  );
 
   useEffect(() => {
-    if (!data) return;
+    if (!replyResponse) return;
 
-    if (data.ok) {
-      setLoading(false);
-      reset();
-      setShowReply(false);
-      postMutation((prev) => prev);
+    if (replyResponse.ok) {
+      postMutation();
     } else {
-      createCautionMsg(data.error, true);
+      createCautionMsg(replyResponse.error, true);
     }
-  }, [data]);
+  }, [replyResponse]);
   const checkChange = () => {
-    let { content, name, password } = getValues();
+    let { content, name } = getValues();
 
     if (isMe) {
       if (content.length <= 0) setEnableReply(false);
       else setEnableReply(true);
     } else {
-      if (content.length <= 0 || name.length <= 0 || password.length <= 0)
-        setEnableReply(false);
+      if (content.length <= 0 || name.length <= 0) setEnableReply(false);
       else setEnableReply(true);
     }
   };
@@ -538,22 +634,29 @@ export const CommentItem = ({
   }, []);
 
   const onValid = (data) => {
-    setLoading(true);
-    data = {
+    reset();
+    setShowReply(false);
+    let commentdata: Reply = {
       ...data,
       commentId: commentData.id,
       postId,
       categoryId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isMe,
     };
-    createReply(data);
+    postMutation((prev) => {
+      let newComments = prev.data.postData.comments[index];
+      newComments.replys = [...newComments.replys, commentdata];
+      return prev;
+    }, false);
+    createReply(commentdata);
   };
   const onInValid: SubmitErrorHandler<ErrorFormData> = (error) => {
-    let { password, content, name } = error;
+    let { content, name } = error;
     let message = "";
     if (name) {
       message = name.message;
-    } else if (password) {
-      message = password.message;
     } else if (content) {
       message = content.message;
     }
@@ -567,15 +670,21 @@ export const CommentItem = ({
         data={commentData}
         isReply={false}
         replyCallback={onReplyBtnClick}
+        deleteEvt={() => {
+          commentDeleteMutate(commentData.id, false, index);
+        }}
       />
       <div className="mt-4 ml-6 grid grid-flow-row">
-        {commentData?.replys?.map((replyData) => (
+        {commentData?.replys?.map((replyData, i) => (
           <CommentBody
-            allow={allow}
             key={replyData.id}
+            allow={allow}
             data={replyData}
             isReply={true}
             replyCallback={onReplyBtnClick}
+            deleteEvt={() => {
+              commentDeleteMutate(replyData.id, true, index, i);
+            }}
           />
         ))}
       </div>
@@ -584,69 +693,107 @@ export const CommentItem = ({
         onSubmit={handleSubmit(onValid, onInValid)}
         className={`mt-4 ${showReply ? "block" : "hidden"}`}
       >
-        <div
-          className={`${
-            isMe ? "hidden" : "block"
-          } flex justify-between w-full h-[50px] relative mb-4`}
-        >
-          <InputField
-            register={
-              isMe
-                ? null
-                : {
-                    ...register("name", {
-                      required: {
-                        value: true,
-                        message: "이름을 입력해주세요.",
-                      },
-                      onChange: checkChange,
-                    }),
-                  }
-            }
-            height="100%"
-            width="49%"
-            placeholder="이름"
-            id="name"
-          />
-          <InputField
-            register={
-              isMe
-                ? null
-                : {
-                    ...register("password", {
-                      required: true,
-                      minLength: {
-                        value: 4,
-                        message: "비밀번호는 4자 이상이여야 합니다.",
-                      },
-                      onChange: checkChange,
-                    }),
-                  }
-            }
-            height="100%"
-            width="49%"
-            placeholder="비밀번호"
-            id="password"
-            type="password"
-          />
+        <div className="flex flex-row pl-10 gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className={`w-6 h-6 scale-y-[-1] mt-4`}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3"
+            />
+          </svg>
+          {isMe ? (
+            <div
+              className="border-2 dark:border-zinc-800 relative flex-none flex
+                   flex-row items-center justify-center w-16 h-16 rounded-full bg-slate-500"
+            >
+              <img
+                src={
+                  userData?.avatar
+                    ? `${getDeliveryDomain(userData?.avatar, "avatar")}`
+                    : ""
+                }
+                className={`${
+                  userData?.avatar ? "block" : "hidden"
+                } w-full h-full rounded-full `}
+              />
+              <span className="text-sm font-semibold text-center text-white ">
+                {!userData?.avatar ? userData?.name : ""}
+              </span>
+            </div>
+          ) : (
+            <div
+              className="w-16 h-16 rounded-full flex-none
+border-[1px] dark:border-zinc-800 items-center flex"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-8 h-8 m-auto text-gray-400"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                />
+              </svg>
+            </div>
+          )}
+          <div className="flex flex-col flex-1">
+            <div
+              className={`${
+                isMe ? "hidden" : "block"
+              } flex justify-between w-full h-[50px] relative mb-4`}
+            >
+              <InputField
+                register={
+                  isMe
+                    ? null
+                    : {
+                        ...register("name", {
+                          required: {
+                            value: true,
+                            message: "이름을 입력해주세요.",
+                          },
+                          onChange: checkChange,
+                        }),
+                      }
+                }
+                height="100%"
+                width="40%"
+                placeholder="이름"
+                id="name"
+              />
+            </div>
+            <InputField
+              register={{
+                ...register("content", {
+                  required: true,
+                  maxLength: {
+                    value: 500,
+                    message: "댓글은 500자까지 입력할 수 있습니다.",
+                  },
+                  onChange: checkChange,
+                }),
+              }}
+              height="120px"
+              width="100%"
+              placeholder="코멘트"
+              id="comment"
+              fieldtype="textarea"
+            />
+          </div>
         </div>
-        <InputField
-          register={{
-            ...register("content", {
-              required: true,
-              maxLength: {
-                value: 500,
-                message: "댓글은 500자까지 입력할 수 있습니다.",
-              },
-              onChange: checkChange,
-            }),
-          }}
-          height="120px"
-          width="100%"
-          placeholder="코멘트"
-          id="comment"
-          fieldtype="textarea"
-        />
+
         <div className="relative flex items-center justify-end w-full h-16 gap-2">
           <CancelBtn
             content="취소"
@@ -678,6 +825,7 @@ export const CommentBody = ({
   isReply,
   replyCallback,
   data,
+  deleteEvt,
 }: CommentItemProps) => {
   const router = useRouter();
   const { data: sessionData } = useSession();
@@ -685,14 +833,6 @@ export const CommentBody = ({
   const isMe = userCheck(sessionData);
   const [targetEle, setTargetEle] = useState<HTMLElement>(null);
   const [eleAnimate, setEleAnimate] = useState<boolean>(false);
-
-  let [commentDelete, { data: commentsResponse, error: commentError }] =
-    useMutation<DeleteResponse>("/api/comments/delete");
-  let [replyDelete, { data: replyResponse, error: replyError }] =
-    useMutation<DeleteResponse>("/api/reply/delete");
-  const { isLoading, mutate: postMutation } = useSWR<CommentSWR>(
-    data?.postId ? `/api/post/${data?.postId}` : null
-  );
 
   useEffect(() => {
     if (!data) return;
@@ -717,46 +857,6 @@ export const CommentBody = ({
     }
   }, [targetEle]);
 
-  useEffect(() => {
-    if (commentError) {
-      createCautionMsg(commentError as any, true);
-    } else if (replyError) {
-      createCautionMsg(replyError as any, true);
-    }
-  }, [commentError, replyError]);
-
-  useEffect(() => {
-    let ok = false;
-    let error = "";
-    if (commentsResponse || replyResponse) {
-      if (commentsResponse) {
-        ok = commentsResponse.ok;
-        error = commentsResponse.error;
-      } else if (replyResponse) {
-        ok = replyResponse.ok;
-        error = replyResponse.error;
-      }
-
-      if (ok) {
-        createCautionMsg("삭제를 완료했습니다", false);
-        postMutation();
-      } else {
-        createCautionMsg(error, true);
-      }
-    }
-  }, [commentsResponse, replyResponse]);
-
-  const onDelete = () => {
-    setLoading(true);
-    let id = data.id;
-    if (isReply) {
-      //대댓글 삭제
-      replyDelete({ replyId: id });
-    } else {
-      //코멘트삭제
-      commentDelete({ commentId: id });
-    }
-  };
   return (
     <div
       id={isReply ? `reply${data.id}` : `comment${data.id}`}
@@ -773,7 +873,7 @@ export const CommentBody = ({
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className={`w-6 h-6 scale-y-[-1] mt-4 mr-[1px] ${
+        className={`w-6 h-6 scale-y-[-1] mt-4 mr-[4px] ${
           isReply ? "block " : "hidden"
         }`}
       >
@@ -783,7 +883,6 @@ export const CommentBody = ({
           d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3"
         />
       </svg>
-
       {data.isMe ? (
         <div
           className="border-2 dark:border-zinc-800 relative flex-none flex
@@ -839,9 +938,9 @@ border-[1px] dark:border-zinc-800 items-center flex"
           </div>
           <div className={`${isMe ? "block" : "hidden"}`}>
             <span
-              onClick={onDelete}
-              className="text-sm cursor-pointer
-dark:text-gray-400 text-slate-400 underline"
+              onClick={deleteEvt}
+              className={`${data.id ? "block" : "hidden"} text-sm cursor-pointer
+dark:text-gray-400 text-slate-400 underline`}
             >
               삭제
             </span>
@@ -1017,144 +1116,26 @@ dark:border-zinc-800
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
-  let token = await getToken({
-    req: ctx.req,
-    cookieName: process.env.NEXTAUTH_TOKENNAME,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-  const postData = await prisma.post.findUnique({
-    where: {
-      id: Number(ctx.params.id),
-    },
-    include: {
-      category: {
-        select: {
-          name: true,
-          id: true,
-        },
-      },
-      comments: {
-        include: { replys: true },
-      },
-    },
-  });
-
-  let privateCheck = postData?.isPrivate && !token ? true : false;
-
-  if (privateCheck) {
-    return {
-      props: {
-        title: "에러",
-        contents: "접근 권한이 없는 페이지입니다.",
-      },
-    };
-  }
-  let privateFilter = !token ? { isPrivate: true } : { isPrivate: null };
-  const getHeadTailData = async (orderBy) => {
-    let data = await prisma.post.findMany({
-      where: {
-        NOT: privateFilter,
-      },
-      cursor: {
-        id: Number(ctx.params.id),
-      },
-      skip: 1,
-      take: 1,
-      select: {
-        title: true,
-        id: true,
-      },
-      orderBy: {
-        createdAt: orderBy,
-      },
-    });
-
-    return data.length > 0 ? data[0] : null;
-  };
-  const getNearCategoryData = async (take, orderBy) => {
-    return await prisma.category.findUnique({
-      where: {
-        id: postData?.category.id,
-      },
-      select: {
-        post: {
-          where: {
-            NOT: privateFilter,
-          },
-          cursor: {
-            id: Number(ctx.params.id),
-          },
-          skip: 1,
-          take,
-          select: {
-            title: true,
-            thumbnail: true,
-            createdAt: true,
-            id: true,
-          },
-          orderBy: {
-            createdAt: orderBy,
-          },
-        },
-      },
-    });
-  };
-
-  let headTailData = {
-    prev: await getHeadTailData("desc"),
-    next: await getHeadTailData("asc"),
-  };
-
-  let { post: prevPost } = await getNearCategoryData(4, "desc");
-  let { post: nextPost } = await getNearCategoryData(4, "asc");
-  let pageData = [];
-  let totalPostCount = prevPost.length + nextPost.length;
-
-  const setPageData = (data, maxLength, reverse?) => {
-    let selectData = [];
-    if (data.length > 0) {
-      for (
-        let i = reverse ? maxLength - 1 : 0;
-        reverse ? i > -1 : i < maxLength;
-        reverse ? i-- : i++
-      ) {
-        selectData.push(data[i]);
-      }
-    }
-    return selectData;
-  };
-
-  if (totalPostCount > 0) {
-    let order = { left: 0, right: 0 };
-    if (nextPost.length >= 2 && prevPost.length >= 2) {
-      order = { left: 2, right: 2 };
-    } else {
-      let firstOne = nextPost.length > prevPost.length ? prevPost : nextPost;
-      let secondOne = nextPost.length > prevPost.length ? nextPost : prevPost;
-      let firstIter = firstOne.length;
-      let secondIter =
-        secondOne.length < 4 ? secondOne.length : secondOne.length - firstIter;
-
-      order = {
-        left: prevPost.length < nextPost.length ? secondIter : firstIter,
-        right: prevPost.length < nextPost.length ? firstIter : secondIter,
-      };
-    }
-
-    let selectedNextPost = setPageData(nextPost, order.left, true);
-    let selectedPrevPost = setPageData(prevPost, order.right);
-    pageData = [...selectedNextPost, ...selectedPrevPost];
-  }
-
+export const getServerSideProps: GetServerSideProps = async () => {
   return {
-    props: {
-      postData: JSON.parse(JSON.stringify(postData)),
-      nearPostData: JSON.parse(JSON.stringify(pageData)),
-      headTailData: JSON.parse(JSON.stringify(headTailData)),
-      title: postData?.title,
-    },
+    props: {},
   };
 };
+// export const getStaticPaths: GetStaticPaths = async () => {
+//   return {
+//     paths: [],
+//     fallback: true,
+//   };
+// };
 
-export default PostSWR;
+// export const getStaticProps: GetStaticProps = async ({ params }) => {
+//   let fallback = await getPostData(params.id);
+//   mutate(`/api/post/${params.id}`, fallback);
+//   return {
+//     props: {
+//       fallback: fallback,
+//     },
+//   };
+// };
+
+export default PostDetail;

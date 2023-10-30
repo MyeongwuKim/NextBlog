@@ -71,7 +71,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           ],
         };
       }
-      let maxCount = await prisma.history.count();
+      let maxCount = await prisma.history.count({
+        where: selectInfo,
+      });
 
       let commentsData = await prisma.history.findMany({
         orderBy: { createdAt: "desc" },

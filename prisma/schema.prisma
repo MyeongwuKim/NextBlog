@@ -63,7 +63,6 @@ model Comment {
   id         Int       @id @default(autoincrement())
   content    String    @db.VarChar(500)
   name       String?
-  password   String?
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
   post       Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -80,7 +79,6 @@ model Reply {
   id         Int       @id @default(autoincrement())
   content    String
   name       String?
-  password   String?
   isMe       Boolean   @default(false)
   createdAt  DateTime? @default(now())
   updatedAt  DateTime? @updatedAt
