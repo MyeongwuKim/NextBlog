@@ -1,7 +1,6 @@
-// middleware.ts
 import { getToken } from "next-auth/jwt";
 import { NextResponse, NextRequest } from "next/server";
-import prisma from "./lib/server/client";
+import path from "path";
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({
@@ -9,19 +8,24 @@ export async function middleware(request: NextRequest) {
     cookieName: process.env.NEXTAUTH_TOKENNAME,
     secret: process.env.NEXTAUTH_SECRET,
   });
-  const { pathname, origin } = request.nextUrl;
+  const { pathname, origin, href } = request.nextUrl;
 
-  if (pathname.includes("post")) {
+  if (!pathname.includes("manage") && pathname.includes("post")) {
     try {
       let postId = pathname.replace(/[^0-9]/g, "");
-      console.log(`${origin}/api/post/${postId}`);
       let req = await fetch(`${origin}/api/post/${postId}`, { method: "GET" });
       let {
-        data: { isPrivate },
+        data: {
+          postData: { isPrivate, title, createdAt },
+        },
       } = await req.json();
       let privateCheck = isPrivate && !token ? true : false;
       if (privateCheck) {
         return NextResponse.rewrite(origin + "/ErrorPage?cause=auth");
+      } else {
+        return NextResponse.rewrite(
+          new URL(pathname + `?title=${title}&createdAt=${createdAt}`, href)
+        );
       }
     } catch {
       return NextResponse.rewrite(origin + "/ErrorPage");
@@ -33,5 +37,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/manage/:path*", "/write/:path*", "/test/:path*"],
+  matcher: ["/manage/:path*", "/write/:path*", "/post/:path*"],
 };

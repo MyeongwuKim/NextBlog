@@ -25,6 +25,7 @@ import useSWR, { KeyedMutator, useSWRConfig } from "swr";
 import { getToken } from "next-auth/jwt";
 import LabelBtn from "@/components/labelBtn";
 import CompImg from "@/components/compImg";
+import prisma from "@/lib/server/client";
 
 interface CommentForm {
   content: string;
@@ -59,18 +60,13 @@ interface PostResponse {
 }
 let commentData: Comment;
 
-export const getPostData = async (id) => {
-  let req = await fetch(`${process.env.NEXTAUTH_URL}/api/post/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-  let res = await req.json();
-  return res;
-};
-
-const PostDetail: NextPage = () => {
+const PostDetail: NextPage = ({
+  title,
+  createdAt,
+}: {
+  title: string;
+  createdAt: string;
+}) => {
   const router = useRouter();
   const { register, handleSubmit, getValues, reset } = useForm<CommentForm>();
   let { data: sessionData } = useSession();
@@ -95,9 +91,9 @@ const PostDetail: NextPage = () => {
     useMutation<DeleteResponse>("/api/reply/delete");
 
   useEffect(() => {
+    console.log(postResponse);
     setHeadTitle(postResponse?.data.postData?.title);
     setCreateTime(getFormatDate(postResponse?.data.postData?.createdAt));
-
     //window.scrollTo({ top: 0 });
     if (document.getElementById("reactMD")) {
       let eles = document.getElementById("reactMD").children;
@@ -253,33 +249,17 @@ const PostDetail: NextPage = () => {
     }
   };
 
-  if (isLoading)
-    return (
-      <div
-        id="PostLoading"
-        className="flex items-center justify-center w-full h-[300px]"
-      >
-        <svg
-          aria-hidden="true"
-          className="w-24 h-24 text-gray-200 animate-spin dark:text-gray-600 fill-blue-500"
-          viewBox="0 0 100 101"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-            fill="currentColor"
-          />
-          <path
-            d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-            fill="currentFill"
-          />
-        </svg>
-      </div>
-    );
+  // if (isLoading)
+  //   return (
+
+  //   );
   return (
     <div>
-      <div className={`${hide ? "hidden" : "block"}`}>
+      <div
+        className={`${isLoading ? "hidden" : "block"} ${
+          hide ? "hidden" : "block"
+        }`}
+      >
         <Appendix
           postId={postResponse?.data?.postData?.id}
           mdElements={mdElements}
@@ -288,14 +268,13 @@ const PostDetail: NextPage = () => {
 
       <div className="w-full">
         <div className="mb-5 text-5xl font-bold leading-tight">
-          <span className="mr-2">
-            [{postResponse?.data?.postData?.category.name}]
-          </span>
-          {postResponse?.data?.postData?.title}
+          {postResponse ? postResponse?.data?.postData?.title : title}
         </div>
         <div className="mb-5 flex justify-between">
           <div className="text-lg dark:text-gray-400 text-slate-400 flex">
-            <span className="mr-2">{createTime} 작성</span>
+            <span className="mr-2">
+              {isLoading ? getFormatDate(createdAt) : createTime} 작성
+            </span>
             <span
               className={`${
                 postResponse?.data?.postData?.isPrivate ? "block" : "hidden"
@@ -349,165 +328,195 @@ const PostDetail: NextPage = () => {
           </div>
         </div>
         <div className="border-y-[1px] border-gray-200 dark:border-zinc-800" />
-        <div className="my-16" id="reactMD">
-          <ReactMD doc={postResponse?.data?.postData?.html} />
-        </div>
-        <div className="mb-8 text-xl font-semibold">Post By</div>
-        <div className="py-12 mb-16 border-y-[1px] flex border-gray-200 dark:border-zinc-800">
+        {isLoading ? (
           <div
-            className="border-2 dark:border-zinc-800 relative flex 
-              flex-row items-center justify-center w-36 h-36 rounded-full bg-slate-500"
+            id="PostLoading"
+            className="flex items-center justify-center w-full h-[300px]"
           >
-            <img
-              src={
-                userData?.avatar
-                  ? `${getDeliveryDomain(userData?.avatar, "avatar")}`
-                  : ""
-              }
-              className={`${
-                userData?.avatar ? "block" : "hidden"
-              } w-full h-full rounded-full `}
-            />
-            <span className="text-3xl font-semibold text-center text-white ">
-              {!userData?.avatar ? userData?.name : ""}
-            </span>
-          </div>
-          <div className="ml-4">
-            <div className="mb-2 text-xl font-bold">{userData?.name}</div>
-            <div className="text-lg font-semibold">{userData?.introduce}</div>
-          </div>
-        </div>
-        <div>
-          <div className="w-full mb-16 min-h-[40px]">
-            <div className="mb-4 text-xl font-semibold">
-              {postResponse?.data?.nearPostData.length > 0
-                ? `[${postResponse?.data?.postData?.category?.name}] 카테고리 관련글`
-                : ""}
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-              {postResponse?.data?.nearPostData?.map((nearPost, i) => (
-                <NearPost
-                  key={i}
-                  title={nearPost?.title}
-                  createdAt={nearPost?.createdAt}
-                  id={nearPost?.id}
-                  thumbnail={nearPost?.thumbnail}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="mb-16 h-[90px] w-full flex flex-row justify-between gap-2">
-            {!postResponse?.data?.headTailPostData
-              ? []
-              : Object.keys(postResponse?.data?.headTailPostData).map(
-                  (dir, i) => {
-                    if (!postResponse?.data?.headTailPostData[dir]) {
-                      return <div key={i}></div>;
-                    }
-                    return (
-                      <NextPost
-                        key={i}
-                        data={postResponse?.data?.headTailPostData[dir]}
-                        dir={dir}
-                      />
-                    );
-                  }
-                )}
-          </div>
-          <div className="border-t-[1px]  border-gray-200 dark:border-zinc-800 flex items-center ">
-            <div className="text-lg my-4 font-semibold">
-              {postResponse?.data?.postData?.comments.length}개의 댓글
-            </div>
-          </div>
-          <div className="grid grid-flow-row">
-            {postResponse?.data?.postData?.comments.map((commentData, i) => (
-              <CommentItem
-                postMutation={postMutation}
-                allow={postResponse?.data?.postData.allow}
-                commentData={commentData}
-                postId={postResponse?.data?.postData?.id}
-                categoryId={postResponse?.data?.postData?.categoryId}
-                index={i}
-                key={commentData.id}
-                commentDeleteMutate={commentDeleteMutate}
-              />
-            ))}
-          </div>
-          <div className="border-y-[1px] border-gray-200 dark:border-zinc-800 mb-6" />
-          <div
-            className={`h-[50px] mb-8 ${
-              postResponse?.data?.postData?.allow ? "hidden" : "block"
-            } text-xl font-semibold flex items-center justify-center text-gray-400`}
-          >
-            <span>댓글 작성이 금지된 게시물입니다.</span>
-          </div>
-          <form
-            className={`${
-              postResponse?.data?.postData?.allow ? "block" : "hidden"
-            }`}
-            method="post"
-            onSubmit={handleSubmit(onValid, onInValid)}
-          >
-            <div
-              className={`${
-                isMe ? "hidden" : "block"
-              } flex  gap-4 w-full h-[50px] relative mb-4`}
+            <svg
+              aria-hidden="true"
+              className="w-24 h-24 text-gray-200 animate-spin dark:text-gray-600 fill-blue-500"
+              viewBox="0 0 100 101"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <InputField
-                register={
-                  isMe
-                    ? null
-                    : {
-                        ...register("name", {
-                          required: {
-                            value: true,
-                            message: "이름을 입력해주세요.",
-                          },
-                          onChange: checkChange,
-                        }),
+              <path
+                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                fill="currentColor"
+              />
+              <path
+                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                fill="currentFill"
+              />
+            </svg>
+          </div>
+        ) : (
+          <div>
+            <div className="my-16" id="reactMD">
+              <ReactMD doc={postResponse?.data?.postData?.html} />
+            </div>
+            <div className="mb-8 text-xl font-semibold">Post By</div>
+            <div className="py-12 mb-16 border-y-[1px] flex border-gray-200 dark:border-zinc-800">
+              <div
+                className="border-2 dark:border-zinc-800 relative flex 
+              flex-row items-center justify-center w-36 h-36 rounded-full bg-slate-500"
+              >
+                <img
+                  src={
+                    userData?.avatar
+                      ? `${getDeliveryDomain(userData?.avatar, "avatar")}`
+                      : ""
+                  }
+                  className={`${
+                    userData?.avatar ? "block" : "hidden"
+                  } w-full h-full rounded-full `}
+                />
+                <span className="text-3xl font-semibold text-center text-white ">
+                  {!userData?.avatar ? userData?.name : ""}
+                </span>
+              </div>
+              <div className="ml-4">
+                <div className="mb-2 text-xl font-bold">{userData?.name}</div>
+                <div className="text-lg font-semibold">
+                  {userData?.introduce}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="w-full mb-16 min-h-[40px]">
+                <div className="mb-4 text-xl font-semibold">
+                  {postResponse?.data?.nearPostData.length > 0
+                    ? `[${postResponse?.data?.postData?.category?.name}] 카테고리 관련글`
+                    : ""}
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                  {postResponse?.data?.nearPostData?.map((nearPost, i) => (
+                    <NearPost
+                      key={i}
+                      title={nearPost?.title}
+                      createdAt={nearPost?.createdAt}
+                      id={nearPost?.id}
+                      thumbnail={nearPost?.thumbnail}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="mb-16 h-[90px] w-full flex flex-row justify-between gap-2">
+                {!postResponse?.data?.headTailPostData
+                  ? []
+                  : Object.keys(postResponse?.data?.headTailPostData).map(
+                      (dir, i) => {
+                        if (!postResponse?.data?.headTailPostData[dir]) {
+                          return <div key={i}></div>;
+                        }
+                        return (
+                          <NextPost
+                            key={i}
+                            data={postResponse?.data?.headTailPostData[dir]}
+                            dir={dir}
+                          />
+                        );
                       }
-                }
-                height="100%"
-                width="40%"
-                placeholder="이름"
-                id="name"
-              />
-            </div>
-            <InputField
-              register={{
-                ...register("content", {
-                  required: true,
-                  maxLength: {
-                    value: 500,
-                    message: "댓글은 500자까지 입력할 수 있습니다.",
-                  },
-                  onChange: checkChange,
-                }),
-              }}
-              height="120px"
-              width="100%"
-              placeholder="코멘트"
-              id="content"
-              fieldtype="textarea"
-            />
+                    )}
+              </div>
+              <div className="border-t-[1px]  border-gray-200 dark:border-zinc-800 flex items-center ">
+                <div className="text-lg my-4 font-semibold">
+                  {postResponse?.data?.postData?.comments.length}개의 댓글
+                </div>
+              </div>
+              <div className="grid grid-flow-row">
+                {postResponse?.data?.postData?.comments.map(
+                  (commentData, i) => (
+                    <CommentItem
+                      postMutation={postMutation}
+                      allow={postResponse?.data?.postData.allow}
+                      commentData={commentData}
+                      postId={postResponse?.data?.postData?.id}
+                      categoryId={postResponse?.data?.postData?.categoryId}
+                      index={i}
+                      key={commentData.id}
+                      commentDeleteMutate={commentDeleteMutate}
+                    />
+                  )
+                )}
+              </div>
+              <div className="border-y-[1px] border-gray-200 dark:border-zinc-800 mb-6" />
+              <div
+                className={`h-[50px] mb-8 ${
+                  postResponse?.data?.postData?.allow ? "hidden" : "block"
+                } text-xl font-semibold flex items-center justify-center text-gray-400`}
+              >
+                <span>댓글 작성이 금지된 게시물입니다.</span>
+              </div>
+              <form
+                className={`${
+                  postResponse?.data?.postData?.allow ? "block" : "hidden"
+                }`}
+                method="post"
+                onSubmit={handleSubmit(onValid, onInValid)}
+              >
+                <div
+                  className={`${
+                    isMe ? "hidden" : "block"
+                  } flex  gap-4 w-full h-[50px] relative mb-4`}
+                >
+                  <InputField
+                    register={
+                      isMe
+                        ? null
+                        : {
+                            ...register("name", {
+                              required: {
+                                value: true,
+                                message: "이름을 입력해주세요.",
+                              },
+                              onChange: checkChange,
+                            }),
+                          }
+                    }
+                    height="100%"
+                    width="40%"
+                    placeholder="이름"
+                    id="name"
+                  />
+                </div>
+                <InputField
+                  register={{
+                    ...register("content", {
+                      required: true,
+                      maxLength: {
+                        value: 500,
+                        message: "댓글은 500자까지 입력할 수 있습니다.",
+                      },
+                      onChange: checkChange,
+                    }),
+                  }}
+                  height="120px"
+                  width="100%"
+                  placeholder="코멘트"
+                  id="content"
+                  fieldtype="textarea"
+                />
 
-            <div className="relative flex items-center justify-end w-full h-16 gap-3">
-              <CancelBtn
-                content="취소"
-                height={45}
-                onClickEvt={() => {}}
-                width={90}
-              />
-              <OkBtn
-                isEnable={btnState}
-                content="작성"
-                height={45}
-                onClickEvt={() => {}}
-                width={90}
-              />
+                <div className="relative flex items-center justify-end w-full h-16 gap-3">
+                  <CancelBtn
+                    content="취소"
+                    height={45}
+                    onClickEvt={() => {}}
+                    width={90}
+                  />
+                  <OkBtn
+                    isEnable={btnState}
+                    content="작성"
+                    height={45}
+                    onClickEvt={() => {}}
+                    width={90}
+                  />
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -677,7 +686,7 @@ export const CommentItem = ({
       <div className="mt-4 ml-6 grid grid-flow-row">
         {commentData?.replys?.map((replyData, i) => (
           <CommentBody
-            key={replyData.id}
+            key={i}
             allow={allow}
             data={replyData}
             isReply={true}
@@ -1116,9 +1125,15 @@ dark:border-zinc-800
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getServerSideProps: GetServerSideProps = async ({
+  query,
+  params,
+}) => {
   return {
-    props: {},
+    props: {
+      title: query?.title,
+      createdAt: query?.createdAt,
+    },
   };
 };
 // export const getStaticPaths: GetStaticPaths = async () => {
