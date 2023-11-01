@@ -34,7 +34,7 @@ const MyCategory: NextPage = () => {
     mutate: categoryUpdate,
   } = useSWR<CategoryProps>("/api/category");
   const [categoryMutation, { loading: mutateLoading, data: resData }] =
-    useMutation<CategoryResponse>("/api/category");
+    useMutation<CategoryResponse>("/api/category/mutate");
   const [saveState, setSaveState] = useState<boolean>(true);
   const [categoryData, setCategoryData] = useState<Category[]>();
   const categoryRef = useRef<any>([]);
@@ -43,16 +43,17 @@ const MyCategory: NextPage = () => {
 
   useEffect(() => {
     setHeadTitle("카테고리 관리");
-
     setCategoryData(JSON.parse(JSON.stringify(originCategory)));
-  }, []);
+  }, [originCategory]);
 
   useEffect(() => {
     if (!resData) return;
     setLoading(false);
     if (resData.ok) {
       setSaveState(false);
+      categoryUpdate();
       createCautionMsg("변경사항을 저장하였습니다.", false);
+      removeIdList = [];
       updateUserData(resData.updateData);
     } else {
       createCautionMsg(resData.error, true);

@@ -155,6 +155,7 @@ const CommentList: NextPage = () => {
 
   const deleteCallback = useCallback(
     (id?: number) => {
+      setLoading(true);
       let newHistory;
       if (id >= 0) {
         newHistory = historyData.filter((item) => {
@@ -189,7 +190,7 @@ const CommentList: NextPage = () => {
     if (!deleteResponse) return;
     if (deleteResponse.ok) {
       createCautionMsg("댓글을 삭제 하였습니다.", false);
-      router.replace(router.asPath);
+      historyMutate();
     } else {
       createCautionMsg(deleteResponse.error, true);
     }
@@ -198,41 +199,8 @@ const CommentList: NextPage = () => {
   useEffect(() => {
     if (!createResponse) return;
     if (createResponse.ok) {
+      historyMutate();
       createCautionMsg("답글을 작성 하였습니다.", false);
-      let {
-        category,
-        categoryId,
-        name,
-        postId,
-        post: { title },
-      } = replyWindow.data;
-      let newData: historyType = {
-        id: historyData[0].id + 1,
-        isMe: true,
-        isReply: true,
-        createdAt: getFormatFullDate(new Date()),
-        content: getValues("replyInput"),
-        category,
-        name,
-        post: { title },
-        categoryId,
-        historyId: historyData[0].historyId + 1,
-        postId,
-      };
-      historyMutate((prev) => {
-        prev.data.historyData.splice(
-          prev.data.historyData.length - 1,
-          1,
-          newData
-        );
-        return {
-          ...prev,
-          data: {
-            historyData: prev.data.historyData,
-            maxCount: prev.data.maxCount,
-          },
-        };
-      }, false);
       setReplyWindow({ data: null, enable: false });
     } else {
       createCautionMsg(createResponse.error, true);

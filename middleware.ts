@@ -13,7 +13,10 @@ export async function middleware(request: NextRequest) {
   if (!pathname.includes("manage") && pathname.includes("post")) {
     try {
       let postId = pathname.replace(/[^0-9]/g, "");
-      let req = await fetch(`${origin}/api/post/${postId}`, { method: "GET" });
+      let req = await fetch(`${process.env.NEXTAUTH_URL}/api/post/${postId}`, {
+        method: "GET",
+        headers: request.headers,
+      });
       let {
         data: {
           postData: { isPrivate, title, createdAt },
@@ -27,7 +30,8 @@ export async function middleware(request: NextRequest) {
           new URL(pathname + `?title=${title}&createdAt=${createdAt}`, href)
         );
       }
-    } catch {
+    } catch (e) {
+      console.log(e);
       return NextResponse.rewrite(origin + "/ErrorPage");
     }
   } else if (!token) {

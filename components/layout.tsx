@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import { Category } from "@prisma/client";
 import DropDownBox from "./dropdownBox";
 import { signOut, useSession } from "next-auth/react";
-import { registUserDataState, userCheck } from "@/hooks/useData";
+import { registUserDataState, getGlobalSWR, userCheck } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import LabelBtn from "./labelBtn";
 import { setLoading } from "@/hooks/useEvent";
@@ -51,7 +51,9 @@ let lastScroll = 0;
 
 const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
   const { theme, setTheme } = useTheme();
+  const { categoryMutate } = getGlobalSWR();
   const router = useRouter();
+  const { data: sessionData } = useSession();
   const [userData, setUserData] = useState<UserData>();
   const [topViewPos, setTopViewPos] = useState<number>(0);
   registUserDataState(setUserData);
@@ -62,6 +64,10 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
     document.body.setAttribute("style", "");
     setSignMode(mode);
   }, []);
+  useEffect(() => {
+    if (sessionData === undefined) return;
+    categoryMutate();
+  }, [sessionData]);
   useEffect(() => {
     setUserData({ profile, category });
   }, [profile, category]);
@@ -432,10 +438,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
     let totalCount = 0;
     for (let i = 0; i < category.length; i++) {
       let c = category[i];
-      let p = c?.post;
-      for (let j = 0; j < p?.length; j++) {
-        if (!p[j].isPrivate || (p[j].isPrivate && isMe)) totalCount++;
-      }
+      totalCount += c.post.length;
     }
     setCountAll(totalCount);
   }, [category, isMe]);
@@ -488,7 +491,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
           <div className="w-full text-center font-semibold my-4 border-b-2 py-4 border-gray-200 dark:border-zinc-800">
             {profile?.introduce}
           </div>
-          <div className="relative">
+          <div className={`relative ${category ? "block" : "hidden"}`}>
             <LabelBtn
               onClick={() => {
                 router.push("/", null);

@@ -1,4 +1,4 @@
-import { getCategoryData, getUserData } from "@/hooks/useData";
+import { getGlobalSWR } from "@/hooks/useData";
 import Head from "next/head";
 import Layout from "./layout";
 import { useRouter } from "next/router";
@@ -8,8 +8,7 @@ import { registHeadState } from "@/hooks/useEvent";
 
 const WithHead = ({ children }) => {
   const router = useRouter();
-  let profile = getUserData();
-  let category = getCategoryData();
+  const { profileData, categoryData } = getGlobalSWR();
   const [headTitle, setHeadTitle] = useState<string>("Loading");
   registHeadState(setHeadTitle);
 
@@ -21,7 +20,7 @@ const WithHead = ({ children }) => {
       {router?.pathname.includes("ErrorPage") ? (
         <ErrorPage />
       ) : (
-        <Layout category={category} profile={profile}>
+        <Layout category={categoryData} profile={profileData}>
           {children}
         </Layout>
       )}

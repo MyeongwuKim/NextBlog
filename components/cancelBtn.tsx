@@ -1,8 +1,8 @@
 interface CancelBtnProps {
   content: string;
   onClickEvt: () => void;
-  width: number;
-  height: number;
+  width: number | string;
+  height: number | string;
 }
 
 const CancelBtn = ({ content, onClickEvt, width, height }: CancelBtnProps) => {

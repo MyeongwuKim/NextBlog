@@ -1,6 +1,6 @@
 import { Category } from "@prisma/client";
 import { Dispatch, SetStateAction } from "react";
-import useSWR from "swr";
+import useSWR, { KeyedMutator } from "swr";
 
 interface UserData {
   profile?: ProfileType;
@@ -27,24 +27,27 @@ export const registUserDataState = (
   userDataState = state;
 };
 
-export const getUserData = (): ProfileType => {
-  const { data } = useSWR("/api/profile");
-  return data?.profile as ProfileType;
-};
+export const getGlobalSWR = (): {
+  profileData: ProfileType;
+  categoryData: CategoryCountType[];
+  profileMutate: KeyedMutator<any>;
+  categoryMutate: KeyedMutator<any>;
+} => {
+  const {
+    data: { profile: profileData },
+    mutate: profileMutate,
+  } = useSWR("/api/profile");
+  const {
+    data: { originCategory: categoryData },
+    mutate: categoryMutate,
+  } = useSWR("/api/category");
 
-export const getCategoryData = (): CategoryCountType[] => {
-  const { data } = useSWR("/api/category");
-  return data?.originCategory;
-};
-
-export const updateCategoryData = () => {
-  const { data, mutate } = useSWR("/api/category");
-  return mutate;
+  return { profileData, categoryData, profileMutate, categoryMutate };
 };
 
 export const userCheck = (sessionData) => {
-  let userData = getUserData();
-  return sessionData && sessionData.accessToken.id == userData.id;
+  let { profileData } = getGlobalSWR();
+  return sessionData && sessionData.accessToken.id == profileData?.id;
 };
 export const updateUserData = (data: CategoryCountType[] | ProfileType) => {
   userDataState((prev) => {

@@ -2,7 +2,7 @@ import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
 import OkBtn from "@/components/okBtn";
 import ReactMD from "@/components/write/reactMD";
-import { getUserData, userCheck } from "@/hooks/useData";
+import { getGlobalSWR, userCheck } from "@/hooks/useData";
 import {
   getDeliveryDomain,
   getFormatDate,
@@ -70,7 +70,7 @@ const PostDetail: NextPage = ({
   const router = useRouter();
   const { register, handleSubmit, getValues, reset } = useForm<CommentForm>();
   let { data: sessionData } = useSession();
-  let userData = getUserData();
+  let { profileData } = getGlobalSWR();
   let isMe = userCheck(sessionData);
   const [createTime, setCreateTime] = useState<string>();
   const [btnState, setBtnState] = useState<boolean>(false);
@@ -363,22 +363,24 @@ const PostDetail: NextPage = ({
               >
                 <img
                   src={
-                    userData?.avatar
-                      ? `${getDeliveryDomain(userData?.avatar, "avatar")}`
+                    profileData?.avatar
+                      ? `${getDeliveryDomain(profileData?.avatar, "avatar")}`
                       : ""
                   }
                   className={`${
-                    userData?.avatar ? "block" : "hidden"
+                    profileData?.avatar ? "block" : "hidden"
                   } w-full h-full rounded-full `}
                 />
                 <span className="text-3xl font-semibold text-center text-white ">
-                  {!userData?.avatar ? userData?.name : ""}
+                  {!profileData?.avatar ? profileData?.name : ""}
                 </span>
               </div>
               <div className="ml-4">
-                <div className="mb-2 text-xl font-bold">{userData?.name}</div>
+                <div className="mb-2 text-xl font-bold">
+                  {profileData?.name}
+                </div>
                 <div className="text-lg font-semibold">
-                  {userData?.introduce}
+                  {profileData?.introduce}
                 </div>
               </div>
             </div>
@@ -606,7 +608,7 @@ export const CommentItem = ({
   index,
 }: CommentProps) => {
   let { data: sessionData } = useSession();
-  let userData = getUserData();
+  let { profileData } = getGlobalSWR();
   let isMe = userCheck(sessionData);
   const { register, handleSubmit, getValues, setFocus, reset } =
     useForm<CommentForm>();
@@ -724,16 +726,16 @@ export const CommentItem = ({
             >
               <img
                 src={
-                  userData?.avatar
-                    ? `${getDeliveryDomain(userData?.avatar, "avatar")}`
+                  profileData?.avatar
+                    ? `${getDeliveryDomain(profileData?.avatar, "avatar")}`
                     : ""
                 }
                 className={`${
-                  userData?.avatar ? "block" : "hidden"
+                  profileData?.avatar ? "block" : "hidden"
                 } w-full h-full rounded-full `}
               />
               <span className="text-sm font-semibold text-center text-white ">
-                {!userData?.avatar ? userData?.name : ""}
+                {!profileData?.avatar ? profileData?.name : ""}
               </span>
             </div>
           ) : (
@@ -838,7 +840,7 @@ export const CommentBody = ({
 }: CommentItemProps) => {
   const router = useRouter();
   const { data: sessionData } = useSession();
-  const userData = getUserData();
+  const { profileData } = getGlobalSWR();
   const isMe = userCheck(sessionData);
   const [targetEle, setTargetEle] = useState<HTMLElement>(null);
   const [eleAnimate, setEleAnimate] = useState<boolean>(false);
@@ -899,16 +901,16 @@ export const CommentBody = ({
         >
           <img
             src={
-              userData?.avatar
-                ? `${getDeliveryDomain(userData?.avatar, "avatar")}`
+              profileData?.avatar
+                ? `${getDeliveryDomain(profileData?.avatar, "avatar")}`
                 : ""
             }
             className={`${
-              userData?.avatar ? "block" : "hidden"
+              profileData?.avatar ? "block" : "hidden"
             } w-full h-full rounded-full `}
           />
           <span className="text-sm font-semibold text-center text-white ">
-            {!userData?.avatar ? userData?.name : ""}
+            {!profileData?.avatar ? profileData?.name : ""}
           </span>
         </div>
       ) : (
@@ -936,7 +938,7 @@ border-[1px] dark:border-zinc-800 items-center flex"
       <div className="flex ml-4 flex-col w-full">
         <div className="w-full flex flex-row justify-between">
           <div className="text-lg font-bold flex items-center">
-            {data.isMe ? userData?.name : data.name}
+            {data.isMe ? profileData?.name : data.name}
             <span
               className={`${
                 data.isMe ? "inline" : "hidden"

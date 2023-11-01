@@ -1,7 +1,7 @@
 import DropDownBox from "@/components/dropdownBox";
 import NormalBtn from "@/components/normalBtn";
 import Pagination from "@/components/pagination";
-import { updateCategoryData } from "@/hooks/useData";
+import { getGlobalSWR } from "@/hooks/useData";
 import {
   createAlert,
   createCautionMsg,
@@ -110,7 +110,7 @@ const PostList: NextPage = () => {
     revalidateIfStale: false,
     revalidateOnFocus: false,
   });
-  const updateCategory = updateCategoryData();
+  const { categoryMutate } = getGlobalSWR();
   const [postDeleteMutation, { data: deleteResponse }] =
     useMutation<MutationResponse>(`/api/post/delete`);
   const [mutateMutation, { data: mutateResponse }] =
@@ -171,7 +171,7 @@ const PostList: NextPage = () => {
   useEffect(() => {
     if (!mutateResponse) return;
     if (mutateResponse.ok) {
-      updateCategory();
+      categoryMutate();
       createCautionMsg("포스트 정보를 변경하였습니다.", false);
     } else {
       createCautionMsg(mutateResponse.error, true);
@@ -180,7 +180,7 @@ const PostList: NextPage = () => {
   useEffect(() => {
     if (!deleteResponse) return;
     if (deleteResponse.ok) {
-      updateCategory();
+      categoryMutate();
       createCautionMsg("포스트를 삭제하였습니다.", false);
       router.replace(router.asPath);
     } else {
