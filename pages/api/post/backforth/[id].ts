@@ -12,22 +12,39 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         cookieName: process.env.NEXTAUTH_TOKENNAME,
         secret: process.env.NEXTAUTH_SECRET,
       });
-      const postData = await prisma.post.findUnique({
-        where: {
-          id: Number(postId),
-        },
-        include: {
-          category: {
-            select: {
-              name: true,
-              id: true,
-            },
+
+      let privateFilter = !token ? { isPrivate: true } : { isPrivate: null };
+
+      const getBackForthData = async (orderBy) => {
+        let data = await prisma.post.findMany({
+          where: {
+            NOT: privateFilter,
           },
-        },
-      });
+          cursor: {
+            id: Number(postId),
+          },
+          skip: 1,
+          take: 1,
+          select: {
+            title: true,
+            id: true,
+          },
+          orderBy: {
+            createdAt: orderBy,
+          },
+        });
+
+        return data.length > 0 ? data[0] : null;
+      };
+
+      let backForthPostsData = {
+        prev: await getBackForthData("desc"),
+        next: await getBackForthData("asc"),
+      };
+
       res.json({
         ok: true,
-        postData,
+        backForthPostsData,
       });
     } catch {
       res.json({

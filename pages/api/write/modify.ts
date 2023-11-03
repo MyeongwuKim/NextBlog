@@ -16,6 +16,7 @@ interface RequestBodyData {
   imagesId: { imageId: string }[];
   preview: string;
   prevThumbnail: string;
+  html: string;
 }
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
@@ -32,6 +33,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         prevThumbnail,
         postId,
         imagesId,
+        html,
       } = req.body as RequestBodyData;
 
       await prisma.post.update({
@@ -44,6 +46,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           isPrivate,
           thumbnail: thumbnail != prevThumbnail ? thumbnail : prevThumbnail,
           title,
+          html,
           preview,
           account: {
             connect: {

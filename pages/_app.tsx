@@ -11,11 +11,12 @@ import dynamic from "next/dynamic";
 import { Category } from "@prisma/client";
 import prisma from "@/lib/server/client";
 import App from "next/app";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { registHeadState } from "@/hooks/useEvent";
 import WithHead from "@/components/WithHead";
 import { getToken } from "next-auth/jwt";
 import { NextApiRequest } from "next";
+import { useRouter } from "next/router";
 dynamic(import("@/components/write/preview"));
 dynamic(import("@/components/write/editor"));
 
@@ -39,6 +40,16 @@ function MyApp({
   profile,
   category,
 }: AppProps & LayoutData) {
+  const router = useRouter();
+
+  useEffect(() => {
+    // If the component is unmounted, unsubscribe
+    // from the event with the `off` method:
+    // return () => {
+    //   router.events.off("routeChangeStart", handleRouteChange);
+    // };
+  }, [router]);
+
   return (
     <SessionProvider session={pageProps.session}>
       <ThemeProvider attribute="class">
@@ -76,7 +87,6 @@ MyApp.getInitialProps = async (
   context: AppContext
 ): Promise<LayoutData & AppInitialProps> => {
   const ctx = await App.getInitialProps(context);
-
   const {
     ctx: { req },
   } = context;
@@ -84,6 +94,7 @@ MyApp.getInitialProps = async (
   if (req?.url.startsWith("/_next")) {
     return { ...ctx };
   }
+  console.log("InitPorpafter");
 
   let token = await getToken({
     req: req as NextApiRequest,

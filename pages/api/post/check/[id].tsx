@@ -16,19 +16,23 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         where: {
           id: Number(postId),
         },
-        include: {
-          category: {
-            select: {
-              name: true,
-              id: true,
-            },
-          },
+        select: {
+          isPrivate: true,
         },
       });
-      res.json({
-        ok: true,
-        postData,
-      });
+
+      let privateCheck = postData.isPrivate && !token ? true : false;
+
+      if (privateCheck) {
+        res.json({
+          ok: false,
+          error: "접근권한이 없습니다.",
+        });
+      } else {
+        res.json({
+          ok: true,
+        });
+      }
     } catch {
       res.json({
         ok: false,

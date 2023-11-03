@@ -28,8 +28,8 @@ const CompImg = ({ thumbnail, style, onClickEvt }: CompImgProps) => {
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className="w-full h-full dark:bg-zinc-700 
-              bg-zinc-100 text-zinc-400"
+          className="w-full h-full dark:bg-zinc-800 
+              bg-gray-50 text-zinc-400"
         >
           <path
             strokeLinecap="round"

@@ -3,40 +3,34 @@ import { NextResponse, NextRequest } from "next/server";
 import path from "path";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    cookieName: process.env.NEXTAUTH_TOKENNAME,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
   const { pathname, origin, href } = request.nextUrl;
-
   if (!pathname.includes("manage") && pathname.includes("post")) {
     try {
       let postId = pathname.replace(/[^0-9]/g, "");
-      let req = await fetch(`${process.env.NEXTAUTH_URL}/api/post/${postId}`, {
-        method: "GET",
-        headers: request.headers,
-      });
-      let {
-        data: {
-          postData: { isPrivate, title, createdAt },
-        },
-      } = await req.json();
-      let privateCheck = isPrivate && !token ? true : false;
-      if (privateCheck) {
+      let req = await fetch(
+        `${process.env.NEXTAUTH_URL}/api/post/check/${postId}`,
+        {
+          method: "GET",
+          headers: request.headers,
+        }
+      );
+      let { error, ok } = await req.json();
+      if (!ok) {
         return NextResponse.rewrite(origin + "/ErrorPage?cause=auth");
-      } else {
-        return NextResponse.rewrite(
-          new URL(pathname + `?title=${title}&createdAt=${createdAt}`, href)
-        );
       }
-    } catch (e) {
-      console.log(e);
+    } catch {
       return NextResponse.rewrite(origin + "/ErrorPage");
     }
-  } else if (!token) {
-    //토큰이 없다면 로그인이 되어있지 않으므로 "로그인이 필요한 기능"이라고 경고창 띄우고 리다이렉트
-    return NextResponse.rewrite(origin + "/ErrorPage?cause=auth");
+  } else {
+    const token = await getToken({
+      req: request,
+      cookieName: process.env.NEXTAUTH_TOKENNAME,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    if (!token) {
+      //토큰이 없다면 로그인이 되어있지 않으므로 "로그인이 필요한 기능"이라고 경고창 띄우고 리다이렉트
+      return NextResponse.rewrite(origin + "/ErrorPage?cause=auth");
+    }
   }
 }
 

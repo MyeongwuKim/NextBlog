@@ -22,6 +22,7 @@ import OkBtn from "@/components/okBtn";
 import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
+import { useSWRConfig } from "swr";
 
 interface PopupData {
   thumbnail?: string;
@@ -42,6 +43,7 @@ interface WriteProps {
 }
 
 const Write: NextPage<WriteProps> = ({ postData }) => {
+  const { mutate } = useSWRConfig();
   const { categoryMutate } = getGlobalSWR();
   const [selectCategory, setSelectCategory] = useState<CategoryCountType>(null);
   const [preview, setPreview] = useState<string>("");
@@ -158,6 +160,10 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
           body: JSON.stringify({ imageId: postData?.thumbnail }),
         });
       }
+    }
+    if (postData) {
+      delete postData.images;
+      mutate(`/api/post/${router.query.id}`, { ...postData, ...data });
     }
     writeMutation(data);
     setLoading(true);
@@ -746,6 +752,7 @@ export const WritePopup = ({
 export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   let { id } = ctx.query;
   let postData;
+
   if (id) {
     postData = await prisma.post.findUnique({
       where: {
@@ -755,6 +762,12 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
         images: {
           select: {
             imageId: true,
+          },
+        },
+        category: {
+          select: {
+            name: true,
+            id: true,
           },
         },
       },

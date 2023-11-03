@@ -4,6 +4,7 @@ import { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CompImg from "@/components/compImg";
+import dynamic from "next/dynamic";
 
 interface PostProps {
   post: Post & { _count: { comments: number } };
@@ -13,6 +14,10 @@ const CPost: NextPage<PostProps> = ({ post }) => {
   const router = useRouter();
   const [createTime, setCreateTime] = useState<string>();
 
+  const onClickEvt = () => {
+    router.push(`/post/${post?.id}`);
+  };
+
   useEffect(() => {
     setCreateTime(getFormatDate(post?.createdAt));
   }, [post]);
@@ -20,9 +25,7 @@ const CPost: NextPage<PostProps> = ({ post }) => {
     <div className="w-full h-auto mb-16">
       <div className="flex felx-row items-center mb-4">
         <CompImg
-          onClickEvt={() => {
-            router.push(`/post/${post?.id}`);
-          }}
+          onClickEvt={() => onClickEvt()}
           style="mr-4 flex-none basis-2/6 h-44"
           thumbnail={post?.thumbnail}
         />
@@ -46,9 +49,7 @@ const CPost: NextPage<PostProps> = ({ post }) => {
             <span>{post._count.comments}</span>
           </div>
           <div
-            onClick={() => {
-              router.push(`/post/${post?.id}`);
-            }}
+            onClick={onClickEvt}
             className="cursor-pointer mb-4 text-3xl font-bold basis-[100px]
           max-h-28 overflow-hidden break-all text-ellipsis"
           >
