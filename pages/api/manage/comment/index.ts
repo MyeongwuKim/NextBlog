@@ -3,12 +3,12 @@ import prisma from "@/lib/server/client";
 import { getToken } from "next-auth/jwt";
 import ProtectHanlder from "@/lib/server/protectHanlder";
 
-const pageSize = 5;
-
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "GET") {
     try {
-      let { name, content, pageoffset } = req.query;
+      let { name, content, pageoffset, limit } = req.query;
+      const pageSize =
+        !limit || typeof Number(limit) !== "number" ? 5 : Number(limit);
       let selectList = {
         id: true,
         content: true,
@@ -132,5 +132,5 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 export default ProtectHanlder({
   handler,
   methods: ["GET"],
-  isPrivate: true,
+  isPrivate: false,
 });

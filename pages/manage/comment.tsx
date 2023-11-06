@@ -46,8 +46,6 @@ type historyType = {
   post: { title: string };
 };
 
-const pageSize = 5;
-
 const CommentListSWR = ({
   historyData,
   maxCount,
@@ -62,7 +60,6 @@ const CommentListSWR = ({
     ok: true,
     data: { historyData, maxCount },
   });
-
   return (
     <SWRConfig
       value={{
@@ -131,6 +128,9 @@ const CommentList: NextPage = () => {
       router.query.pageoffset == undefined ? 1 : router.query.pageoffset
     );
     if (maxCount > 0) {
+      let { limit } = router.query;
+      let pageSize =
+        !limit || typeof Number(limit) !== "number" ? 5 : Number(limit);
       let endPageNumber = Math.ceil(maxCount / pageSize);
       let arr = [curNumber];
       let size = endPageNumber < pageSize ? endPageNumber : pageSize;
@@ -522,8 +522,19 @@ const CommentList: NextPage = () => {
       ))}
       <div className="relative mt-4">
         <Pagination
-          pageSize={pageSize}
-          endPageNumber={Math.ceil(maxCount / pageSize)}
+          pageSize={
+            !router.query.limit ||
+            typeof Number(router.query.limit) !== "number"
+              ? 5
+              : Number(router.query.limit)
+          }
+          endPageNumber={Math.ceil(
+            maxCount /
+              (!router.query.limit ||
+              typeof Number(router.query.limit) !== "number"
+                ? 5
+                : Number(router.query.limit))
+          )}
           pageNumberArr={pageNumArr}
         />
       </div>
@@ -673,8 +684,10 @@ export const Item = ({
 };
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  let { name, content, pageoffset } = ctx.query;
-  const pageSize = 5;
+  let { name, content, pageoffset, limit } = ctx.query;
+  let pageSize;
+  if (!limit || typeof Number(limit) !== "number") pageSize = 5;
+  else pageSize = Number(limit);
 
   let selectList = {
     id: true,
@@ -741,7 +754,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   let maxCount = await prisma.history.count({
     where: selectInfo,
   });
-  console.log(maxCount);
+
   if (Math.ceil(maxCount / pageSize) < Number(pageoffset)) {
     return {
       redirect: {

@@ -76,6 +76,11 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           reply: {
             connect: { id: reply.id },
           },
+          post: {
+            connect: {
+              id: postId,
+            },
+          },
         },
       });
 

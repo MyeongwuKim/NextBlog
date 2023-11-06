@@ -1,9 +1,11 @@
 import React, { createElement, Fragment, useEffect, useRef } from "react";
 import ReactMD from "./reactMD";
+import { setLoading } from "@/hooks/useEvent";
 
 interface Props {
   doc: string;
   title?: string;
+  previewLoadingState: any;
   setCotentPreview: (element) => void;
 }
 
@@ -13,10 +15,12 @@ const Preview: React.FC<Props> = (props) => {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    props.previewLoadingState(false);
+  }, []);
+  useEffect(() => {
     const { current } = previewRef;
     current!.scrollTop = current!.scrollHeight; // left핸드 어쩌고 나오면 !를 써주자
   }, [props.doc]);
-
   useEffect(() => {
     const { current } = titleRef;
     current!.innerHTML = props.title!;

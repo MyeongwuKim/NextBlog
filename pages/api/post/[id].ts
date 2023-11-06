@@ -7,11 +7,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "GET") {
     try {
       const { id: postId } = req.query;
-      const token = await getToken({
-        req,
-        cookieName: process.env.NEXTAUTH_TOKENNAME,
-        secret: process.env.NEXTAUTH_SECRET,
-      });
+
       const postData = await prisma.post.findUnique({
         where: {
           id: Number(postId),

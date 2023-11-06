@@ -11,6 +11,7 @@ import { registUserDataState, getGlobalSWR, userCheck } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import LabelBtn from "./labelBtn";
 import { setLoading } from "@/hooks/useEvent";
+import { useSWRConfig } from "swr";
 
 interface LayoutProps {
   children: React.ReactElement;
@@ -132,7 +133,7 @@ const Layout: NextPage<LayoutProps> = ({ children, category, profile }) => {
         >
           <div
             id="categoryViewContainer"
-            className={`fixed left-0 w-[300px] h-full ${
+            className={`fixed left-0 w-[300px] top-[60px] h-full ${
               categoryHideList.some((page) => {
                 return router.pathname.includes(page);
               })
@@ -422,16 +423,34 @@ export const TopView: NextPage<TopViewProps> = ({
     </div>
   );
 };
+type LatestDataType = {
+  postId: number;
+  isReply: boolean;
+  comment: { content: string; id: number };
+  reply: { content: string; id: number };
+};
 
 export const CategoryView: NextPage<CategoryViewProps> = ({
   profile,
   category,
   hide,
 }) => {
-  const [countAll, setCountAll] = useState<number>(0);
   const router = useRouter();
+  let { mutate } = useSWRConfig();
   const { data } = useSession();
   const isMe = userCheck(data);
+  const [countAll, setCountAll] = useState<number>(0);
+  const [latestData, setLatestData] = useState<LatestDataType[]>([]);
+  useEffect(() => {
+    const callMutate = async () => {
+      let res = await fetch(`/api/comments/latest`);
+      let { historyData } = await res.json();
+      setLatestData(historyData);
+      console.log("call");
+    };
+
+    if (router.pathname == "/") callMutate();
+  }, [router]);
 
   useEffect(() => {
     if (!category) return;
@@ -444,13 +463,18 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
   }, [category, isMe]);
 
   return (
-    <div className={`${hide ? "hidden" : "block"} h-full`}>
+    <div
+      id="categoryView"
+      className={`${
+        hide ? "hidden" : "block"
+      } h-full border-gray-200   dark:border-zinc-800 border-r-[2px]`}
+    >
       <div
-        className={`overflow-auto w-full px-8 left-0 h-full border-r-[2px] border-gray-200 dark:border-zinc-800 
+        className={`absolute pb-[80px] w-full px-8 left-0 h-full overflow-auto 
    
        `}
       >
-        <div className="relative w-full flex flex-col mt-5 items-center">
+        <div className="relative h-auto w-full flex flex-col mt-4 items-center">
           <div className="relative flex flex-row items-center justify-center rounded-full w-36 h-36 bg-slate-500">
             <div
               className="border-2 dark:border-zinc-800 relative flex 
@@ -472,7 +496,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
             </div>
           </div>
           <button
-            className="mt-4"
+            className="relative h-auto mt-4"
             onClick={() => {
               if (profile.github) window.open(profile.github);
             }}
@@ -488,7 +512,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
               />
             </svg>
           </button>
-          <div className="w-full text-center font-semibold my-4 border-b-2 py-4 border-gray-200 dark:border-zinc-800">
+          <div className="w-full h-auto relative text-center py-4 my-4 border-b-2 border-gray-200 dark:border-zinc-800">
             {profile?.introduce}
           </div>
           <div className={`relative ${category ? "block" : "hidden"}`}>
@@ -515,7 +539,6 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
                 onClick={() => {
                   // btnRef.current["category" + v.id].disabled = true;
                   router.query.category = v.id.toString();
-
                   router.push(`/?category=${v.id.toString()}&name=${v.name}`);
                 }}
                 isDisable={
@@ -524,6 +547,24 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
                 id={"category" + v.id.toString()}
                 key={i}
                 contents={`${v.name}(${count})`}
+                addStyle="mt-2 relative"
+              />
+            );
+          })}
+          <div className="mt-4 text-lg my-2">최근 댓글</div>
+          {latestData?.map((data, i) => {
+            let type = data.isReply ? data.reply : data.comment;
+            return (
+              <LabelBtn
+                key={i}
+                onClick={() => {
+                  let url = `/post/${data.postId}?${
+                    data.isReply ? `reply=${type.id}` : `comment=${type.id}`
+                  }`;
+                  router.push(url, null, { shallow: true });
+                }}
+                contents={type.content}
+                addStyle="mt-2 relative"
               />
             );
           })}

@@ -123,9 +123,6 @@ const PostDetail: NextPage = () => {
 
   useEffect(() => {
     setHeadTitle(postResponse?.postData?.title);
-    console.log("--------------------------");
-    console.log(postResponse?.postData);
-    console.log(postResponse?.postData?.createdAt);
   }, [postResponse]);
   useEffect(() => {
     if (
@@ -423,18 +420,20 @@ const PostDetail: NextPage = () => {
                 </div>
               </div>
               <div className="grid grid-flow-row">
-                {commentsResponse?.commentsData?.map((commentData, i) => (
-                  <CommentItem
-                    commentsMutate={commentsMutate}
-                    allow={postResponse?.postData.allow}
-                    commentData={commentData}
-                    postId={postResponse?.postData?.id}
-                    categoryId={postResponse?.postData?.categoryId}
-                    index={i}
-                    key={commentData.id}
-                    commentDeleteMutate={commentDeleteMutate}
-                  />
-                ))}
+                {dynamicLoading
+                  ? ""
+                  : commentsResponse?.commentsData?.map((commentData, i) => (
+                      <CommentItem
+                        commentsMutate={commentsMutate}
+                        allow={postResponse?.postData.allow}
+                        commentData={commentData}
+                        postId={postResponse?.postData?.id}
+                        categoryId={postResponse?.postData?.categoryId}
+                        index={i}
+                        key={commentData.id}
+                        commentDeleteMutate={commentDeleteMutate}
+                      />
+                    ))}
               </div>
               <div className="border-y-[1px] border-gray-200 dark:border-zinc-800 mb-6" />
               <div
@@ -844,6 +843,7 @@ export const CommentBody = ({
     );
     if (targetEle) {
       setTargetEle(targetEle);
+
       let { top } = (targetEle as HTMLElement).getClientRects()[0];
       window.scrollTo({ top: window.scrollY + top });
     }

@@ -7,18 +7,14 @@ import { ThemeProvider } from "next-themes";
 import type { AppContext, AppInitialProps, AppProps } from "next/app";
 import { SWRConfig } from "swr";
 import Loading from "@/components/loading";
-import dynamic from "next/dynamic";
 import { Category } from "@prisma/client";
 import prisma from "@/lib/server/client";
 import App from "next/app";
 import { useCallback, useEffect, useState } from "react";
-import { registHeadState } from "@/hooks/useEvent";
 import WithHead from "@/components/WithHead";
 import { getToken } from "next-auth/jwt";
 import { NextApiRequest } from "next";
 import { useRouter } from "next/router";
-dynamic(import("@/components/write/preview"));
-dynamic(import("@/components/write/editor"));
 
 interface LayoutData {
   profile?: ProfileType;
@@ -94,7 +90,6 @@ MyApp.getInitialProps = async (
   if (req?.url.startsWith("/_next")) {
     return { ...ctx };
   }
-  console.log("InitPorpafter");
 
   let token = await getToken({
     req: req as NextApiRequest,

@@ -2,7 +2,6 @@ import { GetServerSidePropsContext, NextPage } from "next";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Editor from "@/components/write/editor";
-import Preview from "@/components/write/preview";
 import { useTheme } from "next-themes";
 import useCodeMirror from "@/lib/front/use-codemirror";
 import ToolBar from "@/components/write/toolbar";
@@ -23,6 +22,7 @@ import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { useSWRConfig } from "swr";
+import dynamic from "next/dynamic";
 
 interface PopupData {
   thumbnail?: string;
@@ -42,14 +42,28 @@ interface WriteProps {
   postData?: Post & { images: { imageId: number }[] };
 }
 
+const DynamicComponent = dynamic(
+  () =>
+    import("@/components/write/preview").then((mode) => {
+      return mode;
+    }),
+  {
+    ssr: false,
+    loading: () => {
+      return <PreLoadView />;
+    },
+  }
+);
+
 const Write: NextPage<WriteProps> = ({ postData }) => {
   const { mutate } = useSWRConfig();
+  const router = useRouter();
   const { categoryMutate } = getGlobalSWR();
-  const [selectCategory, setSelectCategory] = useState<CategoryCountType>(null);
-  const [preview, setPreview] = useState<string>("");
   const { data: sessionData } = useSession();
   const [enablePopup, setEnablePopup] = useState<boolean>(false);
-  const router = useRouter();
+  const [selectCategory, setSelectCategory] = useState<CategoryCountType>(null);
+  const [preview, setPreview] = useState<string>("");
+  const [previewLoading, setPreviewLoading] = useState<boolean>(true);
   const [doc, setDoc] = useState<string>(postData?.html);
   const [title, setTitle] = useState<string>(postData ? postData.title : "");
   const [imagesId, setImagesId] = useState<string[]>([]); //취소했을시 지울 요청할 이미지id 배열
@@ -59,10 +73,16 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
   useEffect(() => {
     setHeadTitle("글 작성");
   }, []);
+
+  useEffect(() => {
+    if (previewLoading) setLoading(true);
+    else setLoading(false);
+  }, [previewLoading]);
+
   useEffect(() => {
     if (!postData) return;
     setImagesId(getFormatImagesId(postData.html));
-  }, [postData]);
+  }, []);
 
   useEffect(() => {
     if (!resData) return;
@@ -218,9 +238,10 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
               />
             </div>
           </div>
-          <Preview
+          <DynamicComponent
             setCotentPreview={setCotentPreview}
             doc={doc}
+            previewLoadingState={setPreviewLoading}
             title={title}
           />
         </div>
@@ -316,6 +337,15 @@ interface WritePopupProps {
   setPopupState: React.Dispatch<React.SetStateAction<boolean>>;
   doWriteCallback: (popupData: PopupData) => void;
 }
+
+export const PreLoadView = () => {
+  return (
+    <div className="w-full overflow-auto bg-white dark:bg-zinc-800 dark:shadow-black flex flex-col shadow-md  h-[calc(100%-0px)]">
+      <div className="font-bold text-2xl p-4 select-none relative h-auto break-words whitespace-pre-line" />
+      <div className="bg-white dark:text-white p-4 dark:bg-zinc-800  preview markdown-body relative h-auto w-full  break-words"></div>
+    </div>
+  );
+};
 
 export const WritePopup = ({
   postData,
