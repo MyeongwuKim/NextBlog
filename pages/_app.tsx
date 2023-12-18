@@ -11,7 +11,7 @@ import { Category } from "@prisma/client";
 import prisma from "@/lib/server/client";
 import App from "next/app";
 import { useCallback, useEffect, useState } from "react";
-import WithHead from "@/components/WithHead";
+import RootComp from "@/components/rootComp";
 import { getToken } from "next-auth/jwt";
 import { NextApiRequest } from "next";
 import { useRouter } from "next/router";
@@ -70,9 +70,9 @@ function MyApp({
             revalidateOnFocus: false,
           }}
         >
-          <WithHead>
+          <RootComp>
             <Component {...pageProps} />
-          </WithHead>
+          </RootComp>
         </SWRConfig>
       </ThemeProvider>
     </SessionProvider>

@@ -127,12 +127,14 @@ const PostList: NextPage = () => {
         id="PostLoading"
         className="flex items-center justify-center w-full h-[300px]"
       >
-        <SpinnerLoading></SpinnerLoading>
+        <SpinnerLoading />
       </div>
     );
   return (
     <div className="h-auto relative">
-      <ServiceView />
+      {/* <div className="md:hidden">
+        <ServiceView />
+      </div> */}
       <div className="h-auto relative">
         {postsData?.length > 0 ? (
           postsData?.map((post, i) => {

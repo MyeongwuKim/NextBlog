@@ -258,7 +258,7 @@ const CommentList: NextPage = () => {
   }, []);
 
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="h-full w-full flex flex-col md:mt-5">
       <div
         className={`${
           replyWindow.enable ? "block" : "hidden"

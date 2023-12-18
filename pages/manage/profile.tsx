@@ -10,6 +10,7 @@ import { updateUserData } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import { setLoading, createCautionMsg, setHeadTitle } from "@/hooks/useEvent";
 import InputField from "@/components/inputField";
+import OkBtn from "@/components/okBtn";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -101,7 +102,7 @@ const Profile: NextPage = () => {
   const onCheckSaveState = () => {
     let { github, name, introduce } = getValues();
 
-    if (!github) github = github.length <= 0 ? null : github;
+    if (!github) github = !github || github.length <= 0 ? null : github;
     else if (!name) name = github.length <= 0 ? null : name;
     else if (!introduce) introduce = github.length <= 0 ? null : introduce;
 
@@ -215,7 +216,7 @@ const Profile: NextPage = () => {
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full md:mt-5">
       <div className="relative text-xl mb-5 font-bold">
         유저의 정보를 변경할 수 있습니다.
       </div>
@@ -224,7 +225,7 @@ const Profile: NextPage = () => {
           <div className="relative h-auto w-full flex items-center justify-center border-gray-200 dark:border-zinc-800">
             <div
               className="border-2 dark:border-zinc-800 mb-4 relative flex 
-              flex-row items-center justify-center w-48 h-48 rounded-full bg-slate-500"
+              flex-row items-center justify-center w-32 h-32 rounded-full bg-slate-500"
             >
               <img
                 src={avatarPreview ? avatarPreview : ""}
@@ -273,7 +274,7 @@ const Profile: NextPage = () => {
             </button>
           </div>
           <div className="relative items-center mb-4  h-14 w-full flex">
-            <div className="w-1/4 pl-4 text-2xl font-semibold font-sans">
+            <div className="w-1/4 pl-4 text-xl font-semibold font-sans">
               유저이름
             </div>
             <InputField
@@ -297,7 +298,7 @@ const Profile: NextPage = () => {
             />
           </div>
           <div className="relative items-center mb-4 h-14 w-full flex">
-            <div className="w-1/4 pl-4 text-2xl font-semibold font-sans">
+            <div className="w-1/4 pl-4 text-xl font-semibold font-sans">
               깃허브주소
             </div>
             <InputField
@@ -316,7 +317,7 @@ const Profile: NextPage = () => {
             />
           </div>
           <div className="relative items-center mb-4 h-14 w-full flex">
-            <div className="w-1/4 pl-4 text-2xl font-semibold font-sans">
+            <div className="w-1/4 pl-4 text-xl font-semibold font-sans">
               비밀번호
             </div>
             <button
@@ -393,10 +394,10 @@ const Profile: NextPage = () => {
             </div>
           </div>
           <div className="relative items-center mb-10  h-auto w-full flex-cols">
-            <div className="w-full pl-4 mb-4 text-2xl font-semibold font-sans">
+            <div className="w-full pl-4 mb-4 text-xl font-semibold font-sans">
               블로그 소개
             </div>
-            <div className="w-full h-36 pl-4">
+            <div className="w-full h-28 pl-4">
               <InputField
                 register={{
                   ...register("introduce", {
@@ -413,14 +414,13 @@ const Profile: NextPage = () => {
             </div>
           </div>
           <div className="relative">
-            <button
+            <OkBtn
               type="submit"
-              disabled={saveState ? false : true}
-              className="disabled:bg-emerald-900 text-gray-200
-          relative select-none w-36 h-14 inline-block p-2 text-lg font-semibold rounded-lg  bg-emerald-500 hover:bg-emerald-700"
-            >
-              변경사항 저장
-            </button>
+              height={56}
+              width={144}
+              content="변경사항 저장"
+              isEnable={saveState ? true : false}
+            />
           </div>
         </div>
       </form>

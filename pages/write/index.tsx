@@ -207,7 +207,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
   useEffect(() => {}, [editorView]);
 
   return (
-    <div id="write" className="w-[90%] m-auto  h-full flex flex-col">
+    <div id="write" className="m-auto h-full flex flex-col">
       <div className="flex flex-col h-full ">
         <ToolBar editorView={editorView!} theme={useTheme().theme} />
         <div className="flex flex-row w-full h-[calc(100%-50px)] gap-2">

@@ -1,31 +1,31 @@
 import { getGlobalSWR } from "@/hooks/useData";
 import Head from "next/head";
-import Layout from "./layout";
+import BodyComp from "./bodyComp";
 import { useRouter } from "next/router";
 import ErrorPage from "../pages/ErrorPage";
 import { useEffect, useState } from "react";
 import { registHeadState } from "@/hooks/useEvent";
 
-const WithHead = ({ children }) => {
+const Root = ({ children }) => {
   const router = useRouter();
   const { profileData, categoryData } = getGlobalSWR();
   const [headTitle, setHeadTitle] = useState<string>("Loading");
   registHeadState(setHeadTitle);
 
   return (
-    <>
+    <div className="absolute h-full w-full">
       <Head>
         <title>{headTitle == undefined ? "Loading" : headTitle}</title>
       </Head>
       {router?.pathname.includes("ErrorPage") ? (
         <ErrorPage />
       ) : (
-        <Layout category={categoryData} profile={profileData}>
+        <BodyComp category={categoryData} profile={profileData}>
           {children}
-        </Layout>
+        </BodyComp>
       )}
-    </>
+    </div>
   );
 };
 
-export default WithHead;
+export default Root;

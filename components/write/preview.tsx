@@ -45,7 +45,8 @@ const Preview: React.FC<Props> = (props) => {
   return (
     <div
       ref={previewRef}
-      className="w-full overflow-auto bg-white dark:bg-zinc-800 dark:shadow-black flex flex-col shadow-md  h-[calc(100%-0px)]"
+      className="sm:hidden w-full overflow-auto
+      bg-white dark:bg-zinc-800 dark:shadow-black flex flex-col shadow-md  h-[calc(100%-0px)]"
     >
       <div
         ref={titleRef}

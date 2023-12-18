@@ -185,7 +185,10 @@ const MyCategory: NextPage = () => {
   };
 
   return (
-    <div ref={categoryPageRef} className="h-full  w-full  flex flex-col">
+    <div
+      ref={categoryPageRef}
+      className="h-full  w-full  flex flex-col md:mt-5"
+    >
       <div className="w-full h-full">
         <div className="relative text-xl mb-5 font-bold">
           카테고리 순서를 변경하고 주제 연결을 설정할 수 있습니다.

@@ -275,9 +275,10 @@ const PostDetail: NextPage = () => {
   return (
     <div>
       <div
-        className={`${isLoading || router.isFallback ? "hidden" : "block"} ${
+        className={`
+        ${isLoading || router.isFallback ? "hidden" : "block"} ${
           appendixEnable ? "block" : "hidden"
-        }`}
+        } md:hidden`}
       >
         <Appendix postId={postResponse?.postData?.id} mdElements={mdElements} />
       </div>
@@ -1055,7 +1056,7 @@ export const Appendix = ({ postId, mdElements }) => {
     <div
       id="appendix"
       style={{ top: topPos }}
-      className={`relative flex justify-end left-[260px]`}
+      className={`relative w-full flex justify-end left-[240px] `}
     >
       <div
         id="appendixBody"

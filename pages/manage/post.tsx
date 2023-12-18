@@ -298,7 +298,7 @@ const PostList: NextPage = () => {
   }, []);
 
   return (
-    <div className="h-full  w-full  flex flex-col">
+    <div className="h-full  w-full  flex flex-col md:mt-5">
       <div className="relative text-xl mb-5 font-bold">
         {["title", "content", "category"].filter((page, i) => {
           if (router.asPath.includes(page)) {
