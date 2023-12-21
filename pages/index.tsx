@@ -106,8 +106,12 @@ const PostList: NextPage = () => {
   // }, [posts]);
 
   const scrollToBottomEvt = useCallback(async () => {
-    if (document.body.clientHeight - window.scrollY - window.innerHeight <= 0) {
+    let rootHeight = document.getElementById("rootComp").clientHeight;
+    let scrollHeight = document.getElementById("scrollArea").clientHeight + 60;
+
+    if (scrollHeight - window.scrollY - rootHeight <= 0) {
       const { category } = router.query;
+      console.log("!!");
       setSize((size) => {
         return size + 1;
       });

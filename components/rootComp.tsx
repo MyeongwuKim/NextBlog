@@ -13,7 +13,7 @@ const Root = ({ children }) => {
   registHeadState(setHeadTitle);
 
   return (
-    <div className="absolute h-full w-full">
+    <div id="rootComp" className="absolute h-full w-full">
       <Head>
         <title>{headTitle == undefined ? "Loading" : headTitle}</title>
       </Head>

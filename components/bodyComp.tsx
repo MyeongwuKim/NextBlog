@@ -190,6 +190,7 @@ const BodyComp: NextPage<LayoutProps> = ({ children, category, profile }) => {
           </div>
         </div>
         <div
+          id="scrollArea"
           className={`py-8 px-[30px] max-w-[960px] md:w-full
                  ${
                    fullPageList.some((page) => {
