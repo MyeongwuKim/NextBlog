@@ -108,9 +108,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       res.json({
         ok: true,
+        id: post.id,
       });
     } catch (e) {
-      console.log(e);
       let error = e?.code
         ? `Prisma errorCode:${e.code}, Prisma Error ${e.meta.cause}`
         : "포스트 작성중 에러가 발생했습니다.";

@@ -1,5 +1,3 @@
-import SignIn from "@/components/sign/signIn";
-import SignUp from "@/components/sign/signup";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import {
@@ -14,20 +12,30 @@ import { useTheme } from "next-themes";
 import { Category } from "@prisma/client";
 import DropDownBox from "./dropdownBox";
 import { signOut, useSession } from "next-auth/react";
-import { registUserDataState, getGlobalSWR, userCheck } from "@/hooks/useData";
+import { getGlobalSWR, registUserDataState, userCheck } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import LabelBtn from "./labelBtn";
 import { setLoading } from "@/hooks/useEvent";
+import useSWR from "swr";
 
 interface LayoutProps {
   children: React.ReactElement;
-  profile: ProfileType;
-  category: CategoryCountType[];
 }
-type CategoryCountType = Category & {
-  post: { isPrivate: boolean }[];
-  _count: { post: number };
-};
+interface UserData {
+  profile?: ProfileType;
+  category?: CategoryCountType[];
+}
+
+interface TopViewProps {
+  profile?: ProfileType;
+  setCategoryEnabled?: Dispatch<SetStateAction<boolean>>;
+  pos: number;
+}
+
+interface ProfileRespose {
+  ok: boolean;
+  profileData: ProfileType;
+}
 type ProfileType = {
   avatar?: string;
   email: string;
@@ -36,17 +44,15 @@ type ProfileType = {
   id: number;
   introduce?: string;
 };
-interface UserData {
-  profile?: ProfileType;
-  category?: CategoryCountType[];
-}
 
-interface TopViewProps {
-  openCallback: (mode: "signin" | "signup" | "none") => void;
-  profile?: ProfileType;
-  setCategoryEnabled?: Dispatch<SetStateAction<boolean>>;
-  pos: number;
+interface CategoryResponse {
+  ok: boolean;
+  categirtData: CategoryCountType;
 }
+type CategoryCountType = Category & {
+  post: { isPrivate: boolean }[];
+  _count: { post: number };
+};
 
 interface CategoryViewProps {
   profile?: ProfileType;
@@ -58,10 +64,10 @@ const fullPageList = ["write", "post"];
 const categoryHideList = ["post", "manage"];
 let lastScroll = 0;
 
-const BodyComp: NextPage<LayoutProps> = ({ children, category, profile }) => {
-  const { theme, setTheme } = useTheme();
-  const { categoryMutate } = getGlobalSWR();
+const BodyComp: NextPage<LayoutProps> = ({ children }) => {
   const router = useRouter();
+  const { swrProfileResponse, swrCategoryResponse, categoryMutate } =
+    getGlobalSWR(router?.query?.userId as string);
   const { data: sessionData } = useSession();
   const [userData, setUserData] = useState<UserData>();
   const [topViewPos, setTopViewPos] = useState<number>(0);
@@ -69,21 +75,16 @@ const BodyComp: NextPage<LayoutProps> = ({ children, category, profile }) => {
 
   registUserDataState(setUserData);
 
-  const [signMode, setSignMode] = useState<"signin" | "signup" | "none">(
-    "none"
-  );
-  const signModeCallback = useCallback((mode: "signin" | "signup" | "none") => {
-    document.body.setAttribute("style", "");
-    setSignMode(mode);
-  }, []);
-
   useEffect(() => {
     if (sessionData === undefined) return;
     categoryMutate();
   }, [sessionData]);
   useEffect(() => {
-    setUserData({ profile, category });
-  }, [profile, category]);
+    setUserData({
+      profile: swrProfileResponse?.profile,
+      category: swrCategoryResponse?.originCategory,
+    });
+  }, [swrProfileResponse, swrCategoryResponse]);
 
   const onScrollEvt = (e: Event) => {
     if (window.scrollY > lastScroll) {
@@ -99,34 +100,18 @@ const BodyComp: NextPage<LayoutProps> = ({ children, category, profile }) => {
       window.removeEventListener("scroll", onScrollEvt);
     };
   }, []);
-
   return (
     <div id="body" className="w-full h-full">
-      <div
-        className={`fixed z-50 w-full h-full top-0 left-0 ${
-          signMode == "none" ? "hidden" : "block"
-        }`}
-      >
-        <SignIn
-          enable={signMode == "signin" ? true : false}
-          openCallback={signModeCallback}
-        />
-        <SignUp
-          enable={signMode == "signup" ? true : false}
-          openCallback={signModeCallback}
-        />
-      </div>
       <div id="topViewContainer" className="h-[60px] relative w-full">
         <TopView
           pos={topViewPos}
-          openCallback={setSignMode}
           profile={userData?.profile}
           setCategoryEnabled={setCategoryEnabled}
         />
       </div>
       <div
         id="dd"
-        className={`h-[calc(100%-0px)] flex-1 ${
+        className={`h-[calc(100%-60px)] flex-1 ${
           fullPageList.some((page) => {
             if (router.pathname.includes("manage")) return false;
             return router.pathname.includes(page);
@@ -212,7 +197,6 @@ export default BodyComp;
 
 export const TopView: NextPage<TopViewProps> = ({
   pos,
-  openCallback,
   profile,
   setCategoryEnabled,
 }) => {
@@ -244,42 +228,54 @@ export const TopView: NextPage<TopViewProps> = ({
         transform: `translateY(${pos}px)`,
         transition: "transform 0.2s linear",
       }}
-      className={`z-[1] px-6 border-b-[2px] border-gray-200 
+      className={`z-[1] px-4 border-b-[2px] border-gray-200 
       dark:border-zinc-800 w-full bg-white dark:bg-zinc-900
-     fixed flex h-[60px] justify-end items-center`}
+     fixed flex h-[60px] justify-between items-center`}
     >
-      <button
-        className={`absolute hidden left-6 ${
-          router.pathname.includes("manage") ? "md:hidden" : "md:block"
-        }
+      <div className="w-1/3 h-8">
+        <button
+          className={`hidden left-6 ${
+            router.pathname.includes("manage") ? "md:hidden" : "md:block"
+          }
         ${router.pathname.includes("write") ? "md:hidden" : "md:block"}
         `}
-        id="menuBtn"
-        onClick={() => {
-          setCategoryEnabled(true);
-        }}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-8 h-8"
+          id="menuBtn"
+          onClick={() => {
+            setCategoryEnabled(true);
+          }}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-          />
-        </svg>
-      </button>
-      <div className="flex flex-row gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-8 h-8"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+            />
+          </svg>
+        </button>
+      </div>
+      <div className="w-1/3 flex justify-center">
+        <div
+          onClick={() => router.push(`/${router.query.userId}`)}
+          className="w-auto cursor-pointer"
+        >
+          <span className="font-extrabold text-xl">
+            {router.query.userId}
+            <span className="text-base">'s Log</span>
+          </span>
+        </div>
+      </div>
+      <div className="w-1/3 flex flex-row gap-2 justify-end">
         <div className="flex flex-col">
           <button
             onClick={() => {
-              document.body.setAttribute("style", "overflow:hidden");
-              openCallback("signin");
+              router.push("/signin");
             }}
             className={`inline ${
               status == "unauthenticated" ? "" : "hidden"
@@ -295,7 +291,6 @@ export const TopView: NextPage<TopViewProps> = ({
             id="userProfileBtn"
             onClick={(e) => {
               let btn = document.getElementById("userProfileBtn");
-
               setDropBoxInfo({
                 left: btn.getClientRects()[0].left,
                 top: btn.getClientRects()[0].top + 25,
@@ -373,13 +368,13 @@ export const TopView: NextPage<TopViewProps> = ({
                   {
                     name: "관리",
                     clickEvt: () => {
-                      router.push("/manage/profile");
+                      router.push(`/${router.query.userId}/manage/profile`);
                     },
                   },
                   {
                     name: "글쓰기",
                     clickEvt: () => {
-                      router.push("/write");
+                      router.push(`/${router.query.userId}/write`);
                     },
                   },
                   {
@@ -456,28 +451,6 @@ export const TopView: NextPage<TopViewProps> = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-              />
-            </svg>
-          </button>
-        </div>
-        <div className="flex items-center">
-          <button
-            onClick={() => {
-              router.push("/");
-            }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-8 h-[36px]"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
               />
             </svg>
           </button>
@@ -600,9 +573,9 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
           <div className={`relative ${category ? "block" : "hidden"}`}>
             <LabelBtn
               onClick={() => {
-                router.push("/", null);
+                router.push(`/${router.query.userId}`, null);
               }}
-              isDisable={Object.keys(router.query).length <= 0 ? true : false}
+              isDisable={Object.keys(router.query).length == 1 ? true : false}
               id={"total"}
               contents={`전체(${countAll})`}
             />
@@ -621,7 +594,11 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
                 onClick={() => {
                   // btnRef.current["category" + v.id].disabled = true;
                   router.query.category = v.id.toString();
-                  router.push(`/?category=${v.id.toString()}&name=${v.name}`);
+                  router.push(
+                    `${router.query.userId}/?category=${v.id.toString()}&name=${
+                      v.name
+                    }`
+                  );
                 }}
                 isDisable={
                   router?.query?.category == v.id.toString() ? true : false
@@ -685,15 +662,20 @@ export const SettingSide = () => {
         {items.map((item, i) => (
           <LabelBtn
             isDisable={
-              router.pathname.replace(`/manage/`, "") == item.router
+              router.pathname.replace(`/[userId]/manage/`, "") == item.router
                 ? true
                 : false
             }
             key={i}
             id={item.router}
             onClick={() => {
+              console.log(router.pathname);
               router
-                .push(`/manage/${item.router}`, undefined, { shallow: true })
+                .push(
+                  `/${router.query.userId}/manage/${item.router}`,
+                  undefined,
+                  { shallow: true }
+                )
                 .then(() => {});
             }}
             contents={item.name}

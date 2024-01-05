@@ -23,6 +23,7 @@ const LabelBtn = ({
       ref={(element) => {
         if (anyRef) anyRef.current[id] = element;
       }}
+      type="button"
       disabled={isDisable}
       onClick={onClick}
       className={`enabled:text-gray-400 enabled:dark:text-gray-500 

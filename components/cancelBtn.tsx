@@ -1,6 +1,6 @@
 interface CancelBtnProps {
   content: string;
-  onClickEvt: () => void;
+  onClickEvt?: () => void;
   width: number | string;
   height: number | string;
 }

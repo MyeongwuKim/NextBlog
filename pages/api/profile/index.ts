@@ -49,11 +49,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     }
   } else if (req.method == "GET") {
     try {
-      let token = await getToken({
-        req,
-        cookieName: process.env.NEXTAUTH_TOKENNAME,
-        secret: process.env.NEXTAUTH_SECRET,
-      });
       const profileData = await prisma.account.findUnique({
         where: { email: "mw1992@naver.com" },
         select: {

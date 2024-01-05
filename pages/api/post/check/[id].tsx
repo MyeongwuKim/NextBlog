@@ -3,10 +3,12 @@ import prisma from "@/lib/server/client";
 import { getToken } from "next-auth/jwt";
 import ProtectHanlder from "@/lib/server/protectHanlder";
 
+//해당 포스트가 있는지, 비밀포스트인지 체크 권한이 없으면 에러
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  if (req.method == "GET") {
+  if (req.method == "POST") {
     try {
       const { id: postId } = req.query;
+      const { emailId } = JSON.parse(req.body);
       const token = await getToken({
         req,
         cookieName: process.env.NEXTAUTH_TOKENNAME,
@@ -20,10 +22,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
           isPrivate: true,
         },
       });
+      let privatePost = false;
 
-      let privateCheck = postData.isPrivate && !token ? true : false;
+      if (postData.isPrivate && token) {
+        let id = token.email.split("@")[0];
+        privatePost = id != emailId;
+      }
 
-      if (privateCheck) {
+      if (privatePost) {
         res.json({
           ok: false,
           error: "접근권한이 없습니다.",
@@ -44,6 +50,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
 export default ProtectHanlder({
   handler,
-  methods: ["GET"],
+  methods: ["POST"],
   isPrivate: false,
 });

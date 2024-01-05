@@ -21,8 +21,9 @@ import OkBtn from "@/components/okBtn";
 import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
-import { useSWRConfig } from "swr";
+import { KeyedMutator, useSWRConfig } from "swr";
 import dynamic from "next/dynamic";
+import post from "@/pages/api/post";
 
 interface PopupData {
   thumbnail?: string;
@@ -35,6 +36,7 @@ type CategoryCountType = Category & { _count: { post: number } };
 
 interface WriteResponse {
   ok: boolean;
+  id: number;
   error: string;
 }
 
@@ -58,7 +60,9 @@ const DynamicComponent = dynamic(
 const Write: NextPage<WriteProps> = ({ postData }) => {
   const { mutate } = useSWRConfig();
   const router = useRouter();
-  const { categoryMutate } = getGlobalSWR();
+  const { swrCategoryResponse, categoryMutate } = getGlobalSWR(
+    router?.query?.userId as string
+  );
   const { data: sessionData } = useSession();
   const [enablePopup, setEnablePopup] = useState<boolean>(false);
   const [selectCategory, setSelectCategory] = useState<CategoryCountType>(null);
@@ -92,7 +96,12 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
         false
       );
       categoryMutate();
-      router.replace("/");
+      console.log(router);
+      router.replace(
+        postData
+          ? `/${router.query.userId}/post/${postData?.id}`
+          : `/${router.query.userId}/post/${resData?.id}`
+      );
     } else {
       createCautionMsg(resData.error, true);
     }
@@ -249,6 +258,8 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
       <WritePopup
         postData={postData}
         enable={enablePopup}
+        categoryData={swrCategoryResponse?.originCategory}
+        categoryMutate={categoryMutate}
         setPopupState={setEnablePopup}
         doWriteCallback={doWrite}
       />
@@ -334,6 +345,8 @@ export const CategoryList = ({
 interface WritePopupProps {
   postData: Post;
   enable: boolean;
+  categoryData: Category[];
+  categoryMutate: KeyedMutator<any>;
   setPopupState: React.Dispatch<React.SetStateAction<boolean>>;
   doWriteCallback: (popupData: PopupData) => void;
 }
@@ -350,13 +363,14 @@ export const PreLoadView = () => {
 export const WritePopup = ({
   postData,
   enable,
+  categoryData,
+  categoryMutate,
   setPopupState,
   doWriteCallback,
 }: WritePopupProps) => {
   const [addCategoryMutate, { data: categoryResponse, loading }] = useMutation(
     "/api/category/mutate"
   );
-  const { categoryData, categoryMutate } = getGlobalSWR();
   const { data } = useSession();
   const timeStamp = getTimeStamp();
   const btnRef = useRef<any>({});

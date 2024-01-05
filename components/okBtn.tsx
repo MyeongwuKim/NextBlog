@@ -21,7 +21,7 @@ const OkBtn = ({
       onClick={onClickEvt}
       disabled={typeof isEnable === "undefined" ? false : !isEnable}
       style={{ width, height }}
-      className="disabled:bg-emerald-900 text-white
+      className="disabled:bg-emerald-900 text-white font-semibold
   relative items-center inline-block text-lg rounded-md
    bg-emerald-500 hover:bg-emerald-700"
     >

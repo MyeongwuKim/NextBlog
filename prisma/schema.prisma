@@ -12,17 +12,19 @@ datasource db {
 }
 
 model Account {
-  id        Int        @id @default(autoincrement())
-  category  Category[]
-  post      Post[]
-  email     String     @unique
+  id       Int        @id @default(autoincrement())
+  category Category[]
+  post     Post[]
+  emailId  String
+  email    String     @unique
+
   github    String?
   password  String
   name      String
   introduce String?
   avatar    String?
-  createdAt DateTime?  @default(now())
-  updatedAt DateTime?  @updatedAt
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
 }
 
 model Category {

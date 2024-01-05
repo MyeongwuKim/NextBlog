@@ -2,24 +2,29 @@ import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/server/client";
 import { getToken } from "next-auth/jwt";
 import { Category } from "@prisma/client";
+import ProtectHanlder from "@/lib/server/protectHanlder";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  const { userId } = req.query;
   if (req.method == "GET") {
     let token = await getToken({
       req,
       cookieName: process.env.NEXTAUTH_TOKENNAME,
       secret: process.env.NEXTAUTH_SECRET,
     });
-
+    let privateFilter = false;
+    if (token) {
+      privateFilter = token.email.split("@")[0] == userId;
+    }
     let categoryData = await prisma.category.findMany({
       where: {
         account: {
-          email: "mw1992@naver.com",
+          emailId: { equals: String(req.query.userId) },
         },
       },
       include: {
         post: {
-          where: token
+          where: privateFilter
             ? {}
             : {
                 NOT: {
@@ -32,7 +37,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         },
       },
     });
-
     res.json({
       ok: true,
       originCategory: categoryData,
@@ -40,4 +44,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default handler;
+export default ProtectHanlder({
+  handler,
+  methods: ["GET"],
+  isPrivate: false,
+});

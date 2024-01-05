@@ -15,7 +15,8 @@ const CPost: NextPage<PostProps> = ({ post }) => {
   const [createTime, setCreateTime] = useState<string>();
 
   const onClickEvt = () => {
-    router.push(`/post/${post?.id}`);
+    console.log(router);
+    router.push(`/${router.query.userId}/post?id=${post?.id}`);
   };
 
   useEffect(() => {

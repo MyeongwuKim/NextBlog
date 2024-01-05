@@ -1,6 +1,6 @@
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import ReactMD from "../write/reactMD";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
 const PostBody = ({
   postResponse,
@@ -10,8 +10,11 @@ const PostBody = ({
 }) => {
   useEffect(() => {
     dynamicLoadingState(false);
-    appendixEvt();
   }, []);
+  useEffect(() => {
+    appendixEvt();
+  }, [postResponse]);
+
   return (
     <>
       <div className="my-16" id="reactMD">

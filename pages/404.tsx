@@ -1,25 +1,9 @@
 import OkBtn from "@/components/okBtn";
-import { setHeadTitle } from "@/hooks/useEvent";
-import { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
 
-const ErrorPage: NextPage = () => {
+const Custom404 = () => {
   const router = useRouter();
-  const [cause, setCause] = useState<string>("");
-  useEffect(() => {
-    setHeadTitle("에러 페이지");
-  }, []);
-  useEffect(() => {
-    let { cause } = router.query;
-    switch (cause) {
-      case "auth":
-        setCause("이런.. 접근권한이 없는 페이지 입니다.");
-        break;
-      default:
-        setCause("이런.. 에러가 발생했습니다.");
-    }
-  }, [router]);
+
   return (
     <div className="absolute w-full h-full flex items-center justify-center">
       <div className="flex flex-col items-center">
@@ -38,13 +22,13 @@ const ErrorPage: NextPage = () => {
           />
         </svg>
 
-        <div className="text-2xl mb-4">{cause}</div>
+        <div className="text-2xl mb-4">이런.. 잘못된 접근 입니다.</div>
         <OkBtn
-          content="홈 화면으로"
+          content="돌아가기"
           width={120}
           height={45}
           onClickEvt={() => {
-            router.replace("/");
+            router.back();
           }}
         ></OkBtn>
       </div>
@@ -52,4 +36,4 @@ const ErrorPage: NextPage = () => {
   );
 };
 
-export default ErrorPage;
+export default Custom404;

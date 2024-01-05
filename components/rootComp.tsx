@@ -2,13 +2,11 @@ import { getGlobalSWR } from "@/hooks/useData";
 import Head from "next/head";
 import BodyComp from "./bodyComp";
 import { useRouter } from "next/router";
-import ErrorPage from "../pages/ErrorPage";
 import { useEffect, useState } from "react";
 import { registHeadState } from "@/hooks/useEvent";
 
 const Root = ({ children }) => {
   const router = useRouter();
-  const { profileData, categoryData } = getGlobalSWR();
   const [headTitle, setHeadTitle] = useState<string>("Loading");
   registHeadState(setHeadTitle);
 
@@ -17,15 +15,20 @@ const Root = ({ children }) => {
       <Head>
         <title>{headTitle == undefined ? "Loading" : headTitle}</title>
       </Head>
-      {router?.pathname.includes("ErrorPage") ? (
-        <ErrorPage />
-      ) : (
-        <BodyComp category={categoryData} profile={profileData}>
-          {children}
-        </BodyComp>
-      )}
+      {getPageRoute(router.pathname, children)}
     </div>
   );
+};
+
+const getPageRoute = (pathname: string, children) => {
+  let tag;
+  if (pathname.includes("[userId]")) {
+    tag = <BodyComp>{children}</BodyComp>;
+  } else {
+    tag = <>{children}</>;
+  }
+
+  return tag;
 };
 
 export default Root;

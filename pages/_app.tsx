@@ -53,16 +53,6 @@ function MyApp({
         <div id="cautionCont" className="fixed z-[99]" />
         <SWRConfig
           value={{
-            fallback: {
-              "/api/profile": {
-                ok: true,
-                profile,
-              },
-              "/api/category": {
-                ok: true,
-                originCategory: category,
-              },
-            },
             fetcher: (url: string) =>
               fetch(url).then((response: Response) => {
                 return response.json();
@@ -79,59 +69,60 @@ function MyApp({
   );
 }
 
-MyApp.getInitialProps = async (
-  context: AppContext
-): Promise<LayoutData & AppInitialProps> => {
-  const ctx = await App.getInitialProps(context);
-  const {
-    ctx: { req },
-  } = context;
+// MyApp.getInitialProps = async (
+//   context: AppContext
+// ): Promise<LayoutData & AppInitialProps> => {
+//   const ctx = await App.getInitialProps(context);
+//   const {
+//     ctx: { req },
+//   } = context;
 
-  if (req?.url.startsWith("/_next")) {
-    return { ...ctx };
-  }
+//   if (req?.url.startsWith("/_next")) {
+//     return { ...ctx };
+//   }
+//   console.log("req!!");
+//   console.log(req);
+//   let token = await getToken({
+//     req: req as NextApiRequest,
+//     cookieName: process.env.NEXTAUTH_TOKENNAME,
+//     secret: process.env.NEXTAUTH_SECRET,
+//   });
 
-  let token = await getToken({
-    req: req as NextApiRequest,
-    cookieName: process.env.NEXTAUTH_TOKENNAME,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+//   const profileData = await prisma.account.findUnique({
+//     where: { email: "mw1992@naver.com" },
+//     select: {
+//       avatar: true,
+//       email: true,
+//       github: true,
+//       name: true,
+//       id: true,
+//       introduce: true,
+//     },
+//   });
 
-  const profileData = await prisma.account.findUnique({
-    where: { email: "mw1992@naver.com" },
-    select: {
-      avatar: true,
-      email: true,
-      github: true,
-      name: true,
-      id: true,
-      introduce: true,
-    },
-  });
+//   let categoryData = await prisma.category.findMany({
+//     where: {
+//       account: {
+//         email: "mw1992@naver.com",
+//       },
+//     },
+//     include: {
+//       post: {
+//         where: token
+//           ? {}
+//           : {
+//               NOT: {
+//                 isPrivate: true,
+//               },
+//             },
+//         select: {
+//           id: true,
+//         },
+//       },
+//     },
+//   });
 
-  let categoryData = await prisma.category.findMany({
-    where: {
-      account: {
-        email: "mw1992@naver.com",
-      },
-    },
-    include: {
-      post: {
-        where: token
-          ? {}
-          : {
-              NOT: {
-                isPrivate: true,
-              },
-            },
-        select: {
-          id: true,
-        },
-      },
-    },
-  });
-
-  return { ...ctx, profile: profileData, category: categoryData };
-};
+//   return { ...ctx, profile: profileData, category: categoryData };
+// };
 
 export default MyApp;

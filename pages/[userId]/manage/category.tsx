@@ -8,8 +8,9 @@ import useSWR, { SWRConfig } from "swr";
 import useMutation from "@/lib/server/useMutation";
 import { useSession } from "next-auth/react";
 import prisma from "@/lib/server/client";
-import { updateUserData } from "@/hooks/useData";
+import { getGlobalSWR, updateUserData } from "@/hooks/useData";
 import { setLoading, createCautionMsg, setHeadTitle } from "@/hooks/useEvent";
+import { useRouter } from "next/router";
 
 let prevTarget: HTMLElement = null;
 let removeIdList: number[] = [];
@@ -29,10 +30,11 @@ type CategoryCountType = Category & {
 };
 
 const MyCategory: NextPage = () => {
-  const {
-    data: { originCategory },
-    mutate: categoryUpdate,
-  } = useSWR<CategoryProps>("/api/category");
+  const router = useRouter();
+  const { swrCategoryResponse, categoryMutate } = getGlobalSWR(
+    router?.query?.userId as string
+  );
+
   const [categoryMutation, { loading: mutateLoading, data: resData }] =
     useMutation<CategoryResponse>("/api/category/mutate");
   const [saveState, setSaveState] = useState<boolean>(true);
@@ -42,16 +44,17 @@ const MyCategory: NextPage = () => {
   const { data } = useSession();
 
   useEffect(() => {
+    if (!swrCategoryResponse) return;
     setHeadTitle("카테고리 관리");
-    setCategoryData(JSON.parse(JSON.stringify(originCategory)));
-  }, [originCategory]);
+    setCategoryData(swrCategoryResponse?.originCategory);
+  }, [swrCategoryResponse]);
 
   useEffect(() => {
     if (!resData) return;
     setLoading(false);
     if (resData.ok) {
       setSaveState(false);
-      categoryUpdate();
+      categoryMutate();
       createCautionMsg("변경사항을 저장하였습니다.", false);
       removeIdList = [];
       updateUserData(resData.updateData);
@@ -61,12 +64,17 @@ const MyCategory: NextPage = () => {
   }, [resData]);
 
   useEffect(() => {
-    if (originCategory.length != categoryData?.length) {
+    if (!categoryData) return;
+    if (swrCategoryResponse?.originCategory.length != categoryData?.length) {
       setSaveState(true);
     } else {
-      let originOrders = originCategory.map((item) => item.order);
+      let originOrders = swrCategoryResponse?.originCategory.map(
+        (item) => item.order
+      );
       let changeOrders = categoryData.map((item) => item.order);
-      let originNames = originCategory.map((item) => item.name);
+      let originNames = swrCategoryResponse?.originCategory.map(
+        (item) => item.name
+      );
       let changeNames = categoryData.map((item) => item.name);
       if (
         JSON.stringify(originOrders) != JSON.stringify(changeOrders) ||
@@ -77,7 +85,7 @@ const MyCategory: NextPage = () => {
     }
   }, [categoryData]);
 
-  const categoryMutate = () => {
+  const categoryMutateEvt = () => {
     if (!categoryValid()) {
       createCautionMsg("변경사항을 저장할수 없습니다.", true);
     } else {
@@ -174,7 +182,9 @@ const MyCategory: NextPage = () => {
     setCategoryData([
       ...categoryData,
       {
-        id: originCategory.length - (categoryData.length + 1),
+        id:
+          swrCategoryResponse?.originCategory.length -
+          (categoryData.length + 1),
         name: "",
         accountId: data.accessToken.id,
         order: categoryData.length,
@@ -237,7 +247,7 @@ const MyCategory: NextPage = () => {
         </button>
         <div className="relative flex-row justify-center flex items-center mt-4">
           <button
-            onClick={categoryMutate}
+            onClick={categoryMutateEvt}
             disabled={saveState ? false : true}
             className="text-gray-200 first-line:relative select-none w-36 h-14 inline-block p-2 text-lg font-semibold rounded-lg disabled:bg-emerald-900 bg-emerald-500 enabled:hover:bg-emerald-700"
           >

@@ -90,7 +90,7 @@ const DynamicComponent = dynamic(
 const PostDetail: NextPage = () => {
   const router = useRouter();
   const { data: sessionData } = useSession();
-  const { profileData } = getGlobalSWR();
+  const { swrProfileResponse, swrCategoryResponse } = getGlobalSWR();
   const isMe = userCheck(sessionData);
   const { register, handleSubmit, getValues, reset } = useForm<CommentForm>();
   const {
@@ -124,6 +124,7 @@ const PostDetail: NextPage = () => {
   useEffect(() => {
     setHeadTitle(postResponse?.postData?.title);
   }, [postResponse]);
+
   useEffect(() => {
     if (
       !isLoading &&
@@ -132,7 +133,9 @@ const PostDetail: NextPage = () => {
       !nearPostsLoading
     )
       setAllDataLoading(false);
-    else setAllDataLoading(true);
+    else {
+      setAllDataLoading(true);
+    }
   }, [isLoading, backForthPostsLoading, commentsLoading, nearPostsLoading]);
   useEffect(() => {
     if (!deleteRespose) return;
@@ -373,7 +376,7 @@ const PostDetail: NextPage = () => {
             <DynamicComponent
               dynamicLoadingState={setDynamicLoading}
               postResponse={postResponse}
-              profileData={profileData}
+              profileData={swrProfileResponse?.profile}
               appendixEvt={appendixEvt}
             />
             <div className={`${dynamicLoading ? "hidden" : "block"}`}>
@@ -553,7 +556,7 @@ export const NextPost = ({
   return (
     <button
       onClick={() => {
-        router.push(`/post/${data.id}`);
+        router.push(`/${router.query.userId}/post?id=${data.id}`);
       }}
       className="w-[48%] px-4 dark:bg-zinc-800 bg-gray-100 
       shadow-[0_6px_0_rgba(0,0,0,0.2)] hover:shadow-[0_4px_0px_rgba(0,0,0,0.2)]
@@ -602,7 +605,7 @@ export const CommentItem = ({
   index,
 }: CommentProps) => {
   let { data: sessionData } = useSession();
-  let { profileData } = getGlobalSWR();
+  let { swrProfileResponse } = getGlobalSWR();
   let isMe = userCheck(sessionData);
   const { register, handleSubmit, getValues, setFocus, reset } =
     useForm<CommentForm>();
@@ -720,16 +723,21 @@ export const CommentItem = ({
             >
               <img
                 src={
-                  profileData?.avatar
-                    ? `${getDeliveryDomain(profileData?.avatar, "avatar")}`
+                  swrProfileResponse?.profile?.avatar
+                    ? `${getDeliveryDomain(
+                        swrProfileResponse?.profile?.avatar,
+                        "avatar"
+                      )}`
                     : ""
                 }
                 className={`${
-                  profileData?.avatar ? "block" : "hidden"
+                  swrProfileResponse?.profile?.avatar ? "block" : "hidden"
                 } w-full h-full rounded-full `}
               />
               <span className="text-sm font-semibold text-center text-white ">
-                {!profileData?.avatar ? profileData?.name : ""}
+                {!swrProfileResponse?.profile?.avatar
+                  ? swrProfileResponse?.profile?.name
+                  : ""}
               </span>
             </div>
           ) : (
@@ -830,7 +838,7 @@ export const CommentBody = ({
 }: CommentItemProps) => {
   const router = useRouter();
   const { data: sessionData } = useSession();
-  const { profileData } = getGlobalSWR();
+  const { swrProfileResponse } = getGlobalSWR();
   const isMe = userCheck(sessionData);
   const [targetEle, setTargetEle] = useState<HTMLElement>(null);
   const [eleAnimate, setEleAnimate] = useState<boolean>(false);
@@ -892,16 +900,21 @@ export const CommentBody = ({
         >
           <img
             src={
-              profileData?.avatar
-                ? `${getDeliveryDomain(profileData?.avatar, "avatar")}`
+              swrProfileResponse?.profile?.avatar
+                ? `${getDeliveryDomain(
+                    swrProfileResponse?.profile?.avatar,
+                    "avatar"
+                  )}`
                 : ""
             }
             className={`${
-              profileData?.avatar ? "block" : "hidden"
+              swrProfileResponse?.profile?.avatar ? "block" : "hidden"
             } w-full h-full rounded-full `}
           />
           <span className="text-sm font-semibold text-center text-white ">
-            {!profileData?.avatar ? profileData?.name : ""}
+            {!swrProfileResponse?.profile?.avatar
+              ? swrProfileResponse?.profile?.name
+              : ""}
           </span>
         </div>
       ) : (
@@ -929,7 +942,7 @@ border-[1px] dark:border-zinc-800 items-center flex"
       <div className="flex ml-4 flex-col w-full">
         <div className="w-full flex flex-row justify-between">
           <div className="text-lg font-bold flex items-center">
-            {data.isMe ? profileData?.name : data.name}
+            {data.isMe ? swrProfileResponse?.profile?.name : data.name}
             <span
               className={`${
                 data.isMe ? "inline" : "hidden"
@@ -979,7 +992,7 @@ export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
     <div className="flex flex-col gap-2 items-center">
       <CompImg
         onClickEvt={() => {
-          router.push(`/post/${id}`);
+          router.push(`/${router.query.userId}/post?id=${id}`);
         }}
         style="w-full h-28"
         thumbnail={thumbnail}
@@ -987,7 +1000,7 @@ export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
       <LabelBtn
         contents={title}
         onClick={() => {
-          router.push(`/post/${id}`);
+          router.push(`/${router.query.userId}/post?id=${id}`);
         }}
       />
       <div className="text-sm text-gray-400">{getFormatDate(createdAt)}</div>

@@ -88,7 +88,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         ok: true,
       });
     } catch (e) {
-      console.log(e);
       res.json({
         ok: false,
         error: e.cause ? e.cause : "답글 작성중 오류가 발생했습니다.",
