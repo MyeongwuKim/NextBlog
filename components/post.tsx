@@ -9,13 +9,12 @@ import dynamic from "next/dynamic";
 interface PostProps {
   post: Post & { _count: { comments: number } };
 }
-
+//포스트 리스트아이템
 const CPost: NextPage<PostProps> = ({ post }) => {
   const router = useRouter();
   const [createTime, setCreateTime] = useState<string>();
 
   const onClickEvt = () => {
-    console.log(router);
     router.push(`/${router.query.userId}/post?id=${post?.id}`);
   };
 

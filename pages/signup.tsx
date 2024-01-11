@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import { GetServerSidePropsContext, NextPage } from "next";
 import { signIn } from "next-auth/react";
 import { use, useCallback, useEffect, useRef, useState } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
@@ -9,12 +9,8 @@ import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
 import { useRouter } from "next/router";
 import LabelBtn from "@/components/labelBtn";
-import {
-  createAlert,
-  createCautionMsg,
-  setHeadTitle,
-  setLoading,
-} from "@/hooks/useEvent";
+import { createToast, setHeadTitle, setLoading } from "@/hooks/useEvent";
+import { getToken } from "next-auth/jwt";
 
 interface SignupForm {
   email: string;
@@ -52,10 +48,10 @@ const SignUp: NextPage = () => {
   useEffect(() => {
     if (!data) return;
     if (data.ok) {
-      createCautionMsg("끄적블로그에 가입완료 되었습니다.", false);
+      createToast("끄적블로그에 가입완료 되었습니다.", false);
       router.replace("/");
     } else if (!data.ok) {
-      createCautionMsg(data.error, true);
+      createToast(data.error, true);
     }
   }, [data]);
 
@@ -344,6 +340,26 @@ const SignUp: NextPage = () => {
       </div>
     </div>
   );
+};
+
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  let token = await getToken({
+    req: ctx.req,
+    cookieName: process.env.NEXTAUTH_TOKENNAME,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+  if (token) {
+    return {
+      redirect: {
+        permanent: true,
+        destination: "/",
+      },
+      props: {},
+    };
+  }
+  return {
+    props: {},
+  };
 };
 
 export default SignUp;

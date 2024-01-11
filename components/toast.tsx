@@ -1,57 +1,69 @@
 import { NextPage } from "next";
-import { useEffect } from "react";
-import * as ReactDOMClient from "react-dom/client";
+import { Dispatch, useEffect, SetStateAction, useState } from "react";
 
-interface ErrorMsgProps {
+interface ToastProps {
   msg: string;
   isWarning: boolean;
-  root: ReactDOMClient.Root;
+  toastArrHandler: Dispatch<SetStateAction<ToastProps[]>>;
+  index: number;
 }
-const fixedTime = 2;
-let fixedWidth = 0;
-let timer = null;
 
-const CautionMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
+let fixedWidth = 0;
+let timerStorage = {};
+
+const Toast: NextPage<ToastProps> = ({
+  msg,
+  isWarning,
+  toastArrHandler,
+  index,
+}) => {
+  const [fixedTime, setFixedTime] = useState<number>(1);
+
   useEffect(() => {
-    fixedWidth = document.getElementById("cautionBody").clientWidth;
-    if (timer) {
-      clearInterval(timer);
-    }
+    fixedWidth = document.getElementById(`_toastView${index}`).clientWidth;
     timeoutLogic();
   }, []);
 
   const timeoutLogic = () => {
-    let timeBar = document.getElementById("cautionTimeBar");
+    let timeBar = document.getElementById(`_toastTime${index}`);
     timeBar.style.width = fixedWidth.toString();
     +"px";
     let rate = Number((fixedWidth / fixedTime).toFixed(2));
     let currentTime = fixedTime;
-
-    timer = setInterval(() => {
-      if (timeBar.clientWidth <= 0) {
-        clearInterval(timer);
-        root.unmount();
+    let _timer = setInterval(() => {
+      if (currentTime <= 0) {
+        clearInterval(timerStorage[index]);
+        delete timerStorage[index];
+        toastArrHandler((prev) => {
+          let newPrev = [...prev];
+          newPrev.splice(0, 1);
+          return newPrev;
+        });
       }
       currentTime -= 0.1;
       timeBar.style.width =
         (rate * Number(currentTime.toFixed(2))).toString() + "px";
     }, 100);
+
+    timerStorage[index] = _timer;
   };
 
   return (
-    <div id="cautionWindow" className="absolute left-0 top-0 ">
+    <div
+      id={`_toastContainer${index}`}
+      className="w-[280px] min-h-[120px] h-auto "
+    >
       <div
-        id="cautionBody"
+        id={`_toastView${index}`}
         onClick={() => {
-          root.unmount();
           //document.getElementById("cautionWindow").remove();
         }}
-        className={`absolute left-2 top-2 flex flex-col items-center bg-gray-100
-       z-[99] w-[280px] min-h-[120px] h-auto dark:bg-zinc-800 rounded-md shadow-xl`}
+        className={`relative left-2 top-2 flex flex-col items-center bg-gray-100
+       z-[99] w-full h-auto dark:bg-zinc-800 rounded-md shadow-xl`}
       >
         <div
           style={{ width: "280px" }}
-          id="cautionTimeBar"
+          id={`_toastTime${index}`}
           className={`absolute left-0 transition-all h-2 ${
             isWarning ? "bg-red-500" : "bg-green-500"
           } rounded-t-md`}
@@ -80,4 +92,4 @@ const CautionMsg: NextPage<ErrorMsgProps> = ({ msg, root, isWarning }) => {
   );
 };
 
-export default CautionMsg;
+export default Toast;

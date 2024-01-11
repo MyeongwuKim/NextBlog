@@ -29,33 +29,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         preview,
       } = req.body as RequestBodyData;
 
-      // const wait = (timeToDelay) =>
-      //   new Promise((resolve) => setTimeout(resolve, timeToDelay)); //이와 같이 선언 후
-      // for (let i = 10; i < 100; i++) {
-      //   await wait(1000);
-      //   await prisma.post.create({
-      //     data: {
-      //       content,
-      //       html,
-      //       title: title + "-" + i + "번",
-      //       allow,
-      //       preview,
-      //       isPrivate,
-      //       category: {
-      //         connect: {
-      //           id: categoryId,
-      //         },
-      //       },
-      //       account: {
-      //         connect: {
-      //           id: accountId,
-      //         },
-      //       },
-      //     },
-      //   });
-      //   console.log("완료!");
-      // }
-
       let post = await prisma.post.create({
         data: {
           content,

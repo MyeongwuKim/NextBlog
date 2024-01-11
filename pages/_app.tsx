@@ -8,13 +8,11 @@ import type { AppContext, AppInitialProps, AppProps } from "next/app";
 import { SWRConfig } from "swr";
 import Loading from "@/components/loading";
 import { Category } from "@prisma/client";
-import prisma from "@/lib/server/client";
-import App from "next/app";
 import { useCallback, useEffect, useState } from "react";
 import RootComp from "@/components/rootComp";
-import { getToken } from "next-auth/jwt";
-import { NextApiRequest } from "next";
 import { useRouter } from "next/router";
+import PortalContainer from "@/components/modalPortal";
+import ToastPotal from "@/components/toastPortal";
 
 interface LayoutData {
   profile?: ProfileType;
@@ -50,7 +48,8 @@ function MyApp({
     <SessionProvider session={pageProps.session}>
       <ThemeProvider attribute="class">
         <Loading />
-        <div id="cautionCont" className="fixed z-[99]" />
+        <PortalContainer />
+        <ToastPotal />
         <SWRConfig
           value={{
             fetcher: (url: string) =>

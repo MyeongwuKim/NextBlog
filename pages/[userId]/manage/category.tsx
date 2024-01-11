@@ -9,7 +9,7 @@ import useMutation from "@/lib/server/useMutation";
 import { useSession } from "next-auth/react";
 import prisma from "@/lib/server/client";
 import { getGlobalSWR, updateUserData } from "@/hooks/useData";
-import { setLoading, createCautionMsg, setHeadTitle } from "@/hooks/useEvent";
+import { setLoading, createToast, setHeadTitle } from "@/hooks/useEvent";
 import { useRouter } from "next/router";
 
 let prevTarget: HTMLElement = null;
@@ -55,11 +55,11 @@ const MyCategory: NextPage = () => {
     if (resData.ok) {
       setSaveState(false);
       categoryMutate();
-      createCautionMsg("변경사항을 저장하였습니다.", false);
+      createToast("변경사항을 저장하였습니다.", false);
       removeIdList = [];
       updateUserData(resData.updateData);
     } else {
-      createCautionMsg(resData.error, true);
+      createToast(resData.error, true);
     }
   }, [resData]);
 
@@ -87,7 +87,7 @@ const MyCategory: NextPage = () => {
 
   const categoryMutateEvt = () => {
     if (!categoryValid()) {
-      createCautionMsg("변경사항을 저장할수 없습니다.", true);
+      createToast("변경사항을 저장할수 없습니다.", true);
     } else {
       setLoading(true);
       categoryData.forEach((item) => {

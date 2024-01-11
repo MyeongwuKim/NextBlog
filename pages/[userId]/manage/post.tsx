@@ -14,7 +14,9 @@ import useMutation from "@/lib/server/useMutation";
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import { useRouter } from "next/router";
 import {
+  Dispatch,
   MutableRefObject,
+  SetStateAction,
   useCallback,
   useEffect,
   useRef,
@@ -187,7 +189,9 @@ const PostList: NextPage = () => {
       createCautionMsg(deleteResponse.error, true);
     }
   }, [deleteResponse]);
-
+  useEffect(() => {
+    reset();
+  }, [search]);
   const onMutateEvt = useCallback(
     (type?: { [name: string]: any }, id?: number) => {
       setLoading(true);
@@ -268,7 +272,11 @@ const PostList: NextPage = () => {
     } else if (dropBoxText == "카테고리") {
       param = "category";
     }
-    router.push(router.pathname + `?${param}=${searchInput}`);
+    router
+      .push(`/${router.query.userId}/manage/post` + `?${param}=${searchInput}`)
+      .then(() => {
+        setSearch(false);
+      });
   };
   const onSearchInvalid: SubmitErrorHandler<{
     searchInput: string;
@@ -310,7 +318,7 @@ const PostList: NextPage = () => {
           <div className="flex flex-row gap-2 items-center">
             <div
               onClick={() => {
-                router.push(router.pathname);
+                router.push(`/${router.query.userId}/manage/post`);
               }}
             >
               <svg
@@ -496,7 +504,6 @@ const PostList: NextPage = () => {
           </button>
           <div
             onClick={() => {
-              //    reset();
               setSearch(false);
             }}
           >
@@ -545,6 +552,7 @@ const PostList: NextPage = () => {
           id={i}
           checkBoxRef={checkBoxRef}
           checkBoxEvt={checkboxEvt}
+          setSearch={setSearch}
           deleteEvt={onDeleteEvt}
           key={post.id}
         />
@@ -661,10 +669,12 @@ export const Item = ({
   id,
   data,
   deleteEvt,
+  setSearch,
 }: {
   data: PostHistory;
   checkBoxEvt: () => void;
   checkBoxRef: MutableRefObject<any>;
+  setSearch: Dispatch<SetStateAction<boolean>>;
   deleteEvt: (id: number) => void;
   id: number;
 }) => {
@@ -712,7 +722,7 @@ export const Item = ({
           <div>
             <span
               onClick={() => {
-                router.push(`/post/${data?.id}`);
+                router.push(`/${router.query.userId}/post?id=${data?.id}`);
               }}
               className="cursor-pointer"
             >
@@ -722,9 +732,14 @@ export const Item = ({
           <div>
             <span
               onClick={() => {
-                router.push(
-                  router.pathname + `?category=${data?.category.name}`
-                );
+                router
+                  .push(
+                    `/${router.query.userId}/manage/post` +
+                      `?category=${data?.category.name}`
+                  )
+                  .then(() => {
+                    setSearch(false);
+                  });
               }}
               className="text-red-400 cursor-pointer font-semibold  w-auto"
             >
@@ -740,7 +755,7 @@ export const Item = ({
           >
             <NormalBtn
               onClickEvt={() => {
-                router.push(`/write?id=${data?.id}`);
+                router.push(`/${router.query.userId}/write?id=${data?.id}`);
               }}
               content="수정"
               width={45}

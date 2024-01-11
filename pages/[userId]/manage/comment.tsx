@@ -147,6 +147,9 @@ const CommentList: NextPage = () => {
 
     return () => {};
   }, [historyData]);
+  useEffect(() => {
+    reset();
+  }, [search]);
 
   const [historyDelete, { data: deleteResponse, error: deleteErr }] =
     useMutation<historyResponse>("/api/manage/comment/delete");
@@ -215,7 +218,13 @@ const CommentList: NextPage = () => {
     } else if (dropBoxText == "내용") {
       param = "content";
     }
-    router.push(router.pathname + `?${param}=${searchInput}`);
+    router
+      .push(
+        `/${router.query.userId}/manage/comment` + `?${param}=${searchInput}`
+      )
+      .then(() => {
+        setSearch(false);
+      });
   };
 
   const onReplyValid = ({ replyInput }) => {
@@ -303,7 +312,7 @@ const CommentList: NextPage = () => {
           <div className="flex flex-row gap-2 items-center">
             <div
               onClick={() => {
-                router.push(router.pathname);
+                router.push(`/${router.query.userId}/manage/comment`);
               }}
             >
               <svg
@@ -448,7 +457,7 @@ const CommentList: NextPage = () => {
             className="flex-1 bg-transparent w-full focus:outline-none
             dark:placeholder:text-gray-400 placeholder:text-gray-300 "
           />
-          <button className="mr-2">
+          <button id="searchBtn" className="mr-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -466,7 +475,6 @@ const CommentList: NextPage = () => {
           </button>
           <div
             onClick={() => {
-              reset();
               setSearch(false);
             }}
           >
@@ -622,7 +630,10 @@ export const Item = ({
           <div className="flex flex-row gap-2">
             <span
               onClick={() => {
-                router.push(router.pathname + `?name=${data?.name}`);
+                router.push(
+                  `/${router.query.userId}/manage/comment` +
+                    `?name=${data?.name}`
+                );
               }}
               className="font-bold cursor-pointer"
             >
@@ -646,7 +657,9 @@ export const Item = ({
               onClick={() => {
                 let query = "comment";
                 if (data.isReply) query = "reply";
-                router.push(`/post/${data.postId}?${query}=${data.id}`);
+                router.push(
+                  `/${router.query.userId}/post?id=${data.postId}&${query}=${data.id}`
+                );
               }}
             >
               {data?.content}

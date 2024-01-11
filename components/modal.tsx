@@ -1,5 +1,5 @@
 import { NextPage } from "next";
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import * as ReactDOMClient from "react-dom/client";
 import CancelBtn from "./cancelBtn";
 import OkBtn from "./okBtn";
@@ -7,34 +7,34 @@ import OkBtn from "./okBtn";
 interface AlertProps {
   msg: string;
   btnMsgs: string[];
-  root: ReactDOMClient.Root;
   width?: number;
   callback?: () => void;
+  modalHandler: Dispatch<SetStateAction<null>>;
 }
 
-let alertWidth = 400;
-
-// let posX = (window.innerWidth - alertWidth) / 2;
-const Alert: NextPage<AlertProps> = ({
+const Modal: NextPage<AlertProps> = ({
   msg,
   btnMsgs,
-  root,
   callback,
   width,
+  modalHandler,
 }) => {
   return (
-    <div id="alertWindow" className="fixed left-0 top-0 z-[9998]">
+    <div
+      id="_modalContainer"
+      className="fixed z-[9998] w-full h-full bg-[rgba(0,0,0,0.2)]
+      flex justify-center items-center"
+    >
       <div
+        id="_modalView"
         style={{
           width,
-          left: `calc(${(window.innerWidth - alertWidth) / 2}px)`,
         }}
-        id="alertBody"
         onClick={() => {
           //document.getElementById("cautionWindow").remove();
         }}
-        className={`absolute p-4 top-16 flex flex-col items-center bg-gray-100
-       z-[99]  h-auto dark:bg-zinc-800 rounded-md shadow-xl`}
+        className={`p-4 top-16 flex flex-col items-center bg-gray-100
+       z-[99] h-auto dark:bg-zinc-800 rounded-md shadow-xl`}
       >
         <div
           dangerouslySetInnerHTML={{ __html: msg }}
@@ -47,7 +47,7 @@ const Alert: NextPage<AlertProps> = ({
               height={40}
               width={120}
               onClickEvt={() => {
-                root.unmount();
+                modalHandler(null);
               }}
             />
           ) : null}
@@ -56,8 +56,8 @@ const Alert: NextPage<AlertProps> = ({
             height={40}
             width={120}
             onClickEvt={() => {
-              root.unmount();
-              callback();
+              if (callback) callback();
+              modalHandler(null);
             }}
           />
         </div>
@@ -66,4 +66,4 @@ const Alert: NextPage<AlertProps> = ({
   );
 };
 
-export default Alert;
+export default Modal;

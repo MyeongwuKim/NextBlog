@@ -485,8 +485,8 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
       let { historyData } = await res.json();
       setLatestData(historyData);
     };
-
-    if (router.pathname == "/") callMutate();
+    console.log(router);
+    if (router.pathname.replace("[userId]", "") == "/") callMutate();
   }, [router]);
 
   useEffect(() => {
@@ -618,7 +618,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
                 <LabelBtn
                   key={i}
                   onClick={() => {
-                    let url = `/post/${data.postId}?${
+                    let url = `/${router.query.userId}/post?id=${data.postId}&${
                       data.isReply ? `reply=${type.id}` : `comment=${type.id}`
                     }`;
                     router.push(url, null, { shallow: true });
@@ -669,7 +669,6 @@ export const SettingSide = () => {
             key={i}
             id={item.router}
             onClick={() => {
-              console.log(router.pathname);
               router
                 .push(
                   `/${router.query.userId}/manage/${item.router}`,

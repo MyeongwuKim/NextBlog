@@ -5,7 +5,7 @@ const nextConfig = {
   },
   reactStrictMode: false,
   // async redirects(data) {
-  //   console.log(data);
+
   //   return [
   //     {
   //       source: "/setting",

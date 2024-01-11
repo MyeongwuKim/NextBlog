@@ -9,9 +9,9 @@ import {
 } from "@/hooks/useUtils";
 import {
   setLoading,
-  createCautionMsg,
+  createToast,
   setHeadTitle,
-  createAlert,
+  createModal,
 } from "@/hooks/useEvent";
 import useMutation from "@/lib/server/useMutation";
 import { Comment, Post, Reply } from "@prisma/client";
@@ -140,7 +140,7 @@ const PostDetail: NextPage = () => {
   useEffect(() => {
     if (!deleteRespose) return;
     if (deleteRespose.ok) {
-      createCautionMsg("삭제가 완료 되었습니다.", false);
+      createToast("삭제가 완료 되었습니다.", false);
       router.replace("/");
     } else {
     }
@@ -150,25 +150,25 @@ const PostDetail: NextPage = () => {
     if (!createCommentsData) return;
     if (createCommentsData.ok) {
       commentsMutate();
-    } else createCautionMsg(createCommentsData.error, true);
+    } else createToast(createCommentsData.error, true);
   }, [createCommentsData]);
 
   useEffect(() => {
-    if (error) createCautionMsg(error as any, true);
+    if (error) createToast(error as any, true);
   }, [error]);
 
   useEffect(() => {
     if (!commentsDeleteResponse) return;
     if (commentsDeleteResponse.ok)
-      createCautionMsg("댓글 삭제를 완료했습니다", false);
-    else createCautionMsg(commentsDeleteResponse.error, false);
+      createToast("댓글 삭제를 완료했습니다", false);
+    else createToast(commentsDeleteResponse.error, false);
   }, [commentsDeleteResponse]);
 
   useEffect(() => {
     if (!replyResponse) return;
 
-    if (replyResponse.ok) createCautionMsg("답글 삭제를 완료했습니다", false);
-    else createCautionMsg(replyResponse.error, false);
+    if (replyResponse.ok) createToast("답글 삭제를 완료했습니다", false);
+    else createToast(replyResponse.error, false);
   }, [replyResponse]);
 
   const appendixEvt = () => {
@@ -260,7 +260,7 @@ const PostDetail: NextPage = () => {
     } else if (content) {
       message = content.message;
     }
-    createCautionMsg(message, true);
+    createToast(message, true);
   };
 
   const checkChange = () => {
@@ -340,7 +340,9 @@ const PostDetail: NextPage = () => {
             <div className={`flex ${isMe ? "block" : "hidden"}`}>
               <span
                 onClick={() => {
-                  router.push(`/write?id=${postResponse?.postData?.id}`);
+                  router.push(
+                    `/${router.query.userId}/write?id=${postResponse?.postData?.id}`
+                  );
                 }}
                 className="text-lg cursor-pointer
           dark:text-gray-400 text-slate-400 mr-3 underline"
@@ -349,9 +351,10 @@ const PostDetail: NextPage = () => {
               </span>
               <span
                 onClick={() => {
-                  createAlert(
+                  createModal(
                     "이 글 및 이미지 파일을 완전히 삭제합니다.<br> 계속하시겠습니까?",
                     ["취소", "확인"],
+
                     () => {
                       setLoading(true);
                       postDeleteMutation(postResponse?.postData?.id);
@@ -620,7 +623,7 @@ export const CommentItem = ({
     if (replyResponse.ok) {
       commentsMutate();
     } else {
-      createCautionMsg(replyResponse.error, true);
+      createToast(replyResponse.error, true);
     }
   }, [replyResponse]);
   const checkChange = () => {
@@ -668,7 +671,7 @@ export const CommentItem = ({
     } else if (content) {
       message = content.message;
     }
-    createCautionMsg(message, true);
+    createToast(message, true);
   };
 
   return (
@@ -847,6 +850,8 @@ export const CommentBody = ({
     if (!data) return;
     let query = { ...router.query };
     delete query.id;
+    delete query.userId;
+
     let targetEle = document.getElementById(
       Object.keys(query)[0] + query[Object.keys(query)[0]]
     );

@@ -44,7 +44,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         ok: true,
       });
     } catch (err) {
-      console.log(err.message);
       let errMsg = err.message
         ? err.message
         : "계정 생성중 오류가 발생했습니다.";

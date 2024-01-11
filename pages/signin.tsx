@@ -5,8 +5,10 @@ import OkBtn from "@/components/okBtn";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
 import CancelBtn from "@/components/cancelBtn";
 import InputField from "@/components/inputField";
-import { setLoading, setHeadTitle, createCautionMsg } from "@/hooks/useEvent";
+import { setLoading, setHeadTitle, createToast } from "@/hooks/useEvent";
 import LabelBtn from "@/components/labelBtn";
+import { getToken } from "next-auth/jwt";
+import { GetServerSidePropsContext } from "next";
 
 interface SighinForm {
   email: string;
@@ -54,7 +56,7 @@ const SignIn = () => {
       if (ok) {
         router.push(`${id}`);
       } else {
-        createCautionMsg(error, true);
+        createToast(error, true);
       }
     });
   };
@@ -195,4 +197,23 @@ const SignIn = () => {
   );
 };
 
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  let token = await getToken({
+    req: ctx.req,
+    cookieName: process.env.NEXTAUTH_TOKENNAME,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+  if (token) {
+    return {
+      redirect: {
+        permanent: true,
+        destination: "/",
+      },
+      props: {},
+    };
+  }
+  return {
+    props: {},
+  };
+};
 export default SignIn;

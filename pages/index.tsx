@@ -1,18 +1,20 @@
 import CancelBtn from "@/components/cancelBtn";
+import LabelBtn from "@/components/labelBtn";
 import OkBtn from "@/components/okBtn";
-import { setHeadTitle } from "@/hooks/useEvent";
-import { signIn, useSession } from "next-auth/react";
+import { createModal, createToast, setHeadTitle } from "@/hooks/useEvent";
+import { GetServerSidePropsContext } from "next";
+import { getToken } from "next-auth/jwt";
+import { signIn, signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useCallback, useEffect } from "react";
 
-const Home = () => {
+const Home = ({ isLogin, id }) => {
   const router = useRouter();
+
   useEffect(() => {
     setHeadTitle("끄적끄적 블로그");
   }, []);
-  useEffect(() => {
-    console.log(router);
-  }, [router]);
+
   return (
     <div className="w-full h-full flex-col">
       <div className="relative flex flex-col justify-start overflow-hidden">
@@ -41,25 +43,67 @@ const Home = () => {
         </div>
       </div>
       <div className="flex flex-col justify-center gap-4 items-center">
-        <div className="w-[50%] max-w-[400px]">
-          <OkBtn
-            content="로그인"
-            width={"100%"}
-            height={56}
-            onClickEvt={() => router.push("/signin")}
-          />
-        </div>
-        <div className="w-[50%] max-w-[400px]">
-          <CancelBtn
-            content="가입하기"
-            width={"100%"}
-            height={56}
-            onClickEvt={() => router.push("/signup")}
-          />
-        </div>
+        {isLogin ? (
+          <>
+            <div className="text-lg font-semibold">
+              이미 로그인 되어있습니다.
+            </div>
+            <div className="w-[50%] max-w-[400px]">
+              <OkBtn
+                content="내 블로그로"
+                width={"100%"}
+                height={56}
+                onClickEvt={() => router.push(`/${id}`)}
+              />
+            </div>
+            <LabelBtn
+              contents="로그아웃 하기"
+              onClick={() => {
+                signOut().then(() => {
+                  router.reload();
+                });
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <div className="w-[50%] max-w-[400px]">
+              <OkBtn
+                content="로그인"
+                width={"100%"}
+                height={56}
+                onClickEvt={() => router.push("/signin")}
+              />
+            </div>
+            <div className="w-[50%] max-w-[400px]">
+              <CancelBtn
+                content="가입하기"
+                width={"100%"}
+                height={56}
+                onClickEvt={() => router.push("/signup")}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
+export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
+  let token = await getToken({
+    req: ctx.req,
+    cookieName: process.env.NEXTAUTH_TOKENNAME,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  let isLogin = token ? true : false;
+  let id = token ? token?.email?.split("@")[0] : null;
+
+  return {
+    props: {
+      isLogin,
+    },
+  };
+};
 export default Home;

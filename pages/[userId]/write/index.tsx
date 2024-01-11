@@ -96,7 +96,6 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
         false
       );
       categoryMutate();
-      console.log(router);
       router.replace(
         postData
           ? `/${router.query.userId}/post/${postData?.id}`
