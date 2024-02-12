@@ -10,7 +10,7 @@ interface PostProps {
   post: Post & { _count: { comments: number } };
 }
 //포스트 리스트아이템
-const CPost: NextPage<PostProps> = ({ post }) => {
+const PostItem: NextPage<PostProps> = ({ post }) => {
   const router = useRouter();
   const [createTime, setCreateTime] = useState<string>();
 
@@ -77,4 +77,4 @@ const CPost: NextPage<PostProps> = ({ post }) => {
   );
 };
 
-export default CPost;
+export default PostItem;

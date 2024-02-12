@@ -44,6 +44,7 @@ export async function middleware(request: NextRequest) {
       } catch {
         return NextResponse.rewrite(origin + "/404");
       }
+    } else if (secondParm == "search") {
     } else {
       //manage,write 권한 체크
       const token = await getToken({

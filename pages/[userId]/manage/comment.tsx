@@ -4,7 +4,7 @@ import InputField from "@/components/inputField";
 import NormalBtn from "@/components/normalBtn";
 import OkBtn from "@/components/okBtn";
 import Pagination from "@/components/pagination";
-import { createCautionMsg, setHeadTitle, setLoading } from "@/hooks/useEvent";
+import { createToast, setHeadTitle, setLoading } from "@/hooks/useEvent";
 import { getFormatFullDate, getTimeStamp } from "@/hooks/useUtils";
 import prisma from "@/lib/server/client";
 import useMutation from "@/lib/server/useMutation";
@@ -192,10 +192,10 @@ const CommentList: NextPage = () => {
   useEffect(() => {
     if (!deleteResponse) return;
     if (deleteResponse.ok) {
-      createCautionMsg("댓글을 삭제 하였습니다.", false);
+      createToast("댓글을 삭제 하였습니다.", false);
       historyMutate();
     } else {
-      createCautionMsg(deleteResponse.error, true);
+      createToast(deleteResponse.error, true);
     }
   }, [deleteResponse]);
 
@@ -203,10 +203,10 @@ const CommentList: NextPage = () => {
     if (!createResponse) return;
     if (createResponse.ok) {
       historyMutate();
-      createCautionMsg("답글을 작성 하였습니다.", false);
+      createToast("답글을 작성 하였습니다.", false);
       setReplyWindow({ data: null, enable: false });
     } else {
-      createCautionMsg(createResponse.error, true);
+      createToast(createResponse.error, true);
     }
   }, [createResponse]);
 
@@ -243,7 +243,7 @@ const CommentList: NextPage = () => {
     let message = "";
     if (searchInput) {
       message = searchInput.message;
-      createCautionMsg(message, true);
+      createToast(message, true);
     }
   };
 

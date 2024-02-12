@@ -26,7 +26,7 @@ const ToastPotal = () => {
       <></>
     ) : (
       <div
-        id="toasts"
+        id="toastWrapper"
         className="pointer-events-none flex-wrap justify-start gap-2
         fixed w-full h-full flex flex-col"
       >

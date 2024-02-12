@@ -51,7 +51,7 @@ const Toast: NextPage<ToastProps> = ({
   return (
     <div
       id={`_toastContainer${index}`}
-      className="w-[280px] min-h-[120px] h-auto "
+      className="w-[280px] min-h-[130px] h-auto "
     >
       <div
         id={`_toastView${index}`}
@@ -59,7 +59,7 @@ const Toast: NextPage<ToastProps> = ({
           //document.getElementById("cautionWindow").remove();
         }}
         className={`relative left-2 top-2 flex flex-col items-center bg-gray-100
-       z-[99] w-full h-auto dark:bg-zinc-800 rounded-md shadow-xl`}
+       z-[99] w-full h-full dark:bg-zinc-800 rounded-md shadow-xl`}
       >
         <div
           style={{ width: "280px" }}

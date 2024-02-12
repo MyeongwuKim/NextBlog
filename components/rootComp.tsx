@@ -22,7 +22,9 @@ const Root = ({ children }) => {
 
 const getPageRoute = (pathname: string, children) => {
   let tag;
-  if (pathname.includes("[userId]")) {
+  if (pathname.includes("search")) {
+    tag = <>{children}</>;
+  } else if (pathname.includes("[userId]")) {
     tag = <BodyComp>{children}</BodyComp>;
   } else {
     tag = <>{children}</>;

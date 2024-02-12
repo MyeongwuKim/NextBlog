@@ -3,8 +3,8 @@ import NormalBtn from "@/components/normalBtn";
 import Pagination from "@/components/pagination";
 import { getGlobalSWR } from "@/hooks/useData";
 import {
-  createAlert,
-  createCautionMsg,
+  createModal,
+  createToast,
   setHeadTitle,
   setLoading,
 } from "@/hooks/useEvent";
@@ -174,19 +174,19 @@ const PostList: NextPage = () => {
     if (!mutateResponse) return;
     if (mutateResponse.ok) {
       categoryMutate();
-      createCautionMsg("포스트 정보를 변경하였습니다.", false);
+      createToast("포스트 정보를 변경하였습니다.", false);
     } else {
-      createCautionMsg(mutateResponse.error, true);
+      createToast(mutateResponse.error, true);
     }
   }, [mutateResponse]);
   useEffect(() => {
     if (!deleteResponse) return;
     if (deleteResponse.ok) {
       categoryMutate();
-      createCautionMsg("포스트를 삭제하였습니다.", false);
+      createToast("포스트를 삭제하였습니다.", false);
       router.replace(router.asPath);
     } else {
-      createCautionMsg(deleteResponse.error, true);
+      createToast(deleteResponse.error, true);
     }
   }, [deleteResponse]);
   useEffect(() => {
@@ -285,7 +285,7 @@ const PostList: NextPage = () => {
     let message = "";
     if (searchInput) {
       message = searchInput.message;
-      createCautionMsg(message, true);
+      createToast(message, true);
     }
   };
 
@@ -630,7 +630,7 @@ const PostList: NextPage = () => {
               {
                 name: "삭제",
                 clickEvt: () => {
-                  createAlert(
+                  createModal(
                     "이 글 및 이미지 파일을 완전히 삭제합니다.<br> 계속하시겠습니까?",
                     ["취소", "확인"],
                     () => {
@@ -763,7 +763,7 @@ export const Item = ({
             />
             <NormalBtn
               onClickEvt={() => {
-                createAlert(
+                createModal(
                   "이 글 및 이미지 파일을 완전히 삭제합니다.<br> 계속하시겠습니까?",
                   ["취소", "확인"],
                   () => {

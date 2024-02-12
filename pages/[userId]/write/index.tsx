@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import useCodeMirror from "@/lib/front/use-codemirror";
 import ToolBar from "@/components/write/toolbar";
 import { getGlobalSWR } from "@/hooks/useData";
-import { createCautionMsg, setHeadTitle, setLoading } from "@/hooks/useEvent";
+import { createToast, setHeadTitle, setLoading } from "@/hooks/useEvent";
 import NextImage from "next/image";
 import { Category, Post, Image } from "@prisma/client";
 import useMutation from "@/lib/server/useMutation";
@@ -90,19 +90,20 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
 
   useEffect(() => {
     if (!resData) return;
+    setLoading(false);
     if (resData.ok) {
-      createCautionMsg(
+      createToast(
         `포스트 ${postData ? "수정" : "작성"}을 완료하였습니다.`,
         false
       );
       categoryMutate();
       router.replace(
         postData
-          ? `/${router.query.userId}/post/${postData?.id}`
-          : `/${router.query.userId}/post/${resData?.id}`
+          ? `/${router.query.userId}/post?id=${postData?.id}`
+          : `/${router.query.userId}/post?id=${resData?.id}`
       );
     } else {
-      createCautionMsg(resData.error, true);
+      createToast(resData.error, true);
     }
   }, [resData]);
   //프리뷰 만들기
@@ -153,7 +154,10 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
       removeFunc(id);
     }
     setLoading(false);
-    router.replace("/");
+    let backUrl = postData
+      ? `/${router.query.userId}/post?id=${postData.id}`
+      : `/${router.query.userId}`;
+    router.replace(backUrl);
   };
 
   const doWrite = async ({
@@ -193,15 +197,15 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
       delete postData.images;
       mutate(`/api/post/${router.query.id}`, { ...postData, ...data });
     }
-    writeMutation(data);
     setLoading(true);
+    writeMutation(data);
   };
 
   const onWriteValid = () => {
     if (title.length <= 0) {
-      createCautionMsg("제목을 입력해주세요.", true);
+      createToast("제목을 입력해주세요.", true);
     } else if (doc.length <= 0) {
-      createCautionMsg("내용을 입력해주세요.", true);
+      createToast("내용을 입력해주세요.", true);
     } else {
       setEnablePopup(true);
     }
@@ -393,7 +397,7 @@ export const WritePopup = ({
     if (!categoryResponse) return;
     setLoading(false);
     if (categoryResponse.ok) categoryMutate();
-    else createCautionMsg(categoryResponse.error, true);
+    else createToast(categoryResponse.error, true);
   }, [categoryResponse]);
 
   const onCategoryValid = ({ categoryInput }) => {
@@ -421,7 +425,7 @@ export const WritePopup = ({
     let message = "";
     if (searchInput) {
       message = searchInput.message;
-      createCautionMsg(message, true);
+      createToast(message, true);
     }
   };
   useEffect(() => {
@@ -507,7 +511,7 @@ export const WritePopup = ({
       setPopupState(false);
     } catch {
       setLoading(false);
-      createCautionMsg("썸네일 이미지 업로드중 오류가 발생했습니다", true);
+      createToast("썸네일 이미지 업로드중 오류가 발생했습니다", true);
     }
   };
   const onCategorySelect = useCallback((category: CategoryCountType) => {

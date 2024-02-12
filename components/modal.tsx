@@ -19,10 +19,16 @@ const Modal: NextPage<AlertProps> = ({
   width,
   modalHandler,
 }) => {
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
   return (
     <div
       id="_modalContainer"
-      className="fixed z-[9998] w-full h-full bg-[rgba(0,0,0,0.2)]
+      className="fixed z-[9998] w-full h-full bg-[rgba(0,0,0,0.4)]
       flex justify-center items-center"
     >
       <div

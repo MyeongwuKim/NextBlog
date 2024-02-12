@@ -103,6 +103,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   return {
     props: {
       isLogin,
+      id,
     },
   };
 };

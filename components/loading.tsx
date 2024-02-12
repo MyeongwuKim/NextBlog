@@ -16,7 +16,7 @@ const Loading = () => {
     <div
       className={`${
         enable ? "block" : "hidden"
-      } z-[9999] bg-[rgba(0,0,0,0.2)] w-full h-full flex justify-center items-center fixed  left-0 top-0`}
+      } z-[9999] bg-[rgba(0,0,0,0.4)] w-full h-full flex justify-center items-center fixed  left-0 top-0`}
     >
       <div
         id="Loading"

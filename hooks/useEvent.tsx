@@ -61,7 +61,8 @@ export const createModal = (
 };
 
 export const createToast = (msg: string, isWarning: boolean) => {
-  let lastToast = document.getElementById("toasts")?.lastChild as HTMLElement;
+  let lastToast = document.getElementById("toastWrapper")
+    ?.lastChild as HTMLElement;
   let number = lastToast
     ? Number(lastToast.id.replace("_toastContainer", "")) + 1
     : 0;

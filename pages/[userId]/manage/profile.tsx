@@ -8,7 +8,7 @@ import prisma from "@/lib/server/client";
 import useSWR, { SWRConfig } from "swr";
 import { updateUserData } from "@/hooks/useData";
 import { getDeliveryDomain } from "@/hooks/useUtils";
-import { setLoading, createCautionMsg, setHeadTitle } from "@/hooks/useEvent";
+import { setLoading, createToast, setHeadTitle } from "@/hooks/useEvent";
 import InputField from "@/components/inputField";
 import OkBtn from "@/components/okBtn";
 interface ProfileProps {
@@ -93,9 +93,9 @@ const Profile: NextPage = () => {
   useEffect(() => {
     if (!ResponseData) return;
     if (ResponseData.ok) {
-      createCautionMsg("변경사항을 저장하였습니다.", false);
+      createToast("변경사항을 저장하였습니다.", false);
     } else {
-      createCautionMsg(ResponseData.error, true);
+      createToast(ResponseData.error, true);
     }
   }, [ResponseData]);
 
@@ -168,7 +168,7 @@ const Profile: NextPage = () => {
         delete data.avatar;
       }
     } catch {
-      createCautionMsg("이미지서버 통신 오류입니다.", true);
+      createToast("이미지서버 통신 오류입니다.", true);
       return;
     }
 
@@ -178,7 +178,7 @@ const Profile: NextPage = () => {
         profile.password
       );
       if (!passwordResult) {
-        createCautionMsg("기존 비밀번호를 확인해주세요.", true);
+        createToast("기존 비밀번호를 확인해주세요.", true);
         return;
       }
       const changePassword = await bcrypt.hash(data.changePassword, 10);
@@ -212,7 +212,7 @@ const Profile: NextPage = () => {
     } else if (github) {
       msg = github.message;
     }
-    createCautionMsg(msg, true);
+    createToast(msg, true);
   };
 
   return (

@@ -397,6 +397,7 @@ export const TopView: NextPage<TopViewProps> = ({
         </div>
         <div className="flex items-center">
           <button
+            id="topview_ThemeBtn"
             onClick={() => {
               if (theme == "dark") setTheme("light");
               else setTheme("dark");
@@ -438,7 +439,12 @@ export const TopView: NextPage<TopViewProps> = ({
           </button>
         </div>
         <div className="flex items-center">
-          <button>
+          <button
+            id="topview_SearchBtn"
+            onClick={() => {
+              router.push(`/${router.query.userId}/search`);
+            }}
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -485,7 +491,6 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
       let { historyData } = await res.json();
       setLatestData(historyData);
     };
-    console.log(router);
     if (router.pathname.replace("[userId]", "") == "/") callMutate();
   }, [router]);
 

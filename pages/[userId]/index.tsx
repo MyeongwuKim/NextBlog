@@ -1,15 +1,13 @@
-import CPost from "@/components/post";
+import PostItem from "@/components/postItem";
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import useSWRInfinite from "swr/infinite";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Account, Post } from "@prisma/client";
-import prisma from "@/lib/server/client";
-import { setHeadTitle, setLoading } from "@/hooks/useEvent";
+import { setHeadTitle } from "@/hooks/useEvent";
 import { userCheck } from "@/hooks/useData";
 import { useSession } from "next-auth/react";
-import post from "../api/post";
 import SpinnerLoading from "@/components/loading/spinnerLoading";
 
 //CBody 그대로 두고, query string에따라 PostList를 요청받게함
@@ -148,7 +146,7 @@ const PostList: NextPage = () => {
                   post?.isPrivate ? `${isMe ? "block" : "hidden"}` : "block"
                 }`}
               >
-                <CPost post={post} />
+                <PostItem post={post} />
               </div>
             );
           })
