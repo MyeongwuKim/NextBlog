@@ -17,20 +17,36 @@ export const getTimeStamp = () => {
 };
 /**Date값 년,월,일로 포맷해서 가져옴 */
 export const getFormatDate = (date: Date | string): string => {
-  const formatDate = [
-    new Date(date).getFullYear(),
-    ".",
-    (new Date(date).getMonth() + 1).toString().length > 1
-      ? new Date(date).getMonth() + 1
-      : "0" + (new Date(date).getMonth() + 1).toString(),
-    ".",
-    new Date(date).getDate().toString().length > 1
-      ? new Date(date).getDate()
-      : "0" + new Date(date).getDate().toString(),
-  ].join("");
+  const start = new Date(date);
+  const end = new Date();
 
-  return formatDate;
+  const seconds = Math.floor((end.getTime() - start.getTime()) / 1000);
+  if (seconds < 60) return "방금 전";
+
+  const minutes = seconds / 60;
+  if (minutes < 60) return `${Math.floor(minutes)}분 전`;
+
+  const hours = minutes / 60;
+  if (hours < 24) return `${Math.floor(hours)}시간 전`;
+
+  const days = hours / 24;
+  if (days < 7) return `${Math.floor(days)}일 전`;
+  else {
+    const formatDate = [
+      new Date(date).getFullYear(),
+      ".",
+      (new Date(date).getMonth() + 1).toString().length > 1
+        ? new Date(date).getMonth() + 1
+        : "0" + (new Date(date).getMonth() + 1).toString(),
+      ".",
+      new Date(date).getDate().toString().length > 1
+        ? new Date(date).getDate()
+        : "0" + new Date(date).getDate().toString(),
+    ].join("");
+    return formatDate;
+  }
 };
+
 /**Date값 년,월,일,초 로 포맷해서 가져옴 */
 export const getFormatFullDate = (date: Date | string): string => {
   const formatDate = [

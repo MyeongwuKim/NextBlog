@@ -107,7 +107,7 @@ const PostList: NextPage = () => {
     let rootHeight = document.getElementById("rootComp").clientHeight;
     let scrollHeight = document.getElementById("scrollArea").clientHeight + 60;
 
-    if (scrollHeight - window.scrollY - rootHeight <= 0) {
+    if (scrollHeight - window.scrollY - rootHeight <= 10) {
       const { category } = router.query;
       setSize((size) => {
         return size + 1;

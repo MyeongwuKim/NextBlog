@@ -40,7 +40,7 @@ const Search = () => {
 
   useEffect(() => {
     if (!pagePostsData) return;
-    console.log(pagePostsData);
+
     let arr = [];
     pagePostsData?.map((pageData) => {
       let { data } = pageData;
@@ -67,7 +67,7 @@ const Search = () => {
     let scrollHeight = document.getElementById("scrollArea").scrollHeight;
     let scrollTop = document.getElementById("scrollArea").scrollTop;
 
-    if (scrollHeight - scrollTop - clientHeight <= 0) {
+    if (scrollHeight - scrollTop - clientHeight <= 10) {
       const { category } = router.query;
       setSize((size) => {
         return size + 1;
