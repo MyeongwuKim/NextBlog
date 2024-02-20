@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import CompImg from "@/components/compImg";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 interface PostProps {
   post: Post & { _count: { comments: number } };
@@ -15,6 +16,8 @@ const PostItem: NextPage<PostProps> = ({ post }) => {
   const [createTime, setCreateTime] = useState<string>();
 
   const onClickEvt = () => {
+    console.log(router);
+    return;
     router.push(`/${router.query.userId}/post?id=${post?.id}`);
   };
 
@@ -25,7 +28,7 @@ const PostItem: NextPage<PostProps> = ({ post }) => {
     <div className="w-full h-auto mb-16">
       <div className="flex felx-row items-center mb-4">
         <CompImg
-          onClickEvt={() => onClickEvt()}
+          url={`/${router.query.userId}/post?id=${post?.id}`}
           style="mr-4 flex-none basis-2/6 h-44"
           thumbnail={post?.thumbnail}
         />
@@ -48,13 +51,13 @@ const PostItem: NextPage<PostProps> = ({ post }) => {
             </svg>
             <span>{post._count.comments}</span>
           </div>
-          <div
-            onClick={onClickEvt}
+          <Link
+            href={`/${router.query.userId}/post?id=${post?.id}`}
             className="cursor-pointer mb-4 text-3xl font-bold basis-[100px]
-          max-h-28 overflow-hidden break-all text-ellipsis"
+          max-h-28 overflow-hidden break-all text-ellipsis text-zinc-600 dark:text-gray-200"
           >
             {post.title}
-          </div>
+          </Link>
         </div>
       </div>
       <div className="border-b-[2px] mb-4" />

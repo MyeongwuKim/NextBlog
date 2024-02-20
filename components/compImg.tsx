@@ -1,19 +1,15 @@
 import { getDeliveryDomain } from "@/hooks/useUtils";
 import Image from "next/image";
+import Link from "next/link";
 
 interface CompImgProps {
   thumbnail: string;
-  onClickEvt?: () => void;
+  url: string;
   style: string;
 }
-const CompImg = ({ thumbnail, style, onClickEvt }: CompImgProps) => {
+const CompImg = ({ thumbnail, style, url }: CompImgProps) => {
   return (
-    <div
-      onClick={() => {
-        if (onClickEvt) onClickEvt();
-      }}
-      className={`${onClickEvt ? "cursor-pointer" : ""} ${style}`}
-    >
+    <Link href={url} className={`cursor-pointer ${style}`}>
       {thumbnail ? (
         <Image
           src={thumbnail ? `${getDeliveryDomain(thumbnail, "thumbnail")}` : ""}
@@ -38,7 +34,7 @@ const CompImg = ({ thumbnail, style, onClickEvt }: CompImgProps) => {
           />
         </svg>
       )}
-    </div>
+    </Link>
   );
 };
 

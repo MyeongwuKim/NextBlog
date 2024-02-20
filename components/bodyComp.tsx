@@ -17,6 +17,7 @@ import { getDeliveryDomain } from "@/hooks/useUtils";
 import LabelBtn from "./labelBtn";
 import { setLoading } from "@/hooks/useEvent";
 import useSWR from "swr";
+import Link from "next/link";
 
 interface LayoutProps {
   children: React.ReactElement;
@@ -360,7 +361,7 @@ export const TopView: NextPage<TopViewProps> = ({
             </div>
           </button>
           <DropDownBox
-            info={{ left: dropBoxInfo?.left, top: dropBoxInfo?.top }}
+            info={{ left: dropBoxInfo?.left, top: dropBoxInfo?.top + 15 }}
             items={[
               {
                 categoryName: null,
@@ -438,12 +439,11 @@ export const TopView: NextPage<TopViewProps> = ({
             ) : null}
           </button>
         </div>
-        <div className="flex items-center">
-          <button
+        <div className="flex items-center ">
+          <Link
+            className="text-zinc-600 dark:text-gray-200"
             id="topview_SearchBtn"
-            onClick={() => {
-              router.push(`/${router.query.userId}/search`);
-            }}
+            href={`/${router.query.userId}/search`}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -459,7 +459,7 @@ export const TopView: NextPage<TopViewProps> = ({
                 d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
               />
             </svg>
-          </button>
+          </Link>
         </div>
       </div>
     </div>
@@ -577,9 +577,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
           </div>
           <div className={`relative ${category ? "block" : "hidden"}`}>
             <LabelBtn
-              onClick={() => {
-                router.push(`/${router.query.userId}`, null);
-              }}
+              url={`/${router.query.userId}`}
               isDisable={Object.keys(router.query).length == 1 ? true : false}
               id={"total"}
               contents={`전체(${countAll})`}
@@ -596,15 +594,9 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
 
             return (
               <LabelBtn
-                onClick={() => {
-                  // btnRef.current["category" + v.id].disabled = true;
-                  router.query.category = v.id.toString();
-                  router.push(
-                    `${router.query.userId}/?category=${v.id.toString()}&name=${
-                      v.name
-                    }`
-                  );
-                }}
+                url={`${
+                  router.query.userId
+                }/?category=${v.id.toString()}&name=${v.name}`}
                 isDisable={
                   router?.query?.category == v.id.toString() ? true : false
                 }
@@ -622,12 +614,9 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
               return (
                 <LabelBtn
                   key={i}
-                  onClick={() => {
-                    let url = `/${router.query.userId}/post?id=${data.postId}&${
-                      data.isReply ? `reply=${type.id}` : `comment=${type.id}`
-                    }`;
-                    router.push(url, null, { shallow: true });
-                  }}
+                  url={`/${router.query.userId}/post?id=${data.postId}&${
+                    data.isReply ? `reply=${type.id}` : `comment=${type.id}`
+                  }`}
                   contents={type.content}
                   addStyle="mt-2 relative w-full"
                 />
@@ -673,16 +662,9 @@ export const SettingSide = () => {
             }
             key={i}
             id={item.router}
-            onClick={() => {
-              router
-                .push(
-                  `/${router.query.userId}/manage/${item.router}`,
-                  undefined,
-                  { shallow: true }
-                )
-                .then(() => {});
-            }}
+            url={`/${router.query.userId}/manage/${item.router}`}
             contents={item.name}
+            isShallow={true}
           />
         ))}
       </div>

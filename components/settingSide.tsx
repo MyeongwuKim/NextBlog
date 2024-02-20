@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import LabelBtn from "./labelBtn";
 
 const items: ItemProps[] = [
-  { name: "프로필 관리", router: "profile" },
+  { name: "프로필 ss관리", router: "profile" },
   { name: "글 관리", router: "post" },
   { name: "댓글 관리", router: "comment" },
   { name: "카테고리 관리", router: "category" },
@@ -28,11 +28,8 @@ const SettingSide = () => {
         {items.map((item, i) => (
           <LabelBtn
             key={i}
-            onClick={() => {
-              router
-                .push(`/manage/${item.router}`, undefined, { shallow: true })
-                .then(() => {});
-            }}
+            isShallow={true}
+            url={`${router?.query.userId}/manage/${item.router}`}
             isDisable={
               router.pathname.replace("/manage/", "") == item.router
                 ? true

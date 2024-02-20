@@ -318,7 +318,7 @@ const SignUp: NextPage = () => {
               </div>
             </div>
           </div>
-          <div className="mt-4 h-auto right-0 relative w-full flex flex-col justify-center items-center gap-4">
+          <div className="mt-4 mb-4 h-auto right-0 relative w-full flex flex-col justify-center items-center gap-4">
             <OkBtn
               type="submit"
               content="가입"
@@ -328,13 +328,7 @@ const SignUp: NextPage = () => {
                 clearErrors();
               }}
             />
-            <LabelBtn
-              contents="뒤로가기"
-              onClick={() => {
-                clearErrors();
-                router.replace("/");
-              }}
-            />
+            <LabelBtn contents="뒤로가기" url="/" />
           </div>
         </form>
       </div>

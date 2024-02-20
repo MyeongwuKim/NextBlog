@@ -31,6 +31,7 @@ import CompImg from "@/components/compImg";
 import dynamic from "next/dynamic";
 import SpinnerLoading from "@/components/loading/spinnerLoading";
 import DotLoading from "@/components/loading/dotLoading";
+import Link from "next/link";
 
 interface CommentForm {
   content: string;
@@ -557,44 +558,52 @@ export const NextPost = ({
 }) => {
   const router = useRouter();
   return (
-    <button
-      onClick={() => {
-        router.push(`/${router.query.userId}/post?id=${data.id}`);
-      }}
-      className="w-[48%] px-4 dark:bg-zinc-800 bg-gray-100 
+    <Link
+      className="text-zinc-600 dark:text-gray-200
+      w-[48%] px-4 dark:bg-zinc-800 bg-gray-100 
       shadow-[0_6px_0_rgba(0,0,0,0.2)] hover:shadow-[0_4px_0px_rgba(0,0,0,0.2)]
       dark:shadow-[0_6px_0_rgb(0,0,0)] dark:hover:shadow-[0_4px_0px_rgb(0,0,0)]
        ease-out hover:translate-y-1 transition-all rounded"
+      href={`/${router.query.userId}/post?id=${data.id}`}
     >
-      <div
-        className={`w-full flex ${
-          dir == "prev" ? "flex-row" : "flex-row-reverse"
-        } h-full justify-start items-center`}
+      <button
+        onClick={() => {
+          router.push(`/${router.query.userId}/post?id=${data.id}`);
+        }}
+        className="w-full h-full"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className={`flex-none relative w-8 h-8 ${
-            dir == "prev" ? "mr-4" : "rotate-180 ml-4"
-          }`}
+        <div
+          className={`w-full flex ${
+            dir == "prev" ? "flex-row" : "flex-row-reverse"
+          } h-full justify-start items-center`}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <div className="w-[50px] flex-1 relative">
-          <div className="w-auto">{dir == "prev" ? "이전" : "다음"} 게시물</div>
-          <div className="font-bold text-lg  relative truncate">
-            {data.title}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className={`flex-none relative w-8 h-8 ${
+              dir == "prev" ? "mr-4" : "rotate-180 ml-4"
+            }`}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.25 9l-3 3m0 0l3 3m-3-3h7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="w-[50px] flex-1 relative">
+            <div className="w-auto">
+              {dir == "prev" ? "이전" : "다음"} 게시물
+            </div>
+            <div className="font-bold text-lg  relative truncate">
+              {data.title}
+            </div>
           </div>
         </div>
-      </div>
-    </button>
+      </button>
+    </Link>
   );
 };
 
@@ -996,17 +1005,13 @@ export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
   return (
     <div className="flex flex-col gap-2 items-center">
       <CompImg
-        onClickEvt={() => {
-          router.push(`/${router.query.userId}/post?id=${id}`);
-        }}
+        url={`/${router?.query.userId}/post?id=${id}`}
         style="w-full h-28"
         thumbnail={thumbnail}
       />
       <LabelBtn
         contents={title}
-        onClick={() => {
-          router.push(`/${router.query.userId}/post?id=${id}`);
-        }}
+        url={`/${router?.query.userId}/post?id=${id}`}
       />
       <div className="text-sm text-gray-400">{getFormatDate(createdAt)}</div>
     </div>

@@ -183,13 +183,7 @@ const SignIn = () => {
                 clearErrors();
               }}
             />
-            <LabelBtn
-              contents="뒤로가기"
-              onClick={() => {
-                clearErrors();
-                router.back();
-              }}
-            />
+            <LabelBtn contents="뒤로가기" url="/" />
           </div>
         </form>
       </div>
