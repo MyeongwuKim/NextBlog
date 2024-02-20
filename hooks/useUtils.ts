@@ -15,7 +15,7 @@ export const getTimeStamp = () => {
   }
   return fn;
 };
-/**Date값 년,월,일로 포맷해서 가져옴 */
+/**Date값을 현재날짜로 기준으로 포맷해서 보여준다 */
 export const getFormatDate = (date: Date | string): string => {
   const start = new Date(date);
   const end = new Date();
@@ -30,7 +30,9 @@ export const getFormatDate = (date: Date | string): string => {
   if (hours < 24) return `${Math.floor(hours)}시간 전`;
 
   const days = hours / 24;
-  if (days < 7) return `${Math.floor(days)}일 전`;
+
+  if (Math.floor(days) == 1) return `어제`;
+  else if (days < 7) return `${Math.floor(days)}일 전`;
   else {
     const formatDate = [
       new Date(date).getFullYear(),

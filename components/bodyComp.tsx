@@ -182,7 +182,7 @@ const BodyComp: NextPage<LayoutProps> = ({ children }) => {
                      if (router.pathname.includes("manage")) return false;
                      return router.pathname.includes(page);
                    })
-                     ? "h-[calc(100%-70px)] mx-auto"
+                     ? "h-[calc(100%-30px)] mx-auto"
                      : "ml-[360px] md:ml-0"
                  }`}
         >

@@ -92,16 +92,19 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     if (!resData) return;
     setLoading(false);
     if (resData.ok) {
-      createToast(
-        `포스트 ${postData ? "수정" : "작성"}을 완료하였습니다.`,
-        false
-      );
       categoryMutate();
-      router.replace(
-        postData
-          ? `/${router.query.userId}/post?id=${postData?.id}`
-          : `/${router.query.userId}/post?id=${resData?.id}`
-      );
+      router
+        .replace(
+          postData
+            ? `/${router.query.userId}/post?id=${postData?.id}`
+            : `/${router.query.userId}/post?id=${resData?.id}`
+        )
+        .then(() => {
+          createToast(
+            `포스트 ${postData ? "수정" : "작성"}을 완료하였습니다.`,
+            false
+          );
+        });
     } else {
       createToast(resData.error, true);
     }
