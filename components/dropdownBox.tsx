@@ -64,7 +64,7 @@ const DropDownBox: NextPage<DropDownProps> = ({
       <div
         id="dropdown-menu"
         style={{
-          top: info?.top,
+          top: info?.top ? info?.top + 15 : 0,
           left: info?.left,
           width: info?.width ? info?.width : 140,
         }}

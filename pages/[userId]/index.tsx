@@ -66,6 +66,7 @@ const PostList: NextPage = () => {
       };
 
       const onRouteChangeComplete = (url) => {
+        console.log("onRouteChangeComplete");
         restoreScrollPos(url);
       };
 
@@ -86,11 +87,13 @@ const PostList: NextPage = () => {
 
   useEffect(() => {
     if (!pagePostsData) return;
+
     let arr = [];
-    let pageData = pagePostsData?.map((pageData) => {
+
+    pagePostsData?.map((pageData) => {
       let { data } = pageData;
       arr = [...arr, ...data];
-      return data;
+      return arr;
     });
     setPostsData(arr);
   }, [pagePostsData]);
@@ -122,7 +125,7 @@ const PostList: NextPage = () => {
     };
   }, [pagePostsData]);
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div
         id="PostLoading"
@@ -131,13 +134,14 @@ const PostList: NextPage = () => {
         <SpinnerLoading />
       </div>
     );
+  }
   return (
     <div className="h-auto relative">
       {/* <div className="md:hidden">
         <ServiceView />
       </div> */}
       <div className="h-auto relative">
-        {postsData?.length > 0 ? (
+        {pagePostsData?.length > 0 ? (
           postsData?.map((post, i) => {
             return (
               <div
