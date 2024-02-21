@@ -268,7 +268,7 @@ export const TopView: NextPage<TopViewProps> = ({
         >
           <span className="font-extrabold text-xl">
             {router.query.userId}
-            <span className="text-base">'s Log</span>
+            <span className="text-base"> Log</span>
           </span>
         </div>
       </div>
