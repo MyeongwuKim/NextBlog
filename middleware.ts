@@ -3,6 +3,7 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const { pathname, origin, href } = request.nextUrl;
+
   const [route, emailId, secondParm] = request.nextUrl.pathname.split("/");
   if (
     pathname.startsWith("/signin") ||
@@ -29,14 +30,12 @@ export async function middleware(request: NextRequest) {
     if (secondParm == "post") {
       try {
         let postId = request.nextUrl.searchParams.get("id");
-        let req = await fetch(
-          `${process.env.NEXTAUTH_URL}/api/post/check/${postId}`,
-          {
-            method: "POST",
-            headers: request.headers,
-            body: JSON.stringify({ emailId: emailId }),
-          }
-        );
+
+        let req = await fetch(`${origin}/api/post/check/${postId}`, {
+          method: "POST",
+          headers: request.headers,
+          body: JSON.stringify({ emailId: emailId }),
+        });
         let { error, ok } = await req.json();
         if (!ok) {
           return NextResponse.rewrite(origin + "/404");
