@@ -13,7 +13,6 @@ export async function middleware(request: NextRequest) {
     return;
   //계정 url 유효성 검사
   try {
-    console.log("들어옴");
     const response = await fetch(origin + "/api/account/check", {
       method: "POST",
       headers: {
@@ -21,7 +20,6 @@ export async function middleware(request: NextRequest) {
       },
       body: JSON.stringify({ id: emailId }),
     });
-    console.log("유저체크완료!");
     let userCheck = await response.json();
     if (!userCheck.ok) throw new Error("user");
   } catch (e) {
@@ -32,8 +30,8 @@ export async function middleware(request: NextRequest) {
   }
   if (secondParm) {
     //Post 권한 체크
-    console.log("secondParam!! " + secondParm);
     if (secondParm == "post") {
+      console.log("secondParm들어옴 " + secondParm);
       try {
         let postId = request.nextUrl.searchParams.get("id");
 
@@ -44,8 +42,6 @@ export async function middleware(request: NextRequest) {
         });
         let { error, ok } = await req.json();
         if (!ok) {
-          console.log(error);
-          console.log(origin + `/api/post/check/${postId}`);
           console.log("세컨드파람 : 권한없음");
           return NextResponse.rewrite(origin + "/404");
         }
