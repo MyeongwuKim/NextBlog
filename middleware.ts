@@ -36,15 +36,15 @@ export async function middleware(request: NextRequest) {
       try {
         let postId = request.nextUrl.searchParams.get("id");
 
-        let req = await fetch(`${origin}/api/post/check/${postId}`, {
+        let req = await fetch(origin + `/api/post/check/${postId}`, {
           method: "POST",
           headers: request.headers,
           body: JSON.stringify({ emailId: emailId }),
         });
         let { error, ok } = await req.json();
         if (!ok) {
-          console.log("emailId " + emailId);
-          console.log("postId " + postId);
+          console.log(error);
+          console.log(origin + `/api/post/check/${postId}`);
           console.log("세컨드파람 : 권한없음");
           return NextResponse.rewrite(origin + "/404");
         }
