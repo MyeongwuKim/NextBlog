@@ -9,6 +9,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const { id: postId } = req.query;
       const { emailId } = JSON.parse(req.body);
+      console.log("post Check OK!!");
       const token = await getToken({
         req,
         cookieName: process.env.NEXTAUTH_TOKENNAME,
