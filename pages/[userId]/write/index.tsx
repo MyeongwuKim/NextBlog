@@ -314,7 +314,9 @@ export const CategoryList = ({
 
   return (
     <div id="categoryListView" className="w-full h-[240px] flex flex-col">
-      <div className="flex-none text-xl font-semibold mb-4">카테고리</div>
+      <div className="flex-none text-xl sm:text-lg font-semibold mb-4">
+        카테고리
+      </div>
       <input
         readOnly={true}
         defaultValue={selectName}
@@ -565,11 +567,11 @@ export const WritePopup = ({
       top-0 left-0 flex items-center justify-center`}
       >
         <div
-          className="p-6 w-[480px] h-[600px] relative bg-white dark:bg-zinc-800  shadow-md z-50  
+          className="p-6 max-w-[480px] w-[80%] max-h-[600px] sm:h-[80%] sm:w relative bg-white dark:bg-zinc-800  shadow-md z-50  
       border-gray-300 rounded-xl  dark:shadow-black"
         >
-          <div className="text-xl font-semibold mb-4">공개여부</div>
-          <div className="flex flex-row w-full justify-between mb-4">
+          <div className="text-xl sm:text-lg font-semibold mb-4">공개여부</div>
+          <div className="flex flex-row w-full justify-between mb-4 sm:text-sm">
             <button
               id="publicBtn"
               ref={(element) => {
@@ -577,10 +579,10 @@ export const WritePopup = ({
               }}
               onClick={onClickPublicPrivate}
               disabled={false}
-              className={`flex justify-center items-center w-52 h-10 rounded-sm
+              className={`flex justify-center items-center h-10 rounded-sm
             border-gray-100 border-2 dark:border-none
             disabled:text-emerald-500 disabled:ring-1 ring-emerald-500 shadow-sm
-            bg-white enabled:hover:text-zinc-300
+            bg-white enabled:hover:text-zinc-300 w-[48%] max-w-[208px]
             dark:bg-zinc-700 dark:enabled:hover:text-zinc-500  text-zinc-400`}
             >
               <svg
@@ -602,7 +604,7 @@ export const WritePopup = ({
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              공개
+              <span className="sm:">공개</span>
             </button>
             <button
               id="privateBtn"
@@ -611,10 +613,10 @@ export const WritePopup = ({
               }}
               onClick={onClickPublicPrivate}
               disabled={false}
-              className={`flex justify-center items-center  w-52 h-10 rounded-sm
+              className={`flex justify-center items-center  h-10 rounded-sm
             border-gray-100 border-2 dark:border-none
             disabled:text-emerald-500 disabled:ring-1 ring-emerald-500 shadow-sm
-            bg-white enabled:hover:text-zinc-300
+            bg-white enabled:hover:text-zinc-300 w-[48%] max-w-[208px]
             dark:bg-zinc-700 dark:enabled:hover:text-zinc-500  text-zinc-400`}
             >
               <svg
@@ -634,8 +636,8 @@ export const WritePopup = ({
               비공개
             </button>
           </div>
-          <div className="text-xl font-semibold mb-4">댓글여부</div>
-          <div className="flex flex-row w-full justify-between mb-4">
+          <div className="text-xl sm:text-lg font-semibold mb-4">댓글여부</div>
+          <div className="flex flex-row w-full justify-between mb-4 sm:text-sm">
             <button
               id="allowBtn"
               ref={(element) => {
@@ -643,10 +645,10 @@ export const WritePopup = ({
               }}
               onClick={onClickComment}
               disabled={false}
-              className={`flex justify-center items-center w-52 h-10 rounded-sm
+              className={`flex justify-center items-center h-10 rounded-sm
             border-gray-100 border-2 dark:border-none
             disabled:text-emerald-500 disabled:ring-1 ring-emerald-500 shadow-sm
-            bg-white enabled:hover:text-zinc-300
+            bg-white enabled:hover:text-zinc-300 w-[48%] max-w-[208px]
             dark:bg-zinc-700 dark:enabled:hover:text-zinc-500  text-zinc-400`}
             >
               댓글 허용
@@ -658,18 +660,20 @@ export const WritePopup = ({
               }}
               onClick={onClickComment}
               disabled={false}
-              className={`flex justify-center items-center w-52 h-10 rounded-sm
+              className={`flex justify-center items-center  h-10 rounded-sm
             border-gray-100 border-2 dark:border-none
             disabled:text-emerald-500 disabled:ring-1 ring-emerald-500 shadow-sm
-            bg-white enabled:hover:text-zinc-300
+            bg-white enabled:hover:text-zinc-300 w-[48%] max-w-[208px]
             dark:bg-zinc-700 dark:enabled:hover:text-zinc-500  text-zinc-400`}
             >
               댓글 비허용
             </button>
           </div>
-          <div className="grid grid-cols-2 mb-4 w-full h-72 gap-4">
-            <div className="w-full h-full flex flex-col ">
-              <div className="text-xl font-semibold mb-4">썸네일</div>
+          <div className="flex flex-row  mb-4 w-full h-72 gap-4">
+            <div className="flex-1 flex flex-col ">
+              <div className="text-xl sm:text-lg font-semibold mb-4">
+                썸네일
+              </div>
               <label
                 onChange={(e: any) => {
                   const file: any = e.target.files[0];
@@ -757,7 +761,7 @@ export const WritePopup = ({
                 </div>
               )}
             </div>
-            <div>
+            <div className="flex-1">
               <CategoryList
                 categoryData={categoryData}
                 selectCallback={onCategorySelect}
@@ -777,21 +781,25 @@ export const WritePopup = ({
           </div>
 
           <div className="w-full flex flex-row h-10 justify-between">
-            <CancelBtn
-              onClickEvt={() => {
-                setPopupState(false);
-              }}
-              content="취소"
-              height={40}
-              width={208}
-            />
-            <OkBtn
-              onClickEvt={onDoWritePost}
-              isEnable={!disableBtn}
-              width={208}
-              height={40}
-              content={postData ? "수정하기" : "작성하기"}
-            />
+            <div className="max-w-[208px] w-[48%]">
+              <CancelBtn
+                onClickEvt={() => {
+                  setPopupState(false);
+                }}
+                content="취소"
+                height={40}
+                width={"100%"}
+              />
+            </div>
+            <div className="max-w-[208px] w-[48%]">
+              <OkBtn
+                onClickEvt={onDoWritePost}
+                isEnable={!disableBtn}
+                width={"100%"}
+                height={40}
+                content={postData ? "수정하기" : "작성하기"}
+              />
+            </div>
           </div>
         </div>
       </div>

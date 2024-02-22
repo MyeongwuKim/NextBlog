@@ -28,6 +28,9 @@ const LabelBtn = ({
   isDisable,
   isShallow,
 }: LabelBtnProps) => {
+  useEffect(() => {
+    console.log(url);
+  }, [url]);
   return url ? (
     <Link href={url} className={` ${lblBtnStyle} ${addStyle}`}>
       <button

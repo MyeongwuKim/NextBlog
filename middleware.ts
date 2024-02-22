@@ -12,6 +12,8 @@ export async function middleware(request: NextRequest) {
   )
     return;
   //계정 url 유효성 검사
+  console.log("middleware!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  console.log(emailId);
   try {
     const response = await fetch(origin + "/api/account/check", {
       method: "POST",

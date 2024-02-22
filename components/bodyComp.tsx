@@ -68,7 +68,7 @@ let lastScroll = 0;
 const BodyComp: NextPage<LayoutProps> = ({ children }) => {
   const router = useRouter();
   const { swrProfileResponse, swrCategoryResponse, categoryMutate } =
-    getGlobalSWR(router?.query?.userId as string);
+    getGlobalSWR(router ? (router?.query?.userId as string) : null);
   const { data: sessionData } = useSession();
   const [userData, setUserData] = useState<UserData>();
   const [topViewPos, setTopViewPos] = useState<number>(0);
@@ -593,7 +593,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
 
             return (
               <LabelBtn
-                url={`${
+                url={`/${
                   router.query.userId
                 }/?category=${v.id.toString()}&name=${v.name}`}
                 isDisable={
