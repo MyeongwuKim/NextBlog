@@ -30,6 +30,7 @@ export async function middleware(request: NextRequest) {
   }
   if (secondParm) {
     //Post 권한 체크
+    console.log("secondParm드가기전 " + secondParm);
     if (secondParm == "post") {
       console.log("secondParm들어옴 " + secondParm);
       try {
