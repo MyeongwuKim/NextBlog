@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
   }
   if (secondParm) {
     //Post 권한 체크
+    console.log("secondParam!! " + secondParm);
     if (secondParm == "post") {
       try {
         let postId = request.nextUrl.searchParams.get("id");
