@@ -43,9 +43,11 @@ export async function middleware(request: NextRequest) {
         });
         let { error, ok } = await req.json();
         if (!ok) {
+          console.log("세컨드파람 : 권한없음");
           return NextResponse.rewrite(origin + "/404");
         }
       } catch {
+        console.log("세컨드파람 에러!!");
         return NextResponse.rewrite(origin + "/404");
       }
     } else if (secondParm == "search") {
@@ -57,9 +59,11 @@ export async function middleware(request: NextRequest) {
         secret: process.env.NEXTAUTH_SECRET,
       });
       if (!token) {
+        console.log("마지막 체크" + "토큰없음");
         return NextResponse.rewrite(origin + "/404");
       } else {
         if (token.email.split("@")[0] != emailId) {
+          console.log("마지막 체크" + "이메일 아이디없음");
           return NextResponse.rewrite(origin + "/404");
         }
       }
