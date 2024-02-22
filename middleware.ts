@@ -30,20 +30,34 @@ export async function middleware(request: NextRequest) {
   }
   if (secondParm) {
     //Post 권한 체크
-    console.log("secondParm드가기전 " + secondParm);
     if (secondParm == "post") {
-      console.log("secondParm들어옴 " + secondParm);
       try {
         let postId = request.nextUrl.searchParams.get("id");
-        console.log("포스트 체크 전 " + postId);
+
         let req = await fetch(origin + `/api/post/check`, {
           method: "POST",
-          headers: request.headers,
-          body: JSON.stringify({ emailId: emailId, postId: postId }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ id: postId }),
         });
-        let { error, ok } = await req.json();
-        console.log("포스트 체크 후 " + ok);
-        if (!ok) {
+        let { ok, data } = await req.json();
+
+        const token = await getToken({
+          req: request,
+          cookieName: process.env.NEXTAUTH_TOKENNAME,
+          secret: process.env.NEXTAUTH_SECRET,
+        });
+
+        console.log("privatePost" + data);
+
+        let privatePost = false;
+        if (data.isPrivate && token) {
+          let id = token.email.split("@")[0];
+          privatePost = id != emailId;
+        }
+
+        if (privatePost) {
           console.log("세컨드파람 : 권한없음");
           return NextResponse.rewrite(origin + "/404");
         }
