@@ -43,6 +43,8 @@ export async function middleware(request: NextRequest) {
         });
         let { error, ok } = await req.json();
         if (!ok) {
+          console.log("emailId " + emailId);
+          console.log("postId " + postId);
           console.log("세컨드파람 : 권한없음");
           return NextResponse.rewrite(origin + "/404");
         }
