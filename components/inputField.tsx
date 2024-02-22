@@ -15,7 +15,7 @@ const styleClass = `relative
 focus:ring-emerald-500 focus:outline-none
 dark:border-zinc-700 blur:border-gray-200 p-2 bg-transparent ring-0
  dark:text-gray-200 dark:placeholder:text-gray-400 placeholder:text-gray-200 
- text-xl text-slate-800 resize-none`;
+ text-xl text-slate-800 resize-none sm:text-base`;
 
 const InputField = ({
   register,

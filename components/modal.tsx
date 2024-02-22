@@ -44,7 +44,7 @@ const Modal: NextPage<AlertProps> = ({
       >
         <div
           dangerouslySetInnerHTML={{ __html: msg }}
-          className="relative text-center mb-4 font-semibold text-lg break-words w-full h-auto"
+          className="relative text-center mb-4 font-semibold text-lg sm:text-base break-words w-full h-auto"
         ></div>
         <div className="w-full flex flex-row justify-between">
           {btnMsgs.length > 1 ? (

@@ -12,7 +12,7 @@ const CancelBtn = ({ content, onClickEvt, width, height }: CancelBtnProps) => {
       style={{ width, height }}
       onClick={onClickEvt}
       className={`text-white select-none relative items-center 
-    inline-block text-lg font-semibold rounded-md
+    inline-block text-lg sm:text-base font-semibold rounded-md
     bg-slate-600 hover:bg-slate-700`}
     >
       {content}

@@ -26,7 +26,7 @@ const Home = ({ isLogin, id }) => {
             bg-clip-text text-transparent bg-gradient-to-r dark:from-slate-200/60 to-50% dark:to-slate-200"
             >
               <div className="mb-4">내맘대로</div>
-              <div className="mb-4">아무거나 끄적이는 사이트</div>
+              <div className="mb-4">암거나 적는 블로그</div>
               <span className="text-emerald-500 inline-flex flex-col h-[calc(theme(fontSize.3xl)*theme(lineHeight.tight))] md:h-[calc(theme(fontSize.4xl)*theme(lineHeight.tight))] overflow-hidden">
                 <ul className="block animate-text-slide-5 text-left leading-tight [&_li]:block">
                   <li>공부</li>
@@ -42,13 +42,13 @@ const Home = ({ isLogin, id }) => {
           </div>
         </div>
       </div>
-      <div className="flex flex-col justify-center gap-4 items-center">
+      <div className="w-full flex flex-col justify-center gap-4 items-center">
         {isLogin ? (
           <>
             <div className="text-lg font-semibold">
               이미 로그인 되어있습니다.
             </div>
-            <div className="w-[50%] max-w-[400px]">
+            <div className="w-[100%] max-w-[400px] px-4">
               <OkBtn
                 content="내 블로그로"
                 width={"100%"}
@@ -67,19 +67,19 @@ const Home = ({ isLogin, id }) => {
           </>
         ) : (
           <>
-            <div className="w-[50%] max-w-[400px]">
+            <div className="w-[100%] max-w-[400px] px-4">
               <OkBtn
                 content="로그인"
                 width={"100%"}
-                height={56}
+                height={46}
                 onClickEvt={() => router.push("/signin")}
               />
             </div>
-            <div className="w-[50%] max-w-[400px]">
+            <div className="w-[100%] max-w-[400px] px-4">
               <CancelBtn
                 content="가입하기"
                 width={"100%"}
-                height={56}
+                height={46}
                 onClickEvt={() => router.push("/signup")}
               />
             </div>

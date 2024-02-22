@@ -303,7 +303,7 @@ const CommentList: NextPage = () => {
           </div>
         </form>
       </div>
-      <div className="relative text-xl mb-5 font-bold">
+      <div className="relative text-xl mb-5 font-bold sm:text-lg">
         {["name"].some((page) => {
           return !router.asPath.includes(page);
         }) ? (
@@ -627,7 +627,7 @@ export const Item = ({
             focus:dark:ring-offset-0"
         />
         <div className="grow flex flex-col gap-2">
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row gap-2 w-full">
             <span
               onClick={() => {
                 router.push(
@@ -635,20 +635,20 @@ export const Item = ({
                     `?name=${data?.name}`
                 );
               }}
-              className="font-bold cursor-pointer"
+              className="font-bold cursor-pointer max-w-[60px] sm:text-sm truncate"
             >
               {data?.isMe ? (
-                <span className="rounded-md px-2 ring-2 ring-red-400 mr-2">
+                <span className="left-2 absolute rounded-md px-1 ring-2 ring-red-400 mr-2">
                   나
                 </span>
               ) : null}
               {data?.name}
             </span>
-            <span className="dark:text-gray-400 text-slate-400 mr-4">
+            <span className="dark:text-gray-400 text-slate-400 mr-4 sm:text-sm">
               {getFormatFullDate(data?.createdAt)} 작성
             </span>
           </div>
-          <div>
+          <div className="max-w-[230px] max-h-[48px]  truncate">
             {data?.isReply ? (
               <span className="font-bold text-emerald-500 mr-2">[답글]</span>
             ) : null}
@@ -665,11 +665,11 @@ export const Item = ({
               {data?.content}
             </span>
           </div>
-          <span className="dark:text-gray-400 text-slate-400 mr-4">
+          <span className="dark:text-gray-400 text-slate-400 mr-4 max-w-[230px] max-h-[48px]  truncate">
             {data?.post.title}
           </span>
         </div>
-        <div className="flex-none w-[120px] ml-2  flex justify-end items-center">
+        <div className="flex-none w-[100px] ml-2  flex justify-end items-center">
           <div
             className={`${
               enableHiddenView ? "block" : "hidden"

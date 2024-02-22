@@ -307,7 +307,7 @@ const PostList: NextPage = () => {
 
   return (
     <div className="h-full  w-full  flex flex-col md:mt-5">
-      <div className="relative text-xl mb-5 font-bold">
+      <div className="relative text-xl sm:text-lg mb-5 font-bold">
         {["title", "content", "category"].filter((page, i) => {
           if (router.asPath.includes(page)) {
             return true;
@@ -712,14 +712,16 @@ export const Item = ({
             checked:accent-blue-500 focus:dark:ring-0
             focus:dark:ring-offset-0"
         />
-        <div className="grow flex flex-col gap-2">
-          <div className="flex flex-row gap-2">
-            <span className="font-bold ">{data?.account?.name}</span>
-            <span className="dark:text-gray-400 text-slate-400 mr-4">
+        <div className="grow flex flex-col gap-2 w-full">
+          <div className="flex flex-row gap-2 w-full relative">
+            <span className="font-bold min-w-[60px] sm:text-sm">
+              {data?.account?.name}
+            </span>
+            <span className="dark:text-gray-400 text-slate-400 mr-4 sm:text-sm">
               {getFormatFullDate(data?.createdAt)} 작성
             </span>
           </div>
-          <div>
+          <div className="max-w-[230px] max-h-[48px]  truncate">
             <span
               onClick={() => {
                 router.push(`/${router.query.userId}/post?id=${data?.id}`);
@@ -747,7 +749,7 @@ export const Item = ({
             </span>
           </div>
         </div>
-        <div className="flex-none w-[120px] ml-2  flex justify-end items-center">
+        <div className="flex-none w-[100px] ml-2  flex justify-end items-center">
           <div
             className={`${
               enableHiddenView ? "block" : "hidden"

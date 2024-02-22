@@ -11,6 +11,7 @@ import { getDeliveryDomain } from "@/hooks/useUtils";
 import { setLoading, createToast, setHeadTitle } from "@/hooks/useEvent";
 import InputField from "@/components/inputField";
 import OkBtn from "@/components/okBtn";
+import CancelBtn from "@/components/cancelBtn";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -217,7 +218,7 @@ const Profile: NextPage = () => {
 
   return (
     <div className="w-full h-full md:mt-5">
-      <div className="relative text-xl mb-5 font-bold">
+      <div className="relative text-xl sm:text-lg mb-5 font-bold">
         유저의 정보를 변경할 수 있습니다.
       </div>
       <form method="post" onSubmit={handleSubmit(onValid, onInValid)}>
@@ -247,7 +248,9 @@ const Profile: NextPage = () => {
                   URL.revokeObjectURL(file);
                 }}
                 htmlFor="picture"
-                className="text-gray-200 cursor-pointer w-auto h-full select-none inline-block p-2 text-lg font-semibold rounded-lg  bg-emerald-500 hover:bg-emerald-700"
+                className="text-gray-200 cursor-pointer w-auto h-full select-none inline-block p-2 
+                text-lg font-semibold  sm:text-base
+                rounded-lg  bg-emerald-500 hover:bg-emerald-700"
               >
                 이미지 등록
                 <input
@@ -273,8 +276,8 @@ const Profile: NextPage = () => {
               이미지 삭제
             </button>
           </div>
-          <div className="relative items-center mb-4  h-14 w-full flex">
-            <div className="w-1/4 pl-4 text-xl font-semibold font-sans">
+          <div className="relative items-center mb-4  h-[44px] w-full flex">
+            <div className="w-1/4 pl-4 text-xl sm:text-base font-semibold font-sans">
               유저이름
             </div>
             <InputField
@@ -292,14 +295,14 @@ const Profile: NextPage = () => {
               id="name"
               type="text"
               width="76%"
-              height="56px"
+              height="44px"
               fieldtype="input"
               placeholder="이름을 입력해주세요"
             />
           </div>
-          <div className="relative items-center mb-4 h-14 w-full flex">
-            <div className="w-1/4 pl-4 text-xl font-semibold font-sans">
-              깃허브주소
+          <div className="relative items-center mb-4 h-[44px] w-full flex">
+            <div className="w-1/4 pl-4 text-xl sm:text-base font-semibold font-sans">
+              깃허브
             </div>
             <InputField
               register={{
@@ -312,89 +315,89 @@ const Profile: NextPage = () => {
               id="github"
               type="text"
               width="76%"
-              height="56px"
+              height="44px"
               fieldtype="input"
             />
           </div>
-          <div className="relative items-center mb-4 h-14 w-full flex">
-            <div className="w-1/4 pl-4 text-xl font-semibold font-sans">
+          <div className="relative items-center mb-4 h-[44px] w-full flex">
+            <div className="w-1/4 pl-4 text-xl sm:text-base font-semibold font-sans">
               비밀번호
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSaveState(true);
-                setPasswordState(true);
-              }}
-              className={`${
-                passwordState ? "hidden" : "block"
-              } relative select-none text-gray-200
-        w-36 inline-block p-2 text-lg font-semibold h-full rounded-lg bg-slate-600 hover:bg-slate-700`}
-            >
-              변경하기
-            </button>
             <div
-              className={`${
-                passwordState ? "block" : "hidden"
-              } w-3/4 flex gap-3 h-full relative`}
+              className={`w-24 h-[44px] ${passwordState ? "hidden" : "block"}`}
             >
-              <div className="w-1/3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSaveState(false);
-                    setPasswordState(false);
-                  }}
-                  className={`text-gray-200 select-none w-36 inline-block 
-            p-2 text-lg font-semibold h-full rounded-lg bg-slate-600 hover:bg-slate-700`}
-                >
-                  취소
-                </button>
-              </div>
-              <InputField
-                register={{
-                  ...register("originPassword", {
-                    required: {
-                      value: passwordState,
-                      message: "기존 비밀번호를 입력해주세요.",
-                    },
-                    minLength: {
-                      value: 8,
-                      message: "비밀번호는 8자 이상이여야 합니다.",
-                    },
-                  }),
+              <CancelBtn
+                content="변경하기"
+                onClickEvt={() => {
+                  setSaveState(true);
+                  setPasswordState(true);
                 }}
-                id="originPassword"
-                type="password"
-                placeholder="기존 비밀번호"
-                width="33%"
-                height="56px"
-                fieldtype="input"
+                width={"100%"}
+                height={"100%"}
               />
-              <InputField
-                register={{
-                  ...register("changePassword", {
-                    required: {
-                      value: passwordState,
-                      message: "변경할 비밀번호를 입력해주세요.",
-                    },
-                    minLength: {
-                      value: 8,
-                      message: "비밀번호는 8자 이상이여야 합니다.",
-                    },
-                  }),
+            </div>
+            <div
+              className={`w-24 h-[44px] ${passwordState ? "block" : "hidden"}`}
+            >
+              <CancelBtn
+                content="취소"
+                onClickEvt={() => {
+                  setSaveState(false);
+                  setPasswordState(false);
                 }}
-                id="changePassword"
-                type="password"
-                placeholder="변경할 비밀번호"
-                width="33%"
-                height="56px"
-                fieldtype="input"
+                width={"100%"}
+                height={"100%"}
               />
             </div>
           </div>
+          <div
+            className={`${
+              passwordState ? "block" : "hidden"
+            } h-[44px] w-full mb-4 flex justify-center gap-4 pl-4`}
+          >
+            <InputField
+              register={{
+                ...register("originPassword", {
+                  required: {
+                    value: passwordState,
+                    message: "기존 비밀번호를 입력해주세요.",
+                  },
+                  minLength: {
+                    value: 8,
+                    message: "비밀번호는 8자 이상이여야 합니다.",
+                  },
+                }),
+              }}
+              id="originPassword"
+              type="password"
+              placeholder="기존 비밀번호"
+              width="48%"
+              height="44px"
+              fieldtype="input"
+            />
+            <InputField
+              register={{
+                ...register("changePassword", {
+                  required: {
+                    value: passwordState,
+                    message: "변경할 비밀번호를 입력해주세요.",
+                  },
+                  minLength: {
+                    value: 8,
+                    message: "비밀번호는 8자 이상이여야 합니다.",
+                  },
+                }),
+              }}
+              id="changePassword"
+              type="password"
+              placeholder="변경할 비밀번호"
+              width="48%"
+              height="44px"
+              fieldtype="input"
+            />
+          </div>
           <div className="relative items-center mb-10  h-auto w-full flex-cols">
-            <div className="w-full pl-4 mb-4 text-xl font-semibold font-sans">
+            <div className="w-full pl-4 mb-4 text-xl sm:text-base font-semibold font-sans">
               블로그 소개
             </div>
             <div className="w-full h-28 pl-4">

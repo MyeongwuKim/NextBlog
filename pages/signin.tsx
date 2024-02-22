@@ -79,8 +79,8 @@ const SignIn = () => {
           method="post"
           onSubmit={handleSubmit(onValid, onInValid)}
         >
-          <div className="relative w-full  flex items-start flex-col">
-            <div className="w-full h-auto mb-4">
+          <div className="relative w-full  flex items-center flex-col">
+            <div className="w-full h-auto mb-4 max-w-[400px] px-4">
               <div className="relative flex flex-row items-center mb-2 w-full">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -96,11 +96,13 @@ const SignIn = () => {
                     d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"
                   />
                 </svg>
-                <span className="font-semibold text-xl">이메일</span>
+                <span className="font-semibold text-xl sm:text-base">
+                  이메일
+                </span>
               </div>
               <InputField
                 id="email"
-                height="60px"
+                height="46px"
                 width="100%"
                 placeholder="이메일 입력"
                 register={{
@@ -122,7 +124,7 @@ const SignIn = () => {
                 }}
               />
             </div>
-            <div className="w-full h-auto">
+            <div className="w-full h-auto max-w-[400px] px-4">
               <div className="relative w-full flex flex-row items-center mb-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -138,12 +140,14 @@ const SignIn = () => {
                     d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
                   />
                 </svg>
-                <span className="font-semibold text-xl">패스워드</span>
+                <span className="font-semibold text-xl sm:text-base">
+                  패스워드
+                </span>
               </div>
               <InputField
                 id="password"
                 type="password"
-                height="60px"
+                height="46px"
                 width="100%"
                 placeholder="패스워드 입력"
                 register={{
@@ -168,17 +172,17 @@ const SignIn = () => {
               <div
                 className={`relative w-full flex flex-row justify-center mt-2 font-semibold `}
               ></div>
-              <div className="w-full h-6 relative text-center font-medium text-lg text-red-500">
+              <div className="w-full h-6 relative text-center font-medium text-lg sm:text-sm text-red-500">
                 <span>{formErrors?.errorMsg?.message}</span>
               </div>
             </div>
           </div>
-          <div className="mt-4 h-auto right-0 relative w-full flex flex-col justify-center items-center gap-4">
+          <div className="max-w-[400px] px-4 mt-4 h-auto right-0 relative w-full flex flex-col justify-center items-center gap-4">
             <OkBtn
               type="submit"
               content="로그인"
               width={"100%"}
-              height={55}
+              height={46}
               onClickEvt={() => {
                 clearErrors();
               }}

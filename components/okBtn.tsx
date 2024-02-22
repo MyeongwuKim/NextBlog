@@ -22,7 +22,7 @@ const OkBtn = ({
       disabled={typeof isEnable === "undefined" ? false : !isEnable}
       style={{ width, height }}
       className="disabled:bg-emerald-900 text-white font-semibold
-  relative items-center inline-block text-lg rounded-md
+  relative items-center inline-block text-lg sm:text-base rounded-md
    bg-emerald-500 hover:bg-emerald-700"
     >
       {content}

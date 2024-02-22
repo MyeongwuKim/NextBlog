@@ -113,7 +113,7 @@ const CategoryItem: NextPage<CategoryItemProps> = ({
 
       <input
         placeholder="카테고리 이름을 입력해주세요"
-        className={`${
+        className={`sm:text-base ${
           itemModify
             ? `border-2  focus:ring-2
         focus:ring-emerald-500 focus:border-b-0`

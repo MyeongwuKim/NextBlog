@@ -64,7 +64,7 @@ const DropDownBox: NextPage<DropDownProps> = ({
       <div
         id="dropdown-menu"
         style={{
-          top: info?.top ? info?.top + 15 : 0,
+          top: info?.top ? info?.top : 0,
           left: info?.left,
           width: info?.width ? info?.width : 140,
         }}
@@ -73,7 +73,7 @@ const DropDownBox: NextPage<DropDownProps> = ({
         }`}
       >
         <div
-          className={`w-full h-full text-lg font-semibold
+          className={`w-full h-full text-lg sm:text-base font-semibold
         [&>button]:p-2 shadow-lg dark:shadow-black
         flex-col flex items-center  relative dark:bg-zinc-800  bg-gray-50 z-20 ${
           enable ? "block" : "hidden"

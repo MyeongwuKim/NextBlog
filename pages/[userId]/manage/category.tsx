@@ -11,6 +11,7 @@ import prisma from "@/lib/server/client";
 import { getGlobalSWR, updateUserData } from "@/hooks/useData";
 import { setLoading, createToast, setHeadTitle } from "@/hooks/useEvent";
 import { useRouter } from "next/router";
+import OkBtn from "@/components/okBtn";
 
 let prevTarget: HTMLElement = null;
 let removeIdList: number[] = [];
@@ -37,7 +38,7 @@ const MyCategory: NextPage = () => {
 
   const [categoryMutation, { loading: mutateLoading, data: resData }] =
     useMutation<CategoryResponse>("/api/category/mutate");
-  const [saveState, setSaveState] = useState<boolean>(true);
+  const [saveState, setSaveState] = useState<boolean>(false);
   const [categoryData, setCategoryData] = useState<Category[]>();
   const categoryRef = useRef<any>([]);
   const categoryPageRef = useRef<HTMLDivElement>(null);
@@ -200,7 +201,7 @@ const MyCategory: NextPage = () => {
       className="h-full  w-full  flex flex-col md:mt-5"
     >
       <div className="w-full h-full">
-        <div className="relative text-xl mb-5 font-bold">
+        <div className="relative text-xl mb-5 font-bold sm:text-lg">
           카테고리 순서를 변경하고 주제 연결을 설정할 수 있습니다.
         </div>
         <div className="relative flex-col flex font-semibold text-lg">
@@ -243,16 +244,18 @@ const MyCategory: NextPage = () => {
               d="M12 4.5v15m7.5-7.5h-15"
             />
           </svg>
-          <span className="font-semibold text-lg">카테고리 추가</span>
+          <span className="font-semibold text-lg sm:text-base">
+            카테고리 추가
+          </span>
         </button>
         <div className="relative flex-row justify-center flex items-center mt-4">
-          <button
-            onClick={categoryMutateEvt}
-            disabled={saveState ? false : true}
-            className="text-gray-200 first-line:relative select-none w-36 h-14 inline-block p-2 text-lg font-semibold rounded-lg disabled:bg-emerald-900 bg-emerald-500 enabled:hover:bg-emerald-700"
-          >
-            변경사항 저장
-          </button>
+          <OkBtn
+            isEnable={saveState ? true : false}
+            height={46}
+            width={144}
+            onClickEvt={categoryMutateEvt}
+            content="변경사항 저장"
+          />
         </div>
       </div>
     </div>

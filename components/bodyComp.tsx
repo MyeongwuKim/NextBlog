@@ -266,9 +266,9 @@ export const TopView: NextPage<TopViewProps> = ({
           onClick={() => router.push(`/${router.query.userId}`)}
           className="w-auto cursor-pointer"
         >
-          <span className="font-extrabold text-xl">
+          <span className="font-extrabold text-xl sm:text-base">
             {router.query.userId}
-            <span className="text-base"> Log</span>
+            <span className="text-base sm:text-xs"> Log</span>
           </span>
         </div>
       </div>
