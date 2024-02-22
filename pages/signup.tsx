@@ -47,6 +47,7 @@ const SignUp: NextPage = () => {
   }, []);
   useEffect(() => {
     if (!data) return;
+    setLoading(false);
     if (data.ok) {
       createToast("끄적블로그에 가입완료 되었습니다.", false);
       router.replace("/");
