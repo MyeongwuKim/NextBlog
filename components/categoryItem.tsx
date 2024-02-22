@@ -120,7 +120,8 @@ const CategoryItem: NextPage<CategoryItemProps> = ({
             : ""
         }
         focus:outline-none font-sans dark:border-zinc-700 blur:border-gray-200
-        p-2 bg-transparent ring-0 dark:text-gray-200  dark:placeholder:text-gray-400 placeholder:text-gray-200 text-xl text-slate-800 w-1/3`}
+        p-2 bg-transparent ring-0 dark:text-gray-200  dark:placeholder:text-gray-400
+        placeholder:text-gray-200 text-xl text-slate-800 w-1/3`}
         onChange={() => {}}
         ref={inputRef}
         readOnly={itemModify ? false : true}

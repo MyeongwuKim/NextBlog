@@ -47,9 +47,8 @@ const PostList: NextPage = () => {
   );
   const { data } = useSession();
   const isMe = userCheck(data);
-  const [postsData, setPostsData] = useState<
-    (Post & { _count: { comments: number } })[]
-  >([]);
+  const [postsData, setPostsData] =
+    useState<(Post & { _count: { comments: number } })[]>(null);
 
   useEffect(() => {
     const { name } = router.query;
@@ -66,7 +65,6 @@ const PostList: NextPage = () => {
       };
 
       const onRouteChangeComplete = (url) => {
-        console.log("onRouteChangeComplete");
         restoreScrollPos(url);
       };
 
@@ -125,7 +123,7 @@ const PostList: NextPage = () => {
     };
   }, [pagePostsData]);
 
-  if (isLoading) {
+  if (isLoading || !postsData) {
     return (
       <div
         id="PostLoading"
@@ -141,7 +139,7 @@ const PostList: NextPage = () => {
         <ServiceView />
       </div> */}
       <div className="h-auto relative">
-        {pagePostsData?.length > 0 ? (
+        {postsData?.length > 0 ? (
           postsData?.map((post, i) => {
             return (
               <div

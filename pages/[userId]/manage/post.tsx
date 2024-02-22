@@ -718,7 +718,7 @@ export const Item = ({
               {data?.account?.name}
             </span>
             <span className="dark:text-gray-400 text-slate-400 mr-4 sm:text-sm">
-              {getFormatFullDate(data?.createdAt)} 작성
+              {getFormatFullDate(data?.createdAt)}
             </span>
           </div>
           <div className="max-w-[230px] max-h-[48px]  truncate">
@@ -749,11 +749,11 @@ export const Item = ({
             </span>
           </div>
         </div>
-        <div className="flex-none w-[100px] ml-2  flex justify-end items-center">
+        <div className="flex-none w-[100px] ml-2  flex justify-end items-center sm:w-[60px]">
           <div
             className={`${
               enableHiddenView ? "block" : "hidden"
-            }  flex flex-row right-2 gap-2`}
+            }  flex flex-row right-2 gap-2 sm:flex-col`}
           >
             <NormalBtn
               onClickEvt={() => {
@@ -784,7 +784,7 @@ export const Item = ({
             className={`text-sm dark:text-gray-400 text-slate-400 
             ${
               enableHiddenView ? "hidden" : "block"
-            }  flex flex-row right-2 gap-2 justify-center items-center`}
+            }  flex flex-row right-2 gap-2 justify-center items-center sm:flex-col`}
           >
             <span>
               {data?.isPrivate ? (

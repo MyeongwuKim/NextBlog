@@ -635,7 +635,7 @@ export const Item = ({
                     `?name=${data?.name}`
                 );
               }}
-              className="font-bold cursor-pointer max-w-[60px] sm:text-sm truncate"
+              className="font-bold cursor-pointer min-w-[60px] sm:text-sm truncate"
             >
               {data?.isMe ? (
                 <span className="left-2 absolute rounded-md px-1 ring-2 ring-red-400 mr-2">
@@ -645,7 +645,7 @@ export const Item = ({
               {data?.name}
             </span>
             <span className="dark:text-gray-400 text-slate-400 mr-4 sm:text-sm">
-              {getFormatFullDate(data?.createdAt)} 작성
+              {getFormatFullDate(data?.createdAt)}
             </span>
           </div>
           <div className="max-w-[230px] max-h-[48px]  truncate">
@@ -669,11 +669,11 @@ export const Item = ({
             {data?.post.title}
           </span>
         </div>
-        <div className="flex-none w-[100px] ml-2  flex justify-end items-center">
+        <div className="flex-none w-[100px] ml-2  flex justify-end items-cente sm:w-[60px]">
           <div
             className={`${
               enableHiddenView ? "block" : "hidden"
-            } flex flex-row right-2 gap-2`}
+            } flex flex-row right-2 gap-2 sm:flex-col`}
           >
             <NormalBtn
               onClickEvt={() => {

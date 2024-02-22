@@ -233,7 +233,7 @@ export const TopView: NextPage<TopViewProps> = ({
       dark:border-zinc-800 w-full bg-white dark:bg-zinc-900
      fixed flex h-[60px] justify-between items-center`}
     >
-      <div className="w-1/3 h-8">
+      <div className="h-8 flex items-center">
         <button
           className={`hidden left-6 ${
             router.pathname.includes("manage") ? "md:hidden" : "md:block"
@@ -260,11 +260,9 @@ export const TopView: NextPage<TopViewProps> = ({
             />
           </svg>
         </button>
-      </div>
-      <div className="w-1/3 flex justify-center">
         <div
           onClick={() => router.push(`/${router.query.userId}`)}
-          className="w-auto cursor-pointer"
+          className="w-auto cursor-pointer ml-4"
         >
           <span className="font-extrabold text-xl sm:text-base">
             {router.query.userId}
@@ -272,6 +270,7 @@ export const TopView: NextPage<TopViewProps> = ({
           </span>
         </div>
       </div>
+
       <div className="w-1/3 flex flex-row gap-2 justify-end">
         <div className="flex flex-col">
           <button
