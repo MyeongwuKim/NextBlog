@@ -12,9 +12,8 @@ export async function middleware(request: NextRequest) {
   )
     return;
   //계정 url 유효성 검사
-  console.log("middleware!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-  console.log(emailId);
   try {
+    console.log("들어옴");
     const response = await fetch(origin + "/api/account/check", {
       method: "POST",
       headers: {
@@ -22,10 +21,14 @@ export async function middleware(request: NextRequest) {
       },
       body: JSON.stringify({ id: emailId }),
     });
+    console.log("유저체크완료!");
     let userCheck = await response.json();
     if (!userCheck.ok) throw new Error("user");
   } catch (e) {
-    if (e.message == "user") return NextResponse.rewrite(origin + "/404");
+    if (e.message == "user") {
+      console.log("userERROR");
+      return NextResponse.rewrite(origin + "/404");
+    }
   }
   if (secondParm) {
     //Post 권한 체크
