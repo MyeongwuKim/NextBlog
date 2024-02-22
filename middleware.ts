@@ -36,10 +36,10 @@ export async function middleware(request: NextRequest) {
       try {
         let postId = request.nextUrl.searchParams.get("id");
 
-        let req = await fetch(origin + `/api/post/check/${postId}`, {
+        let req = await fetch(origin + `/api/post/check`, {
           method: "POST",
           headers: request.headers,
-          body: JSON.stringify({ emailId: emailId }),
+          body: JSON.stringify({ emailId: emailId, postId: postId }),
         });
         let { error, ok } = await req.json();
         if (!ok) {

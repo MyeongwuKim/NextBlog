@@ -5,10 +5,11 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 
 //해당 포스트가 있는지, 비밀포스트인지 체크 권한이 없으면 에러
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+  console.log("포스트들어가기전");
   if (req.method == "POST") {
     try {
-      const { id: postId } = req.query;
-      const { emailId } = JSON.parse(req.body);
+      console.log("포스트체크");
+      const { emailId, postId } = JSON.parse(req.body);
       console.log("post Check OK!!");
       const token = await getToken({
         req,
@@ -29,7 +30,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         let id = token.email.split("@")[0];
         privatePost = id != emailId;
       }
-
+      console.log("privatePost !" + privatePost);
       if (privatePost) {
         res.json({
           ok: false,
