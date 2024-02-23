@@ -162,6 +162,7 @@ const CommentList: NextPage = ({ url }: { url: string }) => {
   }, [replyWindow]);
   useEffect(() => {
     if (!deleteResponse) return;
+    setLoading(false);
     if (deleteResponse.ok) {
       createToast("댓글을 삭제 하였습니다.", false);
       historyMutate();
@@ -172,6 +173,7 @@ const CommentList: NextPage = ({ url }: { url: string }) => {
 
   useEffect(() => {
     if (!createResponse) return;
+    setLoading(false);
     if (createResponse.ok) {
       historyMutate();
       createToast("답글을 작성 하였습니다.", false);

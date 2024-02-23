@@ -131,6 +131,7 @@ const PostList: NextPage = ({ url }: { url: string }) => {
   }, [data?.data]);
   useEffect(() => {
     if (!mutateResponse) return;
+    setLoading(false);
     if (mutateResponse.ok) {
       categoryMutate();
       createToast("포스트 정보를 변경하였습니다.", false);

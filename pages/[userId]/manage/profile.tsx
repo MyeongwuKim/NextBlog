@@ -97,6 +97,7 @@ const Profile: NextPage = ({ id }: { id: string }) => {
 
   useEffect(() => {
     if (!ResponseData) return;
+    setLoading(false);
     if (ResponseData.ok) {
       createToast("변경사항을 저장하였습니다.", false);
     } else {
