@@ -1,8 +1,14 @@
 import OkBtn from "@/components/okBtn";
+import { setHeadTitle } from "@/hooks/useEvent";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 const Custom404 = () => {
   const router = useRouter();
+
+  useEffect(() => {
+    setHeadTitle("에러페이지");
+  }, [router]);
 
   return (
     <div className="absolute w-full h-full flex items-center justify-center">

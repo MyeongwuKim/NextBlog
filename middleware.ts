@@ -49,14 +49,14 @@ export async function middleware(request: NextRequest) {
           secret: process.env.NEXTAUTH_SECRET,
         });
 
-        console.log("privatePost" + data);
-
         let privatePost = false;
-        if (data.isPrivate && token) {
-          let id = token.email.split("@")[0];
-          privatePost = id != emailId;
+        if (data.isPrivate) {
+          if (token) {
+            let id = token.email.split("@")[0];
+            //url에 들어있는 아이디와 토큰 아이디가 다르면(다른사람이면)
+            privatePost = id != emailId;
+          } else privatePost = true;
         }
-
         if (privatePost) {
           console.log("세컨드파람 : 권한없음");
           return NextResponse.rewrite(origin + "/404");

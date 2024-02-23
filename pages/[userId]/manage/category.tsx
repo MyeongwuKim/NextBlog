@@ -46,7 +46,7 @@ const MyCategory: NextPage = () => {
 
   useEffect(() => {
     if (!swrCategoryResponse) return;
-    setHeadTitle("카테고리 관리");
+    setHeadTitle(`|${router.query.userId}| ` + "카테고리 관리");
     setCategoryData(swrCategoryResponse?.originCategory);
   }, [swrCategoryResponse]);
 
@@ -262,54 +262,12 @@ const MyCategory: NextPage = () => {
   );
 };
 
-const CategorySWR: NextPage<CategoryProps> = ({ originCategory }) => {
-  return (
-    <SWRConfig
-      value={{
-        fallback: {
-          "/api/category": {
-            ok: true,
-            originCategory,
-          },
-        },
-      }}
-    >
-      <MyCategory />
-    </SWRConfig>
-  );
-};
-export const getServerSideProps: GetServerSideProps<CategoryProps> = async (
+export const getServerSideProps: GetServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
-  let token = await getToken({
-    req: context.req,
-    cookieName: process.env.NEXTAUTH_TOKENNAME,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-  let categoryList = await prisma.category.findMany({
-    where: {
-      account: {
-        id: parseInt(token?.id.toString()),
-      },
-    },
-    orderBy: { order: "asc" },
-    select: {
-      order: true,
-      name: true,
-      id: true,
-      _count: {
-        select: {
-          post: true,
-        },
-      },
-    },
-  });
-
   return {
-    props: {
-      originCategory: JSON.parse(JSON.stringify(categoryList)),
-    },
+    props: {},
   };
 };
 
-export default CategorySWR;
+export default MyCategory;

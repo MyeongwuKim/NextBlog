@@ -1,4 +1,5 @@
 import DropDownBox from "@/components/dropdownBox";
+import SpinnerLoading from "@/components/loading/spinnerLoading";
 import NormalBtn from "@/components/normalBtn";
 import Pagination from "@/components/pagination";
 import { getGlobalSWR } from "@/hooks/useData";
@@ -9,7 +10,6 @@ import {
   setLoading,
 } from "@/hooks/useEvent";
 import { getFormatFullDate } from "@/hooks/useUtils";
-import prisma from "@/lib/server/client";
 import useMutation from "@/lib/server/useMutation";
 import { GetServerSideProps, GetServerSidePropsContext, NextPage } from "next";
 import { useRouter } from "next/router";
@@ -23,7 +23,7 @@ import {
   useState,
 } from "react";
 import { SubmitErrorHandler, useForm } from "react-hook-form";
-import useSWR, { SWRConfig, unstable_serialize, useSWRConfig } from "swr";
+import useSWR from "swr";
 
 interface PostHistory {
   id: number;
@@ -62,53 +62,13 @@ interface MutationResponse {
 }
 const pageSize = 5;
 
-const PostListSWR = ({
-  categoryList,
-  postHistory,
-  endPageCount,
-}: {
-  postHistory: PostHistory[];
-  categoryList: Category[];
-  endPageCount: number;
-}) => {
-  const router = useRouter();
-  const { mutate } = useSWRConfig();
-  //화면 진입시 useSWR훅안에있는 Mutate의 prev값이 없을때가있어서 해당 키값 미리 업데이트
-  mutate("/api" + router.asPath, {
-    ok: true,
-    data: {
-      categoryList,
-      postHistory,
-      endPageCount,
-    },
-  });
-  return (
-    <SWRConfig
-      value={{
-        fallback: {
-          [unstable_serialize("/api" + router.asPath)]: {
-            ok: true,
-            data: {
-              categoryList,
-              postHistory,
-              endPageCount,
-            },
-          },
-        },
-      }}
-    >
-      <PostList />
-    </SWRConfig>
-  );
-};
-const PostList: NextPage = () => {
+const PostList: NextPage = ({ url }: { url: string }) => {
   const router = useRouter();
   let {
-    data: {
-      data: { postHistory, categoryList, endPageCount },
-    },
+    data,
     mutate: historyMutate,
-  } = useSWR<SWRdataProps>("/api" + router.asPath, null, {
+    isLoading,
+  } = useSWR<SWRdataProps>(url, null, {
     revalidateIfStale: false,
     revalidateOnFocus: false,
   });
@@ -148,15 +108,14 @@ const PostList: NextPage = () => {
     []
   );
   useEffect(() => {
-    setHeadTitle("글 관리");
+    setHeadTitle(`|${router.query.userId}| ` + "글 관리");
   }, [router]);
   useEffect(() => {
-    setAllCheckBox(false);
-    if (endPageCount > 0) {
+    if (data?.data.endPageCount > 0) {
       let curNumber = Number(
         router.query.pageoffset == undefined ? 1 : router.query.pageoffset
       );
-      let endPageNumber = Math.ceil(endPageCount / pageSize);
+      let endPageNumber = Math.ceil(data?.data.endPageCount / pageSize);
       let arr = [curNumber];
       let size = endPageNumber < pageSize ? endPageNumber : pageSize;
       let prev = curNumber;
@@ -169,7 +128,7 @@ const PostList: NextPage = () => {
       }
       setPageNumArr(arr);
     }
-  }, [postHistory]);
+  }, [data?.data]);
   useEffect(() => {
     if (!mutateResponse) return;
     if (mutateResponse.ok) {
@@ -197,7 +156,7 @@ const PostList: NextPage = () => {
       setLoading(true);
 
       let ids = [];
-      let newHistory = postHistory.filter((item) => {
+      let newHistory = data?.data.postHistory.filter((item) => {
         let checkBox = checkBoxRef.current[item.id] as HTMLInputElement;
         if (checkBox.checked) {
           if (
@@ -227,21 +186,21 @@ const PostList: NextPage = () => {
       setAllCheckBox(false);
       allCheckBoxEvt(false);
     },
-    [postHistory]
+    [data?.data]
   );
   const onDeleteEvt = useCallback(
     (id?: number) => {
       let newHistory;
-      let newEndPageCount = endPageCount;
+      let newEndPageCount = data?.data.endPageCount;
       if (id >= 0) {
-        newHistory = postHistory.filter((item) => {
+        newHistory = data?.data.postHistory.filter((item) => {
           if (item.id != id) return item;
         });
         newEndPageCount--;
         postDeleteMutation(id);
       } else {
         let ids = [];
-        newHistory = postHistory.filter((item) => {
+        newHistory = data?.data.postHistory.filter((item) => {
           let checkBox = checkBoxRef.current[item.id] as HTMLInputElement;
           if (checkBox.checked) ids.push(item.id);
           if (!checkBox.checked) {
@@ -253,7 +212,7 @@ const PostList: NextPage = () => {
       }
       setAllCheckBox(false);
     },
-    [postHistory]
+    [data?.data.postHistory]
   );
   const allCheckBoxEvt = (checked: boolean) => {
     for (let i = 0; i < Object.keys(checkBoxRef.current).length; i++) {
@@ -304,6 +263,17 @@ const PostList: NextPage = () => {
     else setAllCheckBox(false);
     setMutateEnable(checked);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div
+        id="PostLoading"
+        className="flex items-center justify-center w-full h-[300px]"
+      >
+        <SpinnerLoading />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full  w-full  flex flex-col md:mt-5">
@@ -527,7 +497,7 @@ const PostList: NextPage = () => {
       <div
         className={`mt-4 flex flex-col items-center gap-4 border-b-2
         dark:border-zinc-800 dark:bg-zinc-900 ${
-          postHistory?.length <= 0 ? "block" : "hidden"
+          data?.data.postHistory?.length <= 0 ? "block" : "hidden"
         }`}
       >
         <svg
@@ -546,7 +516,7 @@ const PostList: NextPage = () => {
         </svg>
         <div className="font-semibold text-lg mb-4">검색 결과가 없습니다.</div>
       </div>
-      {postHistory?.map((post, i) => (
+      {data?.data.postHistory?.map((post, i) => (
         <Item
           data={post}
           id={i}
@@ -560,7 +530,7 @@ const PostList: NextPage = () => {
       <div className="relative mt-4">
         <Pagination
           pageSize={pageSize}
-          endPageNumber={Math.ceil(endPageCount / pageSize)}
+          endPageNumber={Math.ceil(data?.data.endPageCount / pageSize)}
           pageNumberArr={pageNumArr}
         />
       </div>
@@ -645,7 +615,7 @@ const PostList: NextPage = () => {
           },
           {
             categoryName: "카테고리 변경",
-            child: categoryList?.map((category) => {
+            child: data?.data.categoryList?.map((category) => {
               return {
                 name: category.name,
                 clickEvt: () => {
@@ -858,89 +828,15 @@ export const Item = ({
   );
 };
 
-export const getServerSideProps: GetServerSideProps<{
-  postHistory: PostHistory[];
-  categoryList: Category[];
-}> = async (ctx: GetServerSidePropsContext) => {
-  let { title, content, category, pageoffset } = ctx.query;
-  const pageSize = 5;
-  let selectInfo = {};
-
-  if (content) {
-    selectInfo = {
-      OR: {
-        content: {
-          contains: content,
-        },
-      },
-    };
-  }
-  if (category) {
-    selectInfo = {
-      OR: {
-        category: {
-          name: {
-            startsWith: category.toString(),
-            endsWith: category.toString(),
-          },
-        },
-      },
-    };
-  }
-  if (title) {
-    selectInfo = {
-      OR: {
-        title: {
-          startsWith: title.toString(),
-          endsWith: title.toString(),
-        },
-      },
-    };
-  }
-  const endPageCount = await prisma.post.count({
-    where: selectInfo,
-  });
-  const postData = await prisma.post.findMany({
-    where: selectInfo,
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      id: true,
-      title: true,
-      isPrivate: true,
-      allow: true,
-      content: true,
-      html: true,
-      createdAt: true,
-      category: {
-        select: {
-          name: true,
-          id: true,
-        },
-      },
-      account: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    take: pageSize,
-    skip: Number(!pageoffset ? 0 : Number(pageoffset) - 1) * pageSize,
-  });
-
-  const categoryData = await prisma.category.findMany({
-    select: {
-      name: true,
-      id: true,
-    },
-  });
+export const getServerSideProps: GetServerSideProps = async (
+  ctx: GetServerSidePropsContext
+) => {
+  const { userId, title, content, category, pageoffset } = ctx.query;
+  const url = ctx.resolvedUrl.replace(userId as string, "api");
   return {
     props: {
-      categoryList: JSON.parse(JSON.stringify(categoryData)),
-      postHistory: JSON.parse(JSON.stringify(postData)),
-      endPageCount,
+      url,
     },
   };
 };
-export default PostListSWR;
+export default PostList;

@@ -12,6 +12,8 @@ import { setLoading, createToast, setHeadTitle } from "@/hooks/useEvent";
 import InputField from "@/components/inputField";
 import OkBtn from "@/components/okBtn";
 import CancelBtn from "@/components/cancelBtn";
+import SpinnerLoading from "@/components/loading/spinnerLoading";
+import { useRouter } from "next/router";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -44,21 +46,23 @@ interface ProfileResponse {
 const uploadPrefix = "https://imagedelivery.net/0VaIqAONZ2vq2gejAGX7Sw/";
 const uploadSuffix = "/avatar";
 
-const Profile: NextPage = () => {
+const Profile: NextPage = ({ id }: { id: string }) => {
   const {
-    data: { profile },
+    data,
     mutate: profileCacheMutate,
-  } = useSWR<ProfileProps>("/api/profile");
+    isLoading,
+  } = useSWR<ProfileProps>(`/api/profile/${id}`);
+  const router = useRouter();
   const { register, handleSubmit, getValues, setValue } = useForm<ProfileType>({
     defaultValues: {
-      id: profile.id,
-      name: profile.name,
-      github: profile.github,
-      introduce: profile.introduce,
+      id: data?.profile.id,
+      name: data?.profile.name,
+      github: data?.profile.github,
+      introduce: data?.profile.introduce,
     },
   });
   const [profileMutation, { loading, data: ResponseData }] =
-    useMutation<ProfileResponse>("/api/profile");
+    useMutation<ProfileResponse>(`/api/profile/${id}`);
 
   const [passwordState, setPasswordState] = useState<boolean>(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -66,13 +70,13 @@ const Profile: NextPage = () => {
   const [saveState, setSaveState] = useState<boolean>(false);
 
   useEffect(() => {
-    setHeadTitle("프로필 관리");
+    setHeadTitle(`|${router.query.userId}| ` + "프로필 관리");
 
-    if (profile?.avatar) {
-      setAvatarPreview(`${getDeliveryDomain(profile?.avatar, "avatar")}`);
-      setPrevAvatar(profile?.avatar);
+    if (data?.profile?.avatar) {
+      setAvatarPreview(`${getDeliveryDomain(data?.profile?.avatar, "avatar")}`);
+      setPrevAvatar(data?.profile?.avatar);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (avatarPreview === prevAvatar) {
@@ -86,7 +90,7 @@ const Profile: NextPage = () => {
         .replace(uploadPrefix, "")
         .replace(uploadSuffix, "");
 
-    if (formatPreview != profile.avatar) {
+    if (formatPreview != data?.profile.avatar) {
       setSaveState(true);
     } else setSaveState(false);
   }, [avatarPreview]);
@@ -108,9 +112,9 @@ const Profile: NextPage = () => {
     else if (!introduce) introduce = github.length <= 0 ? null : introduce;
 
     if (
-      name != profile.name ||
-      introduce != profile.introduce ||
-      github != profile.github
+      name != data?.profile.name ||
+      introduce != data?.profile.introduce ||
+      github != data?.profile.github
     ) {
       setSaveState(true);
     } else {
@@ -125,15 +129,15 @@ const Profile: NextPage = () => {
   //   }
   // }, [avatarWatch]);
 
-  const onValid = async (data: ProfileType) => {
+  const onValid = async (formData: ProfileType) => {
     setLoading(true);
     try {
       if (getValues("avatar") && getValues("avatar").length > 0) {
-        if (profile.avatar) {
+        if (data?.profile.avatar) {
           await (
             await fetch(`/api/files`, {
               method: "DELETE",
-              body: JSON.stringify({ imageId: profile.avatar }),
+              body: JSON.stringify({ imageId: data?.profile.avatar }),
             })
           ).json();
         }
@@ -146,7 +150,7 @@ const Profile: NextPage = () => {
         form.append(
           "file",
           avatarFiles as any,
-          `${profile?.id.toString()}_avatar`
+          `${data?.profile?.id.toString()}_avatar`
         );
         const {
           result: { id },
@@ -156,17 +160,17 @@ const Profile: NextPage = () => {
             body: form,
           })
         ).json();
-        data.avatar = id;
-      } else if (profile.avatar && !avatarPreview) {
+        formData.avatar = id;
+      } else if (data?.profile.avatar && !avatarPreview) {
         await (
           await fetch(`/api/files`, {
             method: "DELETE",
-            body: JSON.stringify({ imageId: profile.avatar }),
+            body: JSON.stringify({ imageId: data?.profile.avatar }),
           })
         ).json();
-        data.avatar = null;
+        formData.avatar = null;
       } else {
-        delete data.avatar;
+        delete formData.avatar;
       }
     } catch {
       createToast("이미지서버 통신 오류입니다.", true);
@@ -175,27 +179,27 @@ const Profile: NextPage = () => {
 
     if (passwordState) {
       const passwordResult = await bcrypt.compare(
-        data.originPassword,
-        profile.password
+        formData.originPassword,
+        data?.profile.password
       );
       if (!passwordResult) {
         createToast("기존 비밀번호를 확인해주세요.", true);
         return;
       }
-      const changePassword = await bcrypt.hash(data.changePassword, 10);
-      data.changePassword = changePassword;
-      delete data.originPassword;
+      const changePassword = await bcrypt.hash(formData.changePassword, 10);
+      formData.changePassword = changePassword;
+      delete formData.originPassword;
     }
 
     setValue("avatar", "");
-    profileMutation(data);
+    profileMutation(formData);
     profileCacheMutate((prev) => {
       prev.profile = {
         ...prev.profile,
-        ...data,
-        ...data,
-        password: data.changePassword
-          ? data.changePassword
+        ...formData,
+        ...formData,
+        password: formData.changePassword
+          ? formData.changePassword
           : prev.profile.password,
       };
       updateUserData(prev.profile);
@@ -216,6 +220,17 @@ const Profile: NextPage = () => {
     createToast(msg, true);
   };
 
+  if (isLoading) {
+    return (
+      <div
+        id="ProfileLoading"
+        className="flex items-center justify-center w-full h-[300px]"
+      >
+        <SpinnerLoading />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full md:mt-5">
       <div className="relative text-xl sm:text-lg mb-5 font-bold">
@@ -235,7 +250,7 @@ const Profile: NextPage = () => {
                 } w-full h-full rounded-full `}
               />
               <span className="text-3xl font-semibold text-center text-white ">
-                {!avatarPreview ? profile?.name : ""}
+                {!avatarPreview ? data?.profile?.name : ""}
               </span>
             </div>
           </div>
@@ -431,50 +446,14 @@ const Profile: NextPage = () => {
   );
 };
 
-const ProfileSWR: NextPage<ProfileProps> = ({ profile }) => {
-  return (
-    <SWRConfig
-      value={{
-        fallback: {
-          "/api/profile": {
-            ok: true,
-            profile,
-          },
-        },
-      }}
-    >
-      <Profile />
-    </SWRConfig>
-  );
-};
-
-export const getServerSideProps: GetServerSideProps<ProfileProps> = async (
+export const getServerSideProps: GetServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
-  let token = await getToken({
-    req: context.req,
-    cookieName: process.env.NEXTAUTH_TOKENNAME,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
-  const profileData = await prisma.account.findUnique({
-    where: { id: token.id },
-    select: {
-      avatar: true,
-      email: true,
-      github: true,
-      name: true,
-      id: true,
-      introduce: true,
-      password: true,
-    },
-  });
-
   return {
     props: {
-      profile: profileData,
+      id: context.query.userId,
     },
   };
 };
 
-export default ProfileSWR;
+export default Profile;

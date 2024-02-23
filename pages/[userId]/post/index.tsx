@@ -123,7 +123,7 @@ const PostDetail: NextPage = () => {
   const [allDataLoading, setAllDataLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    setHeadTitle(postResponse?.postData?.title);
+    setHeadTitle(`|${router.query.userId}| ` + postResponse?.postData?.title);
   }, [postResponse]);
 
   useEffect(() => {

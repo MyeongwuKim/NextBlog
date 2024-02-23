@@ -21,6 +21,8 @@ const ProtectHanlder: ProtectType = ({
       cookieName: process.env.NEXTAUTH_TOKENNAME,
       secret: process.env.NEXTAUTH_SECRET,
     });
+    const userId = req.query.userId;
+
     if (req.method && !methods.includes(req.method as any)) {
       return res.status(405).end();
     }

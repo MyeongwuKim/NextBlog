@@ -75,7 +75,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     useMutation<WriteResponse>(`/api/write/${postData ? "modify" : "create"}`);
 
   useEffect(() => {
-    setHeadTitle("글 작성");
+    setHeadTitle(`|${router.query.userId}| ` + "글 작성");
   }, []);
 
   useEffect(() => {

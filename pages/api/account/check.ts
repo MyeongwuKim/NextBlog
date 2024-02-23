@@ -6,7 +6,6 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 import bcrypt from "bcryptjs";
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-  console.log("userCheck OK!");
   if (req.method == "POST") {
     try {
       let data = await prisma.account.findFirst({

@@ -6,8 +6,9 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "GET") {
     try {
-      let { title, content, category, pageoffset } = req.query;
+      const { title, content, category, pageoffset, userId } = req.query;
       let selectInfo = {};
+
       const pageSize = 5;
 
       if (content) {

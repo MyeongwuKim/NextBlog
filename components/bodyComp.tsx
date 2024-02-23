@@ -21,6 +21,7 @@ import Link from "next/link";
 
 interface LayoutProps {
   children: React.ReactElement;
+  query: any;
 }
 interface UserData {
   profile?: ProfileType;
@@ -65,10 +66,10 @@ const fullPageList = ["write", "post"];
 const categoryHideList = ["post", "manage"];
 let lastScroll = 0;
 
-const BodyComp: NextPage<LayoutProps> = ({ children }) => {
+const BodyComp: NextPage<LayoutProps> = ({ children, query }) => {
   const router = useRouter();
   const { swrProfileResponse, swrCategoryResponse, categoryMutate } =
-    getGlobalSWR(router ? (router?.query?.userId as string) : null);
+    getGlobalSWR(query.userId);
   const { data: sessionData } = useSession();
   const [userData, setUserData] = useState<UserData>();
   const [topViewPos, setTopViewPos] = useState<number>(0);
@@ -271,7 +272,7 @@ export const TopView: NextPage<TopViewProps> = ({
         </div>
       </div>
 
-      <div className="w-1/3 flex flex-row gap-2 justify-end">
+      <div className="w-1/2 flex flex-row gap-2 justify-end">
         <div className="flex flex-col">
           <button
             onClick={() => {

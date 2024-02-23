@@ -45,8 +45,9 @@ export const getGlobalSWR = (
   profileMutate: KeyedMutator<any>;
   categoryMutate: KeyedMutator<any>;
 } => {
-  const { data: swrProfileResponse, mutate: profileMutate } =
-    useSWR("/api/profile");
+  const { data: swrProfileResponse, mutate: profileMutate } = useSWR(
+    `/api/profile/${userId}`
+  );
   const { data: swrCategoryResponse, mutate: categoryMutate } = useSWR(
     `/api/category/${userId}`
   );

@@ -1,7 +1,7 @@
 import SpinnerLoading from "@/components/loading/spinnerLoading";
 import PostItem from "@/components/postItem";
 import CPost from "@/components/postItem";
-import { createToast } from "@/hooks/useEvent";
+import { createToast, setHeadTitle } from "@/hooks/useEvent";
 import { Post } from "@prisma/client";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
@@ -14,11 +14,11 @@ interface SWRResponse {
 }
 
 const Search = () => {
+  const router = useRouter();
   const [reqUrl, setReqUrl] = useState<string>("");
   const [postsData, setPostsData] = useState<
     (Post & { _count: { comments: number } })[]
   >([]);
-  const router = useRouter();
   const { register, handleSubmit } = useForm();
   const {
     data: pagePostsData,
@@ -37,6 +37,9 @@ const Search = () => {
       return reqUrl.length <= 0 ? null : url;
     }
   );
+  useEffect(() => {
+    setHeadTitle(`|${router.query.userId}| ` + "게시물검색");
+  }, [router]);
 
   useEffect(() => {
     if (!pagePostsData) return;

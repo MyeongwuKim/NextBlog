@@ -7,7 +7,6 @@ import ProtectHanlder from "@/lib/server/protectHanlder";
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method == "POST") {
     try {
-      console.log("포스트 체크 들어옴");
       const postData = await prisma.post.findUnique({
         where: {
           id: Number(req.body.id),

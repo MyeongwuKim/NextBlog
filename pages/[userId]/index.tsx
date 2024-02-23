@@ -29,7 +29,15 @@ function restoreScrollPos(url) {
   }
 }
 
-const PostList: NextPage = () => {
+const PostList: NextPage = ({
+  id,
+  categoryId,
+  categoryName,
+}: {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+}) => {
   const router = useRouter();
   const {
     data: pagePostsData,
@@ -41,7 +49,7 @@ const PostList: NextPage = () => {
         return null;
       }
       return `/api/post?pageoffset=${pageOffset}${
-        router?.query.category ? `&categoryId=${router?.query.category}` : ""
+        categoryName ? `&categoryId=${categoryId}` : ""
       }`;
     }
   );
@@ -53,7 +61,7 @@ const PostList: NextPage = () => {
   useEffect(() => {
     const { name } = router.query;
     let title = name ? `${name} 카테고리 글목록` : "Home";
-    setHeadTitle(title);
+    setHeadTitle(`|${router.query.userId}| ` + title);
 
     window.history.scrollRestoration = "manual";
     if ("scrollRestoration" in window.history) {
@@ -205,8 +213,14 @@ const ServiceView: NextPage = ({}) => {
 export const getServerSideProps: GetServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
+  const { category, name, userId } = context.query;
+
   return {
-    props: {},
+    props: {
+      id: userId,
+      categoryId: category ? category : "",
+      categoryName: name ? name : "",
+    },
   };
 };
 

@@ -1,6 +1,7 @@
 import CancelBtn from "@/components/cancelBtn";
 import DropDownBox from "@/components/dropdownBox";
 import InputField from "@/components/inputField";
+import SpinnerLoading from "@/components/loading/spinnerLoading";
 import NormalBtn from "@/components/normalBtn";
 import OkBtn from "@/components/okBtn";
 import Pagination from "@/components/pagination";
@@ -46,43 +47,13 @@ type historyType = {
   post: { title: string };
 };
 
-const CommentListSWR = ({
-  historyData,
-  maxCount,
-}: {
-  historyData: historyType[];
-  maxCount: number;
-}) => {
-  const router = useRouter();
-  const { mutate } = useSWRConfig();
-  //화면 진입시 useSWR훅안에있는 Mutate의 prev값이 없을때가있어서 해당 키값 미리 업데이트
-  mutate("/api" + router.asPath, {
-    ok: true,
-    data: { historyData, maxCount },
-  });
-  return (
-    <SWRConfig
-      value={{
-        fallback: {
-          [unstable_serialize("/api" + router.asPath)]: {
-            ok: true,
-            data: { historyData, maxCount },
-          },
-        },
-      }}
-    >
-      <CommentList />
-    </SWRConfig>
-  );
-};
-const CommentList: NextPage = () => {
+const CommentList: NextPage = ({ url }: { url: string }) => {
   const router = useRouter();
   let {
-    data: {
-      data: { historyData, maxCount },
-    },
+    data,
     mutate: historyMutate,
-  } = useSWR<SWRdataProps>("/api" + router.asPath, null, {
+    isLoading,
+  } = useSWR<SWRdataProps>(url, null, {
     revalidateIfStale: false,
   });
 
@@ -127,11 +98,11 @@ const CommentList: NextPage = () => {
     let curNumber = Number(
       router.query.pageoffset == undefined ? 1 : router.query.pageoffset
     );
-    if (maxCount > 0) {
+    if (data?.data.maxCount > 0) {
       let { limit } = router.query;
       let pageSize =
         !limit || typeof Number(limit) !== "number" ? 5 : Number(limit);
-      let endPageNumber = Math.ceil(maxCount / pageSize);
+      let endPageNumber = Math.ceil(data?.data.maxCount / pageSize);
       let arr = [curNumber];
       let size = endPageNumber < pageSize ? endPageNumber : pageSize;
       let prev = curNumber;
@@ -146,7 +117,7 @@ const CommentList: NextPage = () => {
     }
 
     return () => {};
-  }, [historyData]);
+  }, [data?.data]);
   useEffect(() => {
     reset();
   }, [search]);
@@ -161,13 +132,13 @@ const CommentList: NextPage = () => {
       setLoading(true);
       let newHistory;
       if (id >= 0) {
-        newHistory = historyData.filter((item) => {
+        newHistory = data?.data.historyData.filter((item) => {
           if (item.historyId != id) return item;
         });
         historyDelete(id);
       } else {
         let ids = [];
-        newHistory = historyData.filter((item) => {
+        newHistory = data?.data.historyData.filter((item) => {
           let checkBox = checkBoxRef.current[
             item.historyId
           ] as HTMLInputElement;
@@ -178,12 +149,12 @@ const CommentList: NextPage = () => {
         historyDelete(ids);
       }
     },
-    [historyData]
+    [data?.data]
   );
 
   useEffect(() => {
-    setHeadTitle("댓글 관리");
-    setStateHistoryData(historyData);
+    setHeadTitle(`|${router.query.userId}| ` + "댓글 관리");
+    setStateHistoryData(data?.data.historyData);
   }, [stateHistoryData]);
   useEffect(() => {
     if (!replyWindow.enable) winReset();
@@ -265,7 +236,16 @@ const CommentList: NextPage = () => {
 
     setDeleteEnable(checked);
   }, []);
-
+  if (isLoading) {
+    return (
+      <div
+        id="CommentLoading"
+        className="flex items-center justify-center w-full h-[300px]"
+      >
+        <SpinnerLoading />
+      </div>
+    );
+  }
   return (
     <div className="h-full w-full flex flex-col md:mt-5">
       <div
@@ -498,7 +478,7 @@ const CommentList: NextPage = () => {
       <div
         className={`mt-4 flex flex-col items-center gap-4 border-b-2
         dark:border-zinc-800 dark:bg-zinc-900 ${
-          historyData?.length <= 0 ? "block" : "hidden"
+          data?.data.historyData?.length <= 0 ? "block" : "hidden"
         }`}
       >
         <svg
@@ -517,7 +497,7 @@ const CommentList: NextPage = () => {
         </svg>
         <div className="font-semibold text-lg mb-4">검색 결과가 없습니다.</div>
       </div>
-      {historyData?.map((itemData, i) => (
+      {data?.data.historyData?.map((itemData, i) => (
         <Item
           deleteCallback={deleteCallback}
           replayState={setReplyWindow}
@@ -537,7 +517,7 @@ const CommentList: NextPage = () => {
               : Number(router.query.limit)
           }
           endPageNumber={Math.ceil(
-            maxCount /
+            data?.data.maxCount /
               (!router.query.limit ||
               typeof Number(router.query.limit) !== "number"
                 ? 5
@@ -697,134 +677,13 @@ export const Item = ({
 };
 
 export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
-  let { name, content, pageoffset, limit } = ctx.query;
-  let pageSize;
-  if (!limit || typeof Number(limit) !== "number") pageSize = 5;
-  else pageSize = Number(limit);
-
-  let selectList = {
-    id: true,
-    content: true,
-    name: true,
-    createdAt: true,
-    postId: true,
-    isMe: true,
-    category: {
-      select: {
-        id: true,
-        name: true,
-      },
-    },
-    post: {
-      select: {
-        title: true,
-      },
-    },
-  };
-  let selectInfo = {};
-  if (content) {
-    selectInfo = {
-      OR: [
-        {
-          comment: {
-            content: {
-              contains: content.toString(),
-            },
-          },
-        },
-        {
-          reply: {
-            content: {
-              contains: content.toString(),
-            },
-          },
-        },
-      ],
-    };
-  }
-  if (name) {
-    selectInfo = {
-      OR: [
-        {
-          comment: {
-            name: {
-              startsWith: name.toString(),
-              endsWith: name.toString(),
-            },
-          },
-        },
-        {
-          reply: {
-            name: {
-              startsWith: name.toString(),
-              endsWith: name.toString(),
-            },
-          },
-        },
-      ],
-    };
-  }
-  let maxCount = await prisma.history.count({
-    where: selectInfo,
-  });
-
-  if (Math.ceil(maxCount / pageSize) < Number(pageoffset)) {
-    return {
-      redirect: {
-        destination: "/manage/comment",
-        permanent: false,
-      },
-    };
-  }
-  let commentsData = await prisma.history.findMany({
-    orderBy: { createdAt: "desc" },
-    where: selectInfo,
-    select: {
-      id: true,
-      isReply: true,
-      reply: {
-        select: selectList,
-      },
-      comment: {
-        select: selectList,
-      },
-    },
-    take: pageSize,
-    skip:
-      Number(pageoffset == undefined ? 0 : Number(pageoffset) - 1) * pageSize,
-  });
-
-  let formatCommentsData = commentsData.map((item) => {
-    let formatData;
-    let category;
-    let categoryId;
-    if (item.isReply) {
-      delete item.comment;
-      formatData = item.reply;
-      category = item.reply.category.name;
-      categoryId = item.reply.category.id;
-    } else {
-      delete item.reply;
-      formatData = item.comment;
-      category = item.comment.category.name;
-      categoryId = item.comment.category.id;
-    }
-
-    return {
-      ...formatData,
-      isReply: item.isReply,
-      category,
-      categoryId,
-      historyId: item.id,
-    };
-  });
-
+  let { userId, name, content, pageoffset, limit } = ctx.query;
+  const url = ctx.resolvedUrl.replace(userId as string, "api");
   return {
     props: {
-      historyData: JSON.parse(JSON.stringify(formatCommentsData)),
-      maxCount,
+      url,
     },
   };
 };
 
-export default CommentListSWR;
+export default CommentList;
