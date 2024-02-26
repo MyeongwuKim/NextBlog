@@ -534,17 +534,17 @@ export const WritePopup = ({
       >
         <form
           onSubmit={winHanldeSubmit(onCategoryValid)}
-          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[200px] w-[350px]"
+          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[140px] w-[350px]"
         >
-          <div className="font-semibold text-lg">카테고리 이름 입력</div>
-          <InputField
-            height="45px"
-            width="100%"
-            id="categoryInput"
-            register={{
-              ...register("categoryInput"),
-            }}
-          />
+          <div className="h-[46px] w-full">
+            <InputField
+              content="카테고리 입력"
+              id="categoryInput"
+              register={{
+                ...register("categoryInput"),
+              }}
+            />
+          </div>
           <div className="text-red-500 text-sm h-[20px]">
             {errors && errors?.categoryInput?.message}
           </div>
