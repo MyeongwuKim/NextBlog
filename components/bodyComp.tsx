@@ -385,7 +385,6 @@ export const TopView: NextPage<TopViewProps> = ({
                       signOut({ redirect: false }).then((res) => {
                         update();
                         setLoading(false);
-                        router.replace("/").then(() => {});
                       });
                     },
                   },

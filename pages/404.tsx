@@ -32,9 +32,11 @@ const Custom404 = () => {
         <OkBtn
           content="돌아가기"
           width={120}
-          height={45}
+          height={46}
           onClickEvt={() => {
-            router.back();
+            if (!sessionStorage.getItem("prevUrl")) {
+              router.push("/");
+            } else router.back();
           }}
         ></OkBtn>
       </div>

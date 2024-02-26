@@ -14,6 +14,7 @@ import OkBtn from "@/components/okBtn";
 import CancelBtn from "@/components/cancelBtn";
 import SpinnerLoading from "@/components/loading/spinnerLoading";
 import { useRouter } from "next/router";
+import LabelBtn from "@/components/labelBtn";
 interface ProfileProps {
   profile: ProfileType;
 }
@@ -105,14 +106,21 @@ const Profile: NextPage = ({ id }: { id: string }) => {
     }
   }, [ResponseData]);
 
+  useEffect(() => {
+    console.log(data?.profile);
+  }, [data]);
+
   const onCheckSaveState = () => {
-    let { github, name, introduce } = getValues();
+    let { github, name, introduce, password, originPassword, changePassword } =
+      getValues();
 
     if (!github) github = !github || github.length <= 0 ? null : github;
     else if (!name) name = github.length <= 0 ? null : name;
     else if (!introduce) introduce = github.length <= 0 ? null : introduce;
 
     if (
+      originPassword?.length >= 0 ||
+      changePassword?.length >= 0 ||
       name != data?.profile.name ||
       introduce != data?.profile.introduce ||
       github != data?.profile.github
@@ -175,22 +183,24 @@ const Profile: NextPage = ({ id }: { id: string }) => {
       }
     } catch {
       createToast("이미지서버 통신 오류입니다.", true);
+      setLoading(false);
       return;
     }
 
-    if (passwordState) {
+    if (getValues("changePassword") && getValues("originPassword")) {
       const passwordResult = await bcrypt.compare(
         formData.originPassword,
         data?.profile.password
       );
       if (!passwordResult) {
         createToast("기존 비밀번호를 확인해주세요.", true);
+        setLoading(false);
         return;
       }
       const changePassword = await bcrypt.hash(formData.changePassword, 10);
       formData.changePassword = changePassword;
       delete formData.originPassword;
-    }
+    } else delete formData.changePassword;
 
     setValue("avatar", "");
     profileMutation(formData);
@@ -293,130 +303,81 @@ const Profile: NextPage = ({ id }: { id: string }) => {
             </button>
           </div>
           <div className="relative items-center mb-4  h-[44px] w-full flex">
-            <div className="w-1/4 pl-4 text-xl sm:text-base font-semibold font-sans">
-              유저이름
-            </div>
-            <InputField
-              register={{
-                ...register("name", {
-                  required: {
-                    value: true,
-                    message: "이름을 입력해주세요.",
-                  },
-                  onChange(e) {
-                    onCheckSaveState();
-                  },
-                }),
-              }}
-              id="name"
-              type="text"
-              width="76%"
-              height="44px"
-              fieldtype="input"
-              placeholder="이름을 입력해주세요"
-            />
-          </div>
-          <div className="relative items-center mb-4 h-[44px] w-full flex">
-            <div className="w-1/4 pl-4 text-xl sm:text-base font-semibold font-sans">
-              깃허브
-            </div>
-            <InputField
-              register={{
-                ...register("github", {
-                  onChange() {
-                    onCheckSaveState();
-                  },
-                }),
-              }}
-              id="github"
-              type="text"
-              width="76%"
-              height="44px"
-              fieldtype="input"
-            />
-          </div>
-          <div className="relative items-center mb-4 h-[44px] w-full flex">
-            <div className="w-1/4 pl-4 text-xl sm:text-base font-semibold font-sans">
-              비밀번호
-            </div>
-            <div
-              className={`w-24 h-[44px] ${passwordState ? "hidden" : "block"}`}
-            >
-              <CancelBtn
-                content="변경하기"
-                onClickEvt={() => {
-                  setSaveState(true);
-                  setPasswordState(true);
+            <div className="w-full h-[46px]">
+              <InputField
+                register={{
+                  ...register("name", {
+                    required: {
+                      value: true,
+                      message: "이름을 입력해주세요.",
+                    },
+                    onChange(e) {
+                      onCheckSaveState();
+                    },
+                  }),
                 }}
-                width={"100%"}
-                height={"100%"}
-              />
-            </div>
-            <div
-              className={`w-24 h-[44px] ${passwordState ? "block" : "hidden"}`}
-            >
-              <CancelBtn
-                content="취소"
-                onClickEvt={() => {
-                  setSaveState(false);
-                  setPasswordState(false);
-                }}
-                width={"100%"}
-                height={"100%"}
+                id="name"
+                type="text"
+                fieldtype="input"
+                content="이름"
               />
             </div>
           </div>
-          <div
-            className={`${
-              passwordState ? "block" : "hidden"
-            } h-[44px] w-full mb-4 flex justify-center gap-4 pl-4`}
-          >
-            <InputField
-              register={{
-                ...register("originPassword", {
-                  required: {
-                    value: passwordState,
-                    message: "기존 비밀번호를 입력해주세요.",
-                  },
-                  minLength: {
-                    value: 8,
-                    message: "비밀번호는 8자 이상이여야 합니다.",
-                  },
-                }),
-              }}
-              id="originPassword"
-              type="password"
-              placeholder="기존 비밀번호"
-              width="48%"
-              height="44px"
-              fieldtype="input"
-            />
-            <InputField
-              register={{
-                ...register("changePassword", {
-                  required: {
-                    value: passwordState,
-                    message: "변경할 비밀번호를 입력해주세요.",
-                  },
-                  minLength: {
-                    value: 8,
-                    message: "비밀번호는 8자 이상이여야 합니다.",
-                  },
-                }),
-              }}
-              id="changePassword"
-              type="password"
-              placeholder="변경할 비밀번호"
-              width="48%"
-              height="44px"
-              fieldtype="input"
-            />
+          <div className="relative items-center mb-4 h-[44px] w-full flex">
+            <div className="w-full h-[46px]">
+              <InputField
+                register={{
+                  ...register("github", {
+                    onChange() {
+                      onCheckSaveState();
+                    },
+                  }),
+                }}
+                id="github"
+                type="text"
+                content="깃허브주소"
+                fieldtype="input"
+              />
+            </div>
+          </div>
+          <div className={` h-[46px] w-full mb-4 flex justify-center gap-4`}>
+            <div className="w-[48%] h-full">
+              <InputField
+                register={{
+                  ...register("originPassword", {
+                    minLength: {
+                      value: 8,
+                      message: "비밀번호는 8자 이상이여야 합니다.",
+                    },
+                    onChange: onCheckSaveState,
+                  }),
+                }}
+                content="기존 비밀번호"
+                id="originPassword"
+                type="password"
+                fieldtype="input"
+              />
+            </div>
+            <div className="w-[48%] h-full">
+              <InputField
+                register={{
+                  ...register("changePassword", {
+                    minLength: {
+                      value: 8,
+                      message: "비밀번호는 8자 이상이여야 합니다.",
+                    },
+                    onChange: onCheckSaveState,
+                  }),
+                }}
+                id="changePassword"
+                type="password"
+                content="새 비밀번호"
+                fieldtype="input"
+              />
+            </div>
           </div>
           <div className="relative items-center mb-10  h-auto w-full flex-cols">
-            <div className="w-full pl-4 mb-4 text-xl sm:text-base font-semibold font-sans">
-              블로그 소개
-            </div>
-            <div className="w-full h-28 pl-4">
+            <div className="w-full h-28">
               <InputField
                 register={{
                   ...register("introduce", {
@@ -426,8 +387,7 @@ const Profile: NextPage = ({ id }: { id: string }) => {
                   }),
                 }}
                 id="introduce"
-                width="100%"
-                height="100%"
+                content="소개"
                 fieldtype="textarea"
               />
             </div>

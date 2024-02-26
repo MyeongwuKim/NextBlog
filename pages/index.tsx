@@ -1,12 +1,12 @@
 import CancelBtn from "@/components/cancelBtn";
 import LabelBtn from "@/components/labelBtn";
 import OkBtn from "@/components/okBtn";
-import { createModal, createToast, setHeadTitle } from "@/hooks/useEvent";
+import { setHeadTitle } from "@/hooks/useEvent";
 import { GetServerSidePropsContext } from "next";
 import { getToken } from "next-auth/jwt";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { useRouter } from "next/router";
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 
 const Home = ({ isLogin, id }) => {
   const router = useRouter();
@@ -59,7 +59,7 @@ const Home = ({ isLogin, id }) => {
             <LabelBtn
               contents="로그아웃 하기"
               onClick={() => {
-                signOut().then(() => {
+                signOut({ redirect: false }).then(() => {
                   router.reload();
                 });
               }}

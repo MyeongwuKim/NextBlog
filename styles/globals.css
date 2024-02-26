@@ -10,6 +10,9 @@
       "Noto Color Emoji" !important;
     -webkit-tap-highlight-color: transparent;
   }
+  .border-color {
+    @apply dark:border-zinc-700;
+  }
 }
 
 [contentEditable="true"] > pp:first-child:empty:before {

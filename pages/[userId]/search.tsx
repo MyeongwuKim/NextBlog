@@ -81,7 +81,14 @@ const Search = () => {
   return (
     <div id="_searchViewContainer" className="w-full h-full px-4">
       <div className="flex h-16 w-full items-center justify-end">
-        <button id="backBtn" onClick={() => router.back()}>
+        <button
+          id="backBtn"
+          onClick={() => {
+            if (!sessionStorage.getItem("prevUrl")) {
+              router.push("/");
+            } else router.back();
+          }}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"

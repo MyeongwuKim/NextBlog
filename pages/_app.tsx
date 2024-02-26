@@ -37,12 +37,15 @@ function MyApp({
   const router = useRouter();
 
   useEffect(() => {
-    // If the component is unmounted, unsubscribe
-    // from the event with the `off` method:
-    // return () => {
-    //   router.events.off("routeChangeStart", handleRouteChange);
-    // };
-  }, [router]);
+    const onRouteChangeStart = () => {
+      sessionStorage.setItem("prevUrl", window.history.state.url);
+    };
+    router.events.on("routeChangeStart", onRouteChangeStart);
+    return () => {
+      sessionStorage.removeItem("prevUrl");
+      router.events.off("routeChangeStart", onRouteChangeStart);
+    };
+  }, []);
 
   return (
     <SessionProvider session={pageProps.session}>

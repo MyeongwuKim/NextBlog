@@ -266,12 +266,12 @@ const PostDetail: NextPage = () => {
 
   const checkChange = () => {
     let { content, name } = getValues();
-
+    console.log(content);
     if (isMe) {
-      if (content.length <= 0) setBtnState(false);
+      if (content?.length <= 0) setBtnState(false);
       else setBtnState(true);
     } else {
-      if (content.length <= 0 || name.length <= 0) setBtnState(false);
+      if (content?.length <= 0 || name?.length <= 0) setBtnState(false);
       else setBtnState(true);
     }
   };
@@ -463,51 +463,45 @@ const PostDetail: NextPage = () => {
                     isMe ? "hidden" : "block"
                   } flex  gap-4 w-full h-[50px] relative mb-4`}
                 >
+                  <div className="w-[40%] h-[46px]">
+                    <InputField
+                      register={
+                        isMe
+                          ? null
+                          : {
+                              ...register("name", {
+                                required: {
+                                  value: true,
+                                  message: "이름을 입력해주세요.",
+                                },
+                                onChange: checkChange,
+                              }),
+                            }
+                      }
+                      content="이름"
+                      id="name"
+                    />
+                  </div>
+                </div>
+                <div className="w-full h-[120px]">
                   <InputField
-                    register={
-                      isMe
-                        ? null
-                        : {
-                            ...register("name", {
-                              required: {
-                                value: true,
-                                message: "이름을 입력해주세요.",
-                              },
-                              onChange: checkChange,
-                            }),
-                          }
-                    }
-                    height="100%"
-                    width="40%"
-                    placeholder="이름"
-                    id="name"
+                    register={{
+                      ...register("content", {
+                        required: true,
+                        maxLength: {
+                          value: 500,
+                          message: "댓글은 500자까지 입력할 수 있습니다.",
+                        },
+                        onChange: checkChange,
+                      }),
+                    }}
+                    id="content"
+                    content="내용"
+                    fieldtype="textarea"
                   />
                 </div>
-                <InputField
-                  register={{
-                    ...register("content", {
-                      required: true,
-                      maxLength: {
-                        value: 500,
-                        message: "댓글은 500자까지 입력할 수 있습니다.",
-                      },
-                      onChange: checkChange,
-                    }),
-                  }}
-                  height="120px"
-                  width="100%"
-                  placeholder="코멘트"
-                  id="content"
-                  fieldtype="textarea"
-                />
 
                 <div className="relative flex items-center justify-end w-full h-16 gap-3">
-                  <CancelBtn
-                    content="취소"
-                    height={45}
-                    onClickEvt={() => {}}
-                    width={90}
-                  />
                   <OkBtn
                     isEnable={btnState}
                     content="작성"
@@ -639,10 +633,10 @@ export const CommentItem = ({
     let { content, name } = getValues();
 
     if (isMe) {
-      if (content.length <= 0) setEnableReply(false);
+      if (content?.length <= 0) setEnableReply(false);
       else setEnableReply(true);
     } else {
-      if (content.length <= 0 || name.length <= 0) setEnableReply(false);
+      if (content?.length <= 0 || name?.length <= 0) setEnableReply(false);
       else setEnableReply(true);
     }
   };
@@ -779,43 +773,43 @@ border-[1px] dark:border-zinc-800 items-center flex"
                 isMe ? "hidden" : "block"
               } flex justify-between w-full h-[50px] relative mb-4`}
             >
+              <div className="w-[40%] h-[46px]">
+                <InputField
+                  register={
+                    isMe
+                      ? null
+                      : {
+                          ...register("name", {
+                            required: {
+                              value: true,
+                              message: "이름을 입력해주세요.",
+                            },
+                            onChange: checkChange,
+                          }),
+                        }
+                  }
+                  content="이름"
+                  id="name"
+                />
+              </div>
+            </div>
+            <div className="w-full h-[120px]">
               <InputField
-                register={
-                  isMe
-                    ? null
-                    : {
-                        ...register("name", {
-                          required: {
-                            value: true,
-                            message: "이름을 입력해주세요.",
-                          },
-                          onChange: checkChange,
-                        }),
-                      }
-                }
-                height="100%"
-                width="40%"
-                placeholder="이름"
-                id="name"
+                register={{
+                  ...register("content", {
+                    required: true,
+                    maxLength: {
+                      value: 500,
+                      message: "댓글은 500자까지 입력할 수 있습니다.",
+                    },
+                    onChange: checkChange,
+                  }),
+                }}
+                content="내용"
+                id="comment"
+                fieldtype="textarea"
               />
             </div>
-            <InputField
-              register={{
-                ...register("content", {
-                  required: true,
-                  maxLength: {
-                    value: 500,
-                    message: "댓글은 500자까지 입력할 수 있습니다.",
-                  },
-                  onChange: checkChange,
-                }),
-              }}
-              height="120px"
-              width="100%"
-              placeholder="코멘트"
-              id="comment"
-              fieldtype="textarea"
-            />
           </div>
         </div>
 

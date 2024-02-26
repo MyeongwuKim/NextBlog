@@ -258,17 +258,17 @@ const CommentList: NextPage = ({ url }: { url: string }) => {
       >
         <form
           onSubmit={winHanldeSubmit(onReplyValid)}
-          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[200px] w-[350px]"
+          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[140px] w-[350px]"
         >
-          <div className="font-semibold text-lg">답글 입력</div>
-          <InputField
-            height="45px"
-            width="100%"
-            id="replyInput"
-            register={{
-              ...winRegister("replyInput"),
-            }}
-          />
+          <div className="h-[46px] w-full">
+            <InputField
+              content="답글 입력"
+              id="replyInput"
+              register={{
+                ...winRegister("replyInput"),
+              }}
+            />
+          </div>
           <div className="text-red-500 text-sm h-[20px]">
             {errors && errors?.replyInput?.message}
           </div>
