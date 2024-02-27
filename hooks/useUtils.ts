@@ -96,13 +96,13 @@ export const getFormatImagesId = (content: string): string[] => {
 
   let regExp = /\(([^)]+)\)/g;
 
-  let matches = content.replace(regex, "").match(regExp);
+  let matches = content.match(/!\[.*public/g);
 
   if (!matches) return imagesIdArr;
 
   for (let i = 0; i < matches.length; i++) {
     let str = matches[i];
-    imagesIdArr.push(str.replace(/[(|)]/g, ""));
+    imagesIdArr.push(str.replace(regex, "").replace("![](", ""));
   }
 
   return imagesIdArr;

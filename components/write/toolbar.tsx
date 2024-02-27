@@ -241,26 +241,26 @@ const ToolBar: NextPage<IToolBar> = (props) => {
     <div>
       <div className="shadow-md dark:shadow-black dark:bg-zinc-800 p-2 flex items-center relative h-auto font-semibold dark:border-zinc-800 [&>button]:select-none">
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("#")}
         >
           H1
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("##")}
         >
           H2
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt("###")}
         >
           H3
         </button>
         <span className="relative h-6 border-[1px] dark:border-zinc-500 mx-2" />
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onTwoSymbolEvt("**")}
         >
           <svg
@@ -279,7 +279,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onTwoSymbolEvt("_")}
         >
           <svg
@@ -298,7 +298,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onTwoSymbolEvt("~~")}
         >
           <svg
@@ -318,7 +318,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
         </button>
         <span className="relative h-6 border-[1px] dark:border-gray-500 mx-2" />
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onLinkEvt()}
         >
           <svg
@@ -333,7 +333,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onCodeEvt()}
         >
           <svg
@@ -348,7 +348,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
           </svg>
         </button>
         <button
-          className="w-8 h-8 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
+          className="w-12 h-12 sm:w-6 sm:h-6 relative hover:dark:bg-zinc-800 hover:bg-slate-200"
           onClick={() => onOneSymbolEvt(">")}
         >
           <svg
@@ -371,7 +371,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
             fill="currentColor"
             strokeWidth="0"
             viewBox="0 0 24 24"
-            className="w-8 m-auto h-6"
+            className="m-auto w-12 h-8 sm:w-6 sm:h-4"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"></path>

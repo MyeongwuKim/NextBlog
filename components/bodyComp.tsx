@@ -592,33 +592,38 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
             }
 
             return (
-              <LabelBtn
-                url={`/${
-                  router.query.userId
-                }/?category=${v.id.toString()}&name=${v.name}`}
-                isDisable={
-                  router?.query?.category == v.id.toString() ? true : false
-                }
-                id={"category" + v.id.toString()}
-                key={i}
-                contents={`${v.name}(${count})`}
-                addStyle="mt-2 relative"
-              />
+              <div key={i} className="w-full truncate mt-2">
+                <LabelBtn
+                  url={`/${
+                    router.query.userId
+                  }/?category=${v.id.toString()}&name=${v.name}`}
+                  isDisable={
+                    router?.query?.category == v.id.toString() ? true : false
+                  }
+                  id={"category" + v.id.toString()}
+                  contents={`${v.name}(${count})`}
+                  addStyle="w-full relative text-center"
+                />
+              </div>
             );
           })}
-          <div id="latestView" className="my-2 mt-4 flex flex-col items-center">
+          <div
+            id="latestView"
+            className="relative my-2 mt-4 flex items-center flex-col w-full truncate"
+          >
             <div className="text-lg">최근 댓글</div>
             {latestData?.map((data, i) => {
               let type = data.isReply ? data.reply : data.comment;
               return (
-                <LabelBtn
-                  key={i}
-                  url={`/${router.query.userId}/post?id=${data.postId}&${
-                    data.isReply ? `reply=${type.id}` : `comment=${type.id}`
-                  }`}
-                  contents={type.content}
-                  addStyle="mt-2 relative w-full"
-                />
+                <div key={i} className="truncate  mt-2 relative w-full">
+                  <LabelBtn
+                    url={`/${router.query.userId}/post?id=${data.postId}&${
+                      data.isReply ? `reply=${type.id}` : `comment=${type.id}`
+                    }`}
+                    contents={type.content}
+                    addStyle="w-full relative text-center"
+                  />
+                </div>
               );
             })}
           </div>

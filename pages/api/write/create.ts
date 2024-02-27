@@ -74,8 +74,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
         });
       };
 
-      for (let i = 0; i < getFormatImagesId(content).length; i++) {
-        let id = getFormatImagesId(content)[i];
+      const imagesId = getFormatImagesId(html);
+      for (let i = 0; i < imagesId.length; i++) {
+        let id = imagesId[i];
         await imageUplaod(id);
       }
 

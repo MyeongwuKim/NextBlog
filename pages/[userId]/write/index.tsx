@@ -24,6 +24,7 @@ import { SubmitErrorHandler, useForm } from "react-hook-form";
 import { KeyedMutator, useSWRConfig } from "swr";
 import dynamic from "next/dynamic";
 import post from "@/pages/api/post";
+import LabelBtn from "@/components/labelBtn";
 
 interface PopupData {
   thumbnail?: string;
@@ -58,13 +59,15 @@ const DynamicComponent = dynamic(
 );
 
 const Write: NextPage<WriteProps> = ({ postData }) => {
-  const { mutate } = useSWRConfig();
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const { swrCategoryResponse, categoryMutate } = getGlobalSWR(
     router?.query?.userId as string
   );
   const { data: sessionData } = useSession();
   const [enablePopup, setEnablePopup] = useState<boolean>(false);
+
+  const [previewShow, setPreviewShow] = useState<boolean>(false);
   const [selectCategory, setSelectCategory] = useState<CategoryCountType>(null);
   const [preview, setPreview] = useState<string>("");
   const [previewLoading, setPreviewLoading] = useState<boolean>(true);
@@ -170,7 +173,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     thumbnail,
   }: PopupData) => {
     setSelectCategory(category);
-    console.log("글쓰기 실행");
+
     let data = {
       title,
       html: doc,
@@ -226,8 +229,8 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     <div id="write" className="m-auto h-full flex flex-col">
       <div className="flex flex-col h-full ">
         <ToolBar editorView={editorView!} theme={useTheme().theme} />
-        <div className="flex flex-row w-full h-[calc(100%-50px)] gap-2">
-          <div className="flex w-full flex-col">
+        <div className="flex w-full h-[calc(100%-50px)] gap-2">
+          <div id="editorContainer" className="flex w-full flex-col h-full">
             <Editor
               defaultTitleValue={postData?.title}
               editorView={editorView!}
@@ -252,14 +255,57 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
                 width={96}
                 onClickEvt={onWriteValid}
               />
+              <div className="absolute bottom-20 right-6 hidden sm:block">
+                <LabelBtn
+                  contents={"미리보기"}
+                  onClick={() => {
+                    setPreviewShow(true);
+                  }}
+                />
+              </div>
             </div>
           </div>
-          <DynamicComponent
-            setCotentPreview={setCotentPreview}
-            doc={doc}
-            previewLoadingState={setPreviewLoading}
-            title={title}
-          />
+          <div
+            id="previewWrapper"
+            className={`sm:z-[99] sm:top-0 sm:left-0 w-full h-full sm:fixed sm:bg-[rgba(0,0,0,0.5)] 
+            sm:flex justify-center items-center ${
+              previewShow ? "sm:visible" : "sm:hidden"
+            } `}
+          >
+            <div
+              id="previewContainer"
+              className={`web:w-full web:h-full md:w-full md:h-full sm:!h-[83%] sm:px-[30px]`}
+            >
+              <button
+                className="hidden sm:block z-[1] absolute top-[80px] right-[33px] "
+                id="backBtn"
+                onClick={() => {
+                  setPreviewShow(false);
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-8 h-8"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+              <DynamicComponent
+                setCotentPreview={setCotentPreview}
+                doc={doc}
+                previewLoadingState={setPreviewLoading}
+                title={title}
+              />
+            </div>
+          </div>
         </div>
       </div>
       <WritePopup
