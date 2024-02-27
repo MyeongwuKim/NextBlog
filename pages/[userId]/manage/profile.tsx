@@ -106,10 +106,6 @@ const Profile: NextPage = ({ id }: { id: string }) => {
     }
   }, [ResponseData]);
 
-  useEffect(() => {
-    console.log(data?.profile);
-  }, [data]);
-
   const onCheckSaveState = () => {
     let { github, name, introduce, password, originPassword, changePassword } =
       getValues();

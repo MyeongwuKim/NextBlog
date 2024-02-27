@@ -16,7 +16,7 @@ const lblBtnStyle = `enabled:text-gray-400 enabled:dark:text-gray-500
       md:disabled:border-b-2 md:disabled:border-zinc-600 md:disabled:dark:border-gray-300
       disabled:dark:text-gray-300 disabled:text-zinc-600  disabled:pointer-events-none
       enabled:hover:text-zinc-600 enabled:hover:dark:text-gray-300
-       text-center truncate  w-auto text-lg font-semibold sm:text-base`;
+      truncate  w-auto text-lg font-semibold sm:text-base overflow-ellipsis text-left`;
 
 const LabelBtn = ({
   url,
@@ -40,7 +40,7 @@ const LabelBtn = ({
         disabled={isDisable}
         className={`${lblBtnStyle} ${addStyle}`}
       >
-        <span className="relative">{contents}</span>
+        <span className="relative w-auto ">{contents}</span>
       </button>
     </Link>
   ) : (

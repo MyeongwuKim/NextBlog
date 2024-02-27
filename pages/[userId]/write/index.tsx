@@ -76,7 +76,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
 
   useEffect(() => {
     setHeadTitle(`|${router.query.userId}| ` + "글 작성");
-  }, []);
+  }, [router.query]);
 
   useEffect(() => {
     if (previewLoading) setLoading(true);
@@ -92,7 +92,6 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     if (!resData) return;
     setLoading(false);
     if (resData.ok) {
-      categoryMutate();
       router
         .replace(
           postData
@@ -100,6 +99,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
             : `/${router.query.userId}/post?id=${resData?.id}`
         )
         .then(() => {
+          categoryMutate();
           createToast(
             `포스트 ${postData ? "수정" : "작성"}을 완료하였습니다.`,
             false
@@ -120,7 +120,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
         }
       }
     }
-    setPreview(previewContent);
+    setPreview(previewContent.substring(0, 50));
   }, []);
 
   const handleDocChange = useCallback((newDoc: string) => {
@@ -170,6 +170,7 @@ const Write: NextPage<WriteProps> = ({ postData }) => {
     thumbnail,
   }: PopupData) => {
     setSelectCategory(category);
+    console.log("글쓰기 실행");
     let data = {
       title,
       html: doc,
@@ -534,7 +535,7 @@ export const WritePopup = ({
       >
         <form
           onSubmit={winHanldeSubmit(onCategoryValid)}
-          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[140px] w-[350px]"
+          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[155px] w-[350px]"
         >
           <div className="h-[46px] w-full">
             <InputField
@@ -545,10 +546,10 @@ export const WritePopup = ({
               }}
             />
           </div>
-          <div className="text-red-500 text-sm h-[20px]">
+          <div className="text-red-500 text-sm h-[16px]">
             {errors && errors?.categoryInput?.message}
           </div>
-          <div className="flex flex-row justify-center gap-4 mt-2">
+          <div className="flex flex-row justify-center gap-4">
             <OkBtn type="submit" width={85} height={45} content="확인" />
             <CancelBtn
               onClickEvt={() => {

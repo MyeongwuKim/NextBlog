@@ -123,6 +123,7 @@ const PostDetail: NextPage = () => {
   const [allDataLoading, setAllDataLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    if (!postResponse) return;
     setHeadTitle(`|${router.query.userId}| ` + postResponse?.postData?.title);
   }, [postResponse]);
 
@@ -266,7 +267,7 @@ const PostDetail: NextPage = () => {
 
   const checkChange = () => {
     let { content, name } = getValues();
-    console.log(content);
+
     if (isMe) {
       if (content?.length <= 0) setBtnState(false);
       else setBtnState(true);
@@ -997,17 +998,20 @@ export const NearPost = ({ createdAt, id, title, thumbnail }: NearPostType) => {
   useEffect(() => {}, []);
 
   return (
-    <div className="flex flex-col gap-2 items-center">
-      <CompImg
-        url={`/${router?.query.userId}/post?id=${id}`}
-        style="w-full h-28"
-        thumbnail={thumbnail}
-      />
-      <LabelBtn
-        contents={title}
-        url={`/${router?.query.userId}/post?id=${id}`}
-      />
-      <div className="text-sm text-gray-400">{getFormatDate(createdAt)}</div>
+    <div className="truncate">
+      <div className="flex items-start justify-start flex-col mb-2 gap-2">
+        <CompImg
+          url={`/${router?.query.userId}/post?id=${id}`}
+          style="w-full h-28"
+          thumbnail={thumbnail}
+        />
+        <LabelBtn
+          addStyle="w-full"
+          contents={title}
+          url={`/${router?.query.userId}/post?id=${id}`}
+        />
+        <div className="text-sm text-gray-400">{getFormatDate(createdAt)}</div>
+      </div>
     </div>
   );
 };
@@ -1040,12 +1044,12 @@ export const Appendix = ({ postId, mdElements }) => {
       )?.getClientRects()[0];
 
       if (appendix && nextAppendix) {
-        if (appendix.top <= -1 && nextAppendix.top > 0) {
+        if (appendix?.top <= -1 && nextAppendix?.top > 0) {
           index = i;
           break;
         }
       } else if (!nextAppendix) {
-        if (appendix.top <= 0) {
+        if (appendix?.top <= 0) {
           index = i;
           break;
         }

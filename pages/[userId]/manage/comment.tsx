@@ -258,7 +258,7 @@ const CommentList: NextPage = ({ url }: { url: string }) => {
       >
         <form
           onSubmit={winHanldeSubmit(onReplyValid)}
-          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[140px] w-[350px]"
+          className=" flex flex-col p-4 shadow-md gap-2 dark:bg-zinc-800 rounded-md h-[155px] w-[350px]"
         >
           <div className="h-[46px] w-full">
             <InputField
@@ -269,10 +269,10 @@ const CommentList: NextPage = ({ url }: { url: string }) => {
               }}
             />
           </div>
-          <div className="text-red-500 text-sm h-[20px]">
+          <div className="text-red-500 text-sm h-[16px]">
             {errors && errors?.replyInput?.message}
           </div>
-          <div className="flex flex-row justify-center gap-4 mt-2">
+          <div className="flex flex-row justify-center gap-4">
             <OkBtn type="submit" width={85} height={45} content="확인" />
             <CancelBtn
               onClickEvt={() => {

@@ -66,7 +66,6 @@ export const createToast = (msg: string, isWarning: boolean) => {
   let number = lastToast
     ? Number(lastToast.id.replace("_toastContainer", "")) + 1
     : 0;
-  console.log(lastToast);
 
   let toastInfo = { msg, isWarning, index: number };
   toastsState((prev) => {

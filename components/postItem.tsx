@@ -23,15 +23,15 @@ const PostItem: NextPage<PostProps> = ({ post }) => {
     setCreateTime(getFormatDate(post?.createdAt));
   }, [post]);
   return (
-    <div className="w-full h-auto mb-16">
+    <div className="w-full h-auto mb-8">
       <div className="flex felx-row items-center mb-4">
         <CompImg
           url={`/${router.query.userId}/post?id=${post?.id}`}
-          style="mr-4 flex-none basis-2/6 h-44"
+          style="mr-4 flex-none basis-1/4 h-auto"
           thumbnail={post?.thumbnail}
         />
         <div className="basis-4/6 flex flex-col">
-          <div className="flex items-center mb-4 space-x-2 text-lg dark:text-gray-400 text-slate-400">
+          <div className="flex items-center mb-4 space-x-2 text-lg sm:text-base dark:text-gray-400 text-slate-400">
             <span>{createTime} 작성</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +51,7 @@ const PostItem: NextPage<PostProps> = ({ post }) => {
           </div>
           <Link
             href={`/${router.query.userId}/post?id=${post?.id}`}
-            className="cursor-pointer mb-4 text-3xl font-bold basis-[100px]
+            className="cursor-pointer mb-4 text-3xl sm:text-2xl font-bold basis-[100px]
           max-h-28 overflow-hidden break-all text-ellipsis text-zinc-600 dark:text-gray-200"
           >
             {post.title}
@@ -62,7 +62,7 @@ const PostItem: NextPage<PostProps> = ({ post }) => {
       <div
         style={{ display: "table" }}
         className="table-fixed
-        overflow-hidden text-ellipsis w-full mb-4 font-semibold text-xl
+        overflow-hidden text-ellipsis w-full mb-4 font-semibold text-xl sm:text-lg
         "
       >
         <p

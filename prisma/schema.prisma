@@ -42,10 +42,10 @@ model Category {
 
 model Post {
   id         Int       @id @default(autoincrement())
-  title      String
+  title      String   @db.VarChar(200)
   content    String    @db.Text()
-  html       String    @db.Text()
-  thumbnail  String?
+  html       String     @db.Text()
+  thumbnail  String?   @db.VarChar(100)
   isPrivate  Boolean?  @default(false)
   category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   preview    String?   @db.VarChar(200)
@@ -113,3 +113,4 @@ model History {
   post      Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int?
 }
+
