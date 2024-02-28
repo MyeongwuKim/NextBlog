@@ -542,7 +542,7 @@ export const CategoryView: NextPage<CategoryViewProps> = ({
               <img
                 src={
                   profile?.avatar
-                    ? `${getDeliveryDomain(profile?.avatar, "avatar")}`
+                    ? `${getDeliveryDomain(profile?.avatar, "public")}`
                     : ""
                 }
                 className={`${
