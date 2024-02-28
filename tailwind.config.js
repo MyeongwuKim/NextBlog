@@ -8,6 +8,7 @@ module.exports = {
       md: { max: "960px" },
       web: { min: "960px" },
       sm: { max: "640px" },
+      xs: { max: "420px" },
     },
     extend: {
       animation: {

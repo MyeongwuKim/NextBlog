@@ -1,5 +1,12 @@
 import { GetServerSidePropsContext, NextPage } from "next";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/router";
 import Editor from "@/components/write/editor";
 import { useTheme } from "next-themes";
@@ -323,11 +330,13 @@ interface CategoryListProps {
   selectCallback: (category: Category) => void;
   categoryId: number;
   categoryData;
+  setCategoryPopup: Dispatch<SetStateAction<boolean>>;
 }
 export const CategoryList = ({
   selectCallback,
   categoryId,
   categoryData,
+  setCategoryPopup,
 }: CategoryListProps) => {
   let categoryList: Category[] = categoryData;
   let [selectName, setSelectName] = useState<string>("");
@@ -360,17 +369,40 @@ export const CategoryList = ({
   };
 
   return (
-    <div id="categoryListView" className="w-full h-[240px] flex flex-col">
-      <div className="flex-none text-xl sm:text-lg font-semibold mb-4">
+    <div id="categoryListView" className="w-full  flex flex-col">
+      <div className="flex-none text-xl sm:text-lg font-semibold mb-2">
         카테고리
       </div>
-      <input
-        readOnly={true}
-        defaultValue={selectName}
-        className="flex-none overflow-hidden break-all text-ellipsis h-10 mb-2
+      <div>
+        <div className="mt-3 w-full flex items-center justify-center">
+          <div className="w-full h-full">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-6 h-6 absolute right-8 translate-y-1/3 cursor-pointer"
+              onClick={() => {
+                setCategoryPopup(true);
+              }}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
+            </svg>
+            <input
+              readOnly={true}
+              defaultValue={selectName}
+              className="flex-none overflow-hidden break-all text-ellipsis h-10 mb-2
           border-2 bg-transparent pl-2 text-lg outline-none pointer-events-none
           rounded-sm dark:border-zinc-700 w-full mr-2 relative"
-      />
+            />
+          </div>
+        </div>
+      </div>
       <div className="relative w-full grow px-2 dark:bg-zinc-700 overflow-auto">
         {categoryList?.map((category, idx) => (
           <button
@@ -383,8 +415,8 @@ export const CategoryList = ({
             className="relative w-full flex items-center disabled:bg-emerald-500
             enabled:hover:dark:bg-zinc-600 enabled:hover:bg-gray-100
             enabled:hover:dark:text-zinc-400 enabled:hover:text-gray-300
-              justify-center font-sans text-lg border-b-[1px]
-              overflow-hidden break-all text-ellipsis h-12
+              justify-center font-sans text-lg sm:text-base border-b-[1px]
+              overflow-hidden break-all text-ellipsis h-[46px]
               "
           >
             <span className="pointer-events-none relative w-full h-6">
@@ -614,8 +646,8 @@ export const WritePopup = ({
       top-0 left-0 flex items-center justify-center`}
       >
         <div
-          className="p-6 max-w-[480px] w-[80%] max-h-[600px] sm:h-[80%] sm:w relative bg-white dark:bg-zinc-800  shadow-md z-50  
-      border-gray-300 rounded-xl  dark:shadow-black"
+          className="p-6 max-w-[480px] w-[80%] xs:h-[500px] sm:h-[600px] h-[640px] sm:w relative bg-white dark:bg-zinc-800  shadow-md z-50  
+      border-gray-300 rounded-xl  dark:sdhaow-black"
         >
           <div className="text-xl sm:text-lg font-semibold mb-4">공개여부</div>
           <div className="flex flex-row w-full justify-between mb-4 sm:text-sm">
@@ -651,7 +683,7 @@ export const WritePopup = ({
                   d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              <span className="sm:">공개</span>
+              공개
             </button>
             <button
               id="privateBtn"
@@ -716,9 +748,9 @@ export const WritePopup = ({
               댓글 비허용
             </button>
           </div>
-          <div className="flex flex-row  mb-4 w-full h-72 gap-4">
+          <div className="flex flex-row  mb-2 w-full h-[calc(100%-240px)] gap-4">
             <div className="flex-1 flex flex-col ">
-              <div className="text-xl sm:text-lg font-semibold mb-4">
+              <div className="text-xl sm:text-lg font-semibold mb-2">
                 썸네일
               </div>
               <label
@@ -728,7 +760,7 @@ export const WritePopup = ({
                   URL.revokeObjectURL(file);
                 }}
                 htmlFor="picture"
-                className={`w-full h-full border-dashed border-4  
+                className={`w-full h-auto border-dashed border-4  
             round-sm dark:bg-zinc-700 flex 
             bg-zinc-100 hover:text-zinc-300
         dark:hover:text-zinc-500  text-zinc-400 cursor-pointer
@@ -767,26 +799,27 @@ export const WritePopup = ({
                   style={{
                     position: "relative",
                     width: "100%",
-                    height: "100%",
+                    height: "auto",
                   }}
                 >
                   <NextImage
                     src={thumbnailPreView.length > 0 ? thumbnailPreView : ""}
                     alt="thumbnail"
                     fill={true}
-                    className={`w-full h-full  transition-colors ${
+                    className={`relative w-full h-auto  transition-colors ${
                       thumbnailPreView.length <= 0 ? "hidden" : "block"
                     }`}
                   />
                   <div
-                    className={`absolute bg-[rgba(0,0,0,0.5)] w-full h-full
+                    className={`absolute bg-[rgba(0,0,0,0.5)] w-full h-full top-0
               ${hoverThumnail ? "block" : "hidden"}`}
                   />
                   <button
+                    id="removeThumbnailBtn"
                     onClick={() => {
                       setThumbnailPreview("");
                     }}
-                    className="absolute w-full h-full flex justify-center items-center"
+                    className="absolute w-full h-full flex justify-center items-center top-0"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -813,17 +846,8 @@ export const WritePopup = ({
                 categoryData={categoryData}
                 selectCallback={onCategorySelect}
                 categoryId={postData?.categoryId}
+                setCategoryPopup={setCategoryPopup}
               />
-              <div className="mt-3 w-full flex items-center justify-center">
-                <CancelBtn
-                  height={35}
-                  width={120}
-                  content="추가 +"
-                  onClickEvt={() => {
-                    setCategoryPopup(true);
-                  }}
-                />
-              </div>
             </div>
           </div>
 
@@ -831,6 +855,7 @@ export const WritePopup = ({
             <div className="max-w-[208px] w-[48%]">
               <CancelBtn
                 onClickEvt={() => {
+                  setThumbnailPreview("");
                   setPopupState(false);
                 }}
                 content="취소"
