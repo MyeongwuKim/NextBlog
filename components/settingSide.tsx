@@ -28,7 +28,6 @@ const SettingSide = () => {
         {items.map((item, i) => (
           <LabelBtn
             key={i}
-            isShallow={true}
             url={`${router?.query.userId}/manage/${item.router}`}
             isDisable={
               router.pathname.replace("/manage/", "") == item.router
