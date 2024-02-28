@@ -6,7 +6,6 @@ interface LabelBtnProps {
   anyRef?: any;
   url?: string;
   onClick?: () => void;
-  isShallow?: boolean;
   id?: string;
   addStyle?: string;
   isDisable?: boolean;
@@ -25,7 +24,6 @@ const LabelBtn = ({
   id,
   addStyle,
   isDisable,
-  isShallow,
 }: LabelBtnProps) => {
   return url ? (
     <Link href={url} className={` ${lblBtnStyle} ${addStyle}`}>

@@ -289,7 +289,7 @@ const CommentList: NextPage = ({ url }: { url: string }) => {
         {["name"].some((page) => {
           return !router.asPath.includes(page);
         }) ? (
-          "댓글 관리"
+          "댓글에 답글을 달거나 삭제할 수 있습니다."
         ) : (
           <div className="flex flex-row gap-2 items-center">
             <div
@@ -587,10 +587,10 @@ export const Item = ({
       onMouseLeave={() => {
         setEnableHiddenView(false);
       }}
-      className={`relative mb-1 w-full h-auto p-2 hover:dark:bg-zinc-800 hover:bg-gray-50
+      className={`relative mb-1 w-full h-[106px] p-2 hover:dark:bg-zinc-800 hover:bg-gray-50
       select-none border-b-2 flex items-center dark:border-zinc-800 dark:bg-zinc-900`}
     >
-      <div className="flex flex-row w-full">
+      <div className="flex flex-row w-full h-[88px]">
         <input
           id={data?.historyId.toString()}
           onChange={(e) => {
@@ -651,11 +651,11 @@ export const Item = ({
             {data?.post.title}
           </span>
         </div>
-        <div className="flex-none w-[100px] ml-2  flex justify-end items-cente sm:w-[60px]">
+        <div className="flex-none w-[100px] ml-2  flex justify-end items-cente xs:w-[30px]">
           <div
             className={`${
               enableHiddenView ? "block" : "hidden"
-            } flex flex-row right-2 gap-2 sm:flex-col`}
+            } flex flex-row right-2 gap-2 xs:flex-col`}
           >
             <NormalBtn
               onClickEvt={() => {

@@ -653,7 +653,7 @@ export const SettingSide = () => {
       <div
         className={`overflow-auto flex web:flex-col md:flex-row md:gap-2
         web:justify-center
-         left-0 h-auto w-full border-r-[2px] border-gray-200
+         left-0 h-auto w-full web:border-r-[2px] border-gray-200
         dark:border-zinc-800 
  `}
       >
@@ -668,7 +668,7 @@ export const SettingSide = () => {
             id={item.router}
             url={`/${router.query.userId}/manage/${item.router}`}
             contents={item.name}
-            isShallow={true}
+            addStyle={"text-center"}
           />
         ))}
       </div>

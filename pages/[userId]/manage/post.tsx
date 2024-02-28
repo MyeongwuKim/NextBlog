@@ -284,7 +284,7 @@ const PostList: NextPage = ({ url }: { url: string }) => {
             return true;
           }
         }).length <= 0 ? (
-          "글 관리"
+          "글을 삭제하거나 변경할 수 있습니다. "
         ) : (
           <div className="flex flex-row gap-2 items-center">
             <div
@@ -662,10 +662,10 @@ export const Item = ({
       onMouseLeave={() => {
         setEnableHiddenView(false);
       }}
-      className={`relative mb-1 w-full h-auto p-2 hover:dark:bg-zinc-800 hover:bg-gray-50
+      className={`relative mb-1 w-full h-[106px] p-2 hover:dark:bg-zinc-800 hover:bg-gray-50
       select-none border-b-2 flex items-center dark:border-zinc-800 dark:bg-zinc-900`}
     >
-      <div className="flex flex-row w-full">
+      <div className="flex flex-row w-full h-[88px]">
         <input
           id={data?.id.toString()}
           onChange={(e) => {
@@ -720,11 +720,11 @@ export const Item = ({
             </span>
           </div>
         </div>
-        <div className="flex-none w-[100px] ml-2  flex justify-end items-center sm:w-[60px]">
+        <div className="flex-none w-[100px] ml-2  flex justify-end items-center xs:w-[30px]">
           <div
             className={`${
               enableHiddenView ? "block" : "hidden"
-            }  flex flex-row right-2 gap-2 sm:flex-col`}
+            }  flex flex-row right-2 gap-2 xs:flex-col`}
           >
             <NormalBtn
               onClickEvt={() => {
@@ -755,7 +755,7 @@ export const Item = ({
             className={`text-sm dark:text-gray-400 text-slate-400 
             ${
               enableHiddenView ? "hidden" : "block"
-            }  flex flex-row right-2 gap-2 justify-center items-center sm:flex-col`}
+            }  flex flex-row right-2 gap-2 justify-center items-center xs:flex-col`}
           >
             <span>
               {data?.isPrivate ? (
