@@ -6,16 +6,17 @@ interface CompImgProps {
   thumbnail: string;
   url: string;
   style: string;
+  imgStyle?: string;
 }
-const CompImg = ({ thumbnail, style, url }: CompImgProps) => {
+const CompImg = ({ thumbnail, style, url, imgStyle }: CompImgProps) => {
   return (
     <Link href={url} className={`cursor-pointer ${style}`}>
       {thumbnail ? (
         <Image
-          src={thumbnail ? `${getDeliveryDomain(thumbnail, "thumbnail")}` : ""}
+          src={thumbnail ? `${getDeliveryDomain(thumbnail, "public")}` : ""}
           alt="thumbnail"
           fill={true}
-          className={`relative w-full h-full `}
+          className={`relative object-center object-cover ${imgStyle}`}
         />
       ) : (
         <svg
@@ -24,8 +25,8 @@ const CompImg = ({ thumbnail, style, url }: CompImgProps) => {
           viewBox="0 0 24 24"
           strokeWidth="1.5"
           stroke="currentColor"
-          className="w-full h-full dark:bg-zinc-800 
-              bg-gray-50 text-zinc-400"
+          className={`w-full h-full dark:bg-zinc-800 
+              bg-gray-50 text-zinc-400 ${imgStyle}`}
         >
           <path
             strokeLinecap="round"

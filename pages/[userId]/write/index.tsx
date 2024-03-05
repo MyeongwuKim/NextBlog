@@ -576,7 +576,9 @@ export const WritePopup = ({
         form.append(
           "file",
           file as any,
-          `${userId.toString()}_postThumbnail_${timeStamp()}`
+          `${
+            process.env.NODE_ENV
+          }_${userId.toString()}_postThumbnail_${timeStamp()}`
         );
         const {
           result: { id },
