@@ -55,7 +55,7 @@ const ToolBar: NextPage<IToolBar> = (props) => {
         form.append(
           "file",
           file as any,
-          `${userId.toString()}_post_${timeStamp()}`
+          `${process.env.NODE_ENV}_${userId.toString()}_post_${timeStamp()}`
         );
         const {
           result: { id },
